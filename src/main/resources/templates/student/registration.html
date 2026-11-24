@@ -3,14 +3,592 @@
       layout:decorate="~{fragments/layout}">
 <head>
     <title>Đăng Ký Học Phần</title>
+    <style>
+        @keyframes softIn {
+            from { opacity: 0; transform: translateY(5px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes ghostFade {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 0.96; }
+        }
+
+        /* ===== TOP MODE SWITCHER ===== */
+        .reg-command-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 8px 14px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+        }
+        .mode-tabs {
+            display: inline-flex;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 3px;
+            border-radius: 12px;
+            gap: 3px;
+        }
+        .mode-tab {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 7px 14px;
+            border-radius: 9px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .mode-tab:hover { color: var(--text-primary); }
+        .mode-tab.active {
+            background: var(--bg-card);
+            color: var(--uit-blue);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+        }
+        [data-theme="dark"] .mode-tab.active { color: #38BDF8; }
+        .mode-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: var(--uit-blue-light);
+            color: var(--uit-blue);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ui-btn {
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 7px 13px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+            white-space: nowrap;
+        }
+        .ui-btn:hover { background: var(--bg-subtle); border-color: var(--border-hover); transform: translateY(-1px); }
+        .ui-btn:active { transform: scale(0.97); }
+        .ui-btn.brand {
+            background: var(--uit-blue);
+            border-color: var(--uit-blue);
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px -3px rgba(0, 91, 171, 0.42);
+        }
+        .ui-btn.brand:hover { background: #004A8C; box-shadow: 0 6px 16px -3px rgba(0, 91, 171, 0.5); }
+        .ui-btn.brand:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+        .ui-btn.magic {
+            background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+            border-color: transparent;
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px -3px rgba(2, 132, 199, 0.42);
+        }
+        .ui-btn.magic:hover { filter: brightness(1.05); }
+
+        /* ===== ORIGINAL WORKSPACE SHELL ===== */
+        .planner-frame {
+            display: flex;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+            min-height: calc(100vh - 178px);
+            margin-bottom: 88px;
+            animation: softIn 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Collapsible Catalog Drawer */
+        .catalog-drawer {
+            width: 344px;
+            flex-shrink: 0;
+            background: var(--bg-subtle);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 150px);
+            position: sticky;
+            top: 76px;
+            transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease, border-color 0.25s ease;
+            overflow: hidden;
+        }
+        .planner-frame.is-collapsed .catalog-drawer {
+            width: 0;
+            opacity: 0;
+            border-right-color: transparent;
+            pointer-events: none;
+        }
+        .catalog-inner {
+            width: 344px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+            height: 100%;
+            min-height: 0;
+        }
+        .drawer-reopen { display: none; }
+        .planner-frame.is-collapsed .drawer-reopen { display: inline-flex; }
+
+        .cat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .cat-search { position: relative; }
+        .cat-search input {
+            width: 100%;
+            padding: 9px 32px 9px 35px;
+            border: 1px solid var(--border-color);
+            border-radius: 11px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.16s, box-shadow 0.16s;
+        }
+        .cat-search input:focus {
+            border-color: var(--uit-blue-primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+        }
+        .cat-search .ic {
+            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+            width: 15px; height: 15px; color: var(--text-muted); pointer-events: none;
+        }
+        .cat-search-clr {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            width: 19px; height: 19px; border-radius: 50%; border: none;
+            background: var(--border-color); color: var(--text-secondary);
+            font-size: 12px; cursor: pointer; display: none; align-items: center; justify-content: center;
+        }
+        .cat-search-clr.show { display: inline-flex; }
+
+        .cat-scroll {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 3px;
+        }
+
+        /* Original Clean Light Course Card with Color Dot */
+        .cat-card {
+            flex-shrink: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 13px;
+            overflow: hidden;
+            transition: border-color 0.16s ease, box-shadow 0.18s ease;
+        }
+        .cat-card:hover { border-color: var(--border-hover); }
+        .cat-card.has-pick {
+            border-color: color-mix(in srgb, var(--c-accent, #0284C7) 55%, var(--border-color));
+            box-shadow: 0 3px 10px -4px color-mix(in srgb, var(--c-accent, #0284C7) 25%, transparent);
+        }
+        .cat-card-hd {
+            padding: 11px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .cat-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--c-accent, #94A3B8);
+            flex-shrink: 0;
+            opacity: 0.32;
+            transition: opacity 0.18s, transform 0.18s;
+        }
+        .cat-card.has-pick .cat-dot {
+            opacity: 1;
+            transform: scale(1.15);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-accent) 22%, transparent);
+        }
+        .cat-texts { flex: 1; min-width: 0; }
+        .cat-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cat-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cat-picked-tag {
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 6px;
+            background: color-mix(in srgb, var(--c-accent) 14%, transparent);
+            color: var(--c-accent);
+        }
+
+        /* Semantic Priority Switch (P1 / P2 / P3) */
+        .prio-seg {
+            display: inline-flex;
+            gap: 2px;
+            padding: 2px;
+            border-radius: 8px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .prio-opt {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 10.5px;
+            font-weight: 700;
+            width: 21px;
+            height: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.14s;
+        }
+        .prio-opt.active-1 { background: #FEE2E2; color: #DC2626; }
+        .prio-opt.active-2 { background: #E0F2FE; color: #0369A1; }
+        .prio-opt.active-3 { background: #E2E8F0; color: #475569; }
+
+        .cat-chev {
+            width: 15px; height: 15px; color: var(--text-muted); flex-shrink: 0;
+            transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .cat-card.is-open .cat-chev { transform: rotate(180deg); }
+
+        /* Smooth Accordion */
+        .cat-acc {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .cat-card.is-open .cat-acc { grid-template-rows: 1fr; }
+        .cat-acc-in { overflow: hidden; }
+
+        .lhp-opt {
+            padding: 10px 12px;
+            border-top: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: background 0.14s;
+        }
+        .lhp-opt:hover { background: var(--bg-subtle); }
+        .lhp-opt.picked { background: color-mix(in srgb, var(--c-accent, #0284C7) 9%, var(--bg-card)); }
+
+        .lhp-radio {
+            width: 17px; height: 17px; border-radius: 50%;
+            border: 1.5px solid #CBD5E1; flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: transparent; transition: all 0.16s ease;
+        }
+        .lhp-opt.picked .lhp-radio {
+            background: var(--c-accent, #0284C7);
+            border-color: var(--c-accent, #0284C7);
+            color: #FFFFFF;
+        }
+
+        /* ===== RIGHT SOFT-SURFACE CALENDAR (NOTION/LINEAR STYLE) ===== */
+        .cal-stage {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-card);
+        }
+        .cal-head-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .cal-seg-filter {
+            display: inline-flex;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 3px;
+            border-radius: 10px;
+            gap: 2px;
+        }
+        .cal-flt-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 11px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .cal-flt-btn.active {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        }
+
+        .cal-scroll { flex: 1; overflow: auto; }
+        .cal-matrix {
+            display: grid;
+            grid-template-columns: 74px repeat(7, minmax(134px, 1fr));
+            grid-template-rows: 42px repeat(15, 52px);
+            min-width: 1012px;
+            background: var(--bg-card);
+        }
+        .cm-day-hd {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-subtle);
+            background: var(--bg-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .cm-time {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            padding-right: 10px;
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--bg-card);
+            user-select: none;
+        }
+        .cm-time .t-lbl { font-size: 11px; font-weight: 700; color: var(--text-secondary); line-height: 1.1; }
+        .cm-time .t-hr { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+        .cm-time.session-end, .cm-slot.session-end {
+            border-bottom: 1.5px dashed var(--border-color);
+        }
+        .cm-slot {
+            border-bottom: 1px solid var(--border-subtle);
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        /* Soft-Surface Editorial Event Block (Original!) */
+        .ev-block {
+            margin: 3px 4px;
+            border-radius: 10px;
+            padding: 8px 10px 8px 11px;
+            background: color-mix(in srgb, var(--c-accent, #0284C7) 10%, var(--bg-card));
+            border: 1px solid color-mix(in srgb, var(--c-accent, #0284C7) 28%, transparent);
+            border-left: 4px solid var(--c-accent, #0284C7);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            z-index: 2;
+            animation: softIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease, background 0.16s;
+        }
+        [data-theme="dark"] .ev-block {
+            background: color-mix(in srgb, var(--c-accent, #0284C7) 18%, #0F172A);
+        }
+        .ev-block:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--c-accent, #0284C7) 35%, transparent);
+            background: color-mix(in srgb, var(--c-accent, #0284C7) 14%, var(--bg-card));
+            z-index: 6;
+        }
+        .ev-block.is-conflict {
+            background: repeating-linear-gradient(-45deg, rgba(239, 68, 68, 0.11), rgba(239, 68, 68, 0.11) 6px, rgba(254, 242, 242, 0.92) 6px, rgba(254, 242, 242, 0.92) 12px);
+            border: 1.5px solid #EF4444;
+            border-left: 4px solid #DC2626;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+            z-index: 7;
+        }
+        [data-theme="dark"] .ev-block.is-conflict {
+            background: rgba(153, 27, 27, 0.35);
+        }
+        .ev-block.is-ghost {
+            border: 1.5px dashed var(--c-accent, #0284C7);
+            border-left: 4px dashed var(--c-accent, #0284C7);
+            background: color-mix(in srgb, var(--c-accent, #0284C7) 8%, var(--bg-card));
+            z-index: 8;
+            pointer-events: none;
+            animation: ghostFade 1.4s infinite ease-in-out;
+        }
+        .ev-block.is-ghost.ghost-clash {
+            border-color: #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .ev-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; }
+        .ev-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ev-badges { display: flex; align-items: center; gap: 4px; margin-top: 3px; flex-wrap: nowrap; overflow: hidden; }
+        .ev-type-pill {
+            font-size: 9.5px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 5px;
+            background: var(--c-accent, #0284C7);
+            color: #FFFFFF;
+            flex-shrink: 0;
+        }
+        .ev-code {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--c-accent, #0284C7);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
+        }
+        .ev-meta {
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 10.5px;
+            color: var(--text-secondary);
+        }
+        .ev-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ev-row svg { width: 11px; height: 11px; flex-shrink: 0; color: var(--c-accent, #64748B); opacity: 0.85; }
+        .ev-rm {
+            border: none;
+            background: color-mix(in srgb, var(--c-accent, #64748B) 14%, transparent);
+            color: var(--c-accent, #475569);
+            width: 18px; height: 18px; border-radius: 6px;
+            cursor: pointer; font-size: 12px; line-height: 1; flex-shrink: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            opacity: 0; transition: all 0.14s;
+        }
+        .ev-block:hover .ev-rm { opacity: 1; }
+        .ev-rm:hover { background: #EF4444; color: #FFFFFF; }
+
+        .conflict-strip {
+            margin: 10px 16px 0 16px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #B91C1C;
+            font-size: 12.5px;
+        }
+
+        /* ===== FLOATING TUITION COMMAND BAR (ORIGINAL) ===== */
+        .tuition-pill-dock {
+            position: fixed;
+            bottom: 18px;
+            right: 24px;
+            z-index: 920;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 14px 34px -8px rgba(15, 23, 42, 0.16);
+            min-width: 348px;
+            max-width: 420px;
+            overflow: hidden;
+        }
+        .tpd-sheet {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .tuition-pill-dock.open .tpd-sheet { grid-template-rows: 1fr; }
+        .tpd-sheet-in { overflow: hidden; background: var(--bg-subtle); }
+        .tpd-list { padding: 10px 16px; max-height: 220px; overflow-y: auto; border-bottom: 1px solid var(--border-color); font-size: 12px; }
+        .tpd-bar {
+            padding: 11px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            cursor: pointer;
+        }
+        .tpd-prog {
+            height: 4px;
+            width: 100%;
+            background: var(--bg-subtle);
+            overflow: hidden;
+        }
+        .tpd-prog-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0EA5E9, #005BAB);
+            transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s;
+        }
+
+        /* ===== AUTO-SCHEDULE MODAL ===== */
+        .as-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; }
+        @media (max-width: 820px) { .as-grid { grid-template-columns: 1fr; } }
+        .busy-mat { display: grid; grid-template-columns: 64px repeat(7, 1fr); gap: 5px; font-size: 11.5px; }
+        .busy-btn {
+            border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-muted);
+            border-radius: 8px; padding: 7px 2px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.14s;
+        }
+        .busy-btn:hover { border-color: #EF4444; color: #DC2626; }
+        .busy-btn.busy { background: #FEE2E2; border-color: #EF4444; color: #B91C1C; }
+        .lec-pill {
+            border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary);
+            border-radius: 999px; padding: 4px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all 0.14s;
+        }
+        .lec-pill.avoided { background: #FEE2E2; border-color: #EF4444; color: #B91C1C; text-decoration: line-through; }
+        .combo-box {
+            border: 1px solid var(--border-color); border-radius: 13px; padding: 14px 16px;
+            background: var(--bg-card); margin-bottom: 10px; transition: border-color 0.16s, box-shadow 0.16s;
+        }
+        .combo-box:hover { border-color: var(--uit-blue-primary); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.08); }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
 
-    <!-- Page Header -->
-    <div class="page-header">
+    <!-- Official Page Header (Auto-hides in Sandbox mode for clean full-viewport canvas) -->
+    <div id="official-page-header" class="page-header">
         <div>
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                 <span class="lux-badge lux-badge-solid">HỌC CHẾ TÍN CHỈ</span>
                 <span th:if="${activeHocKy != null and activeHocKy.trangThaiDangKy.name() == 'DANG_MO'}" class="lux-badge" style="border-color: #22C55E; color: #16A34A; background: rgba(34, 197, 94, 0.08);">
                     <i data-lucide="radio" style="width: 12px; height: 12px;"></i>
@@ -27,202 +605,1059 @@
             </p>
         </div>
 
-        <!-- Registered Credits Quick Stat Card -->
-        <div class="lux-card" style="padding: 16px 24px; margin-bottom: 0; display: flex; align-items: center; gap: 28px; background: var(--bg-subtle);">
+        <div class="lux-card" style="padding: 14px 20px; margin-bottom: 0; display: flex; align-items: center; gap: 22px;">
             <div>
-                <div class="stat-box-label">Số Tín Chỉ Đã Đăng Ký</div>
-                <div class="stat-box-value" style="font-size: 26px; margin: 4px 0 0 0;">
+                <div class="stat-box-label">Tín Chỉ Đã Đăng Ký</div>
+                <div class="stat-box-value" style="font-size: 24px; margin: 2px 0 0 0;">
                     <span th:text="${totalRegisteredCredits}">0</span>
-                    <span style="font-size: 14px; font-weight: 500; color: var(--text-muted);">/ <span th:text="${maxCredits}">25</span> TC</span>
+                    <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">/ <span th:text="${maxCredits}">25</span> TC</span>
                 </div>
             </div>
-            <div style="border-left: 1px solid var(--border-color); padding-left: 20px;">
-                <div class="stat-box-label">Hạn Mức Đào Tạo</div>
-                <div style="font-size: 13.5px; font-weight: 700; margin-top: 4px;" th:text="${isWarning ? 'Tối đa 18 TC (Hạn chế do Cảnh báo)' : 'Tối đa 25 TC (Chuẩn tín chỉ)'}">
-                    Tối đa 25 TC
+            <div style="border-left: 1px solid var(--border-color); padding-left: 18px;">
+                <div class="stat-box-label">Hạn Mức</div>
+                <div style="font-size: 13px; font-weight: 700; margin-top: 2px;" th:text="${isWarning ? 'Tối đa 18 TC (Cảnh báo)' : 'Tối đa 25 TC (Chuẩn)'}">Tối đa 25 TC</div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${isWarning}" class="lux-alert lux-alert-warning" style="margin-bottom: 14px;">
+        <i data-lucide="alert-triangle" style="width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px;"></i>
+        <div><strong>Cảnh báo học vụ (<span th:text="${student.trangThaiHocVu}">CANH_BAO_1</span>):</strong> Giới hạn tối đa <strong>18 tín chỉ</strong> trong học kỳ này.</div>
+    </div>
+
+    <!-- Command Bar -->
+    <div class="reg-command-bar">
+        <div class="mode-tabs">
+            <button type="button" id="tab-official-btn" class="mode-tab active" onclick="switchRegMode('official')">
+                <i data-lucide="clipboard-check" style="width: 15px; height: 15px;"></i>
+                <span>Đăng Ký Chính Thức</span>
+            </button>
+            <button type="button" id="tab-sandbox-btn" class="mode-tab" onclick="switchRegMode('sandbox')">
+                <i data-lucide="layout-template" style="width: 15px; height: 15px;"></i>
+                <span>Xếp Lịch Nháp (Sandbox)</span>
+                <span class="mode-badge" id="sandbox-count-pill">0</span>
+            </button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span class="lux-badge" style="font-size: 12px;" th:if="${activeHocKy != null}" th:text="${activeHocKy.tenHocKy + ' · ' + activeHocKy.namHoc}">HK2 · 2025-2026</span>
+            <button type="button" class="ui-btn magic" onclick="openAutoScheduleModal()">
+                <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                <span>Tự Động Xếp Lịch</span>
+            </button>
+            <button type="button" class="ui-btn" onclick="copyShareLink()">
+                <i data-lucide="link-2" style="width: 14px; height: 14px;"></i>
+                <span>Copy Link Chia Sẻ</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== PANEL 1: ĐĂNG KÝ CHÍNH THỨC ==================== -->
+    <div id="panel-official" style="margin-bottom: 88px;">
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="check-circle-2" style="width: 18px; height: 18px; color: #16A34A;"></i>
+                    <span>Học Phần Đã Đăng Ký Trong Học Kỳ</span>
+                    <span class="lux-badge" style="margin-left: 4px;" th:text="${registeredClasses != null ? registeredClasses.size() + ' Lớp' : '0 Lớp'}">0 Lớp</span>
+                </div>
+                <div style="font-size: 12.5px; color: var(--text-muted);">
+                    Tổng: <strong class="mono" style="color: var(--text-primary);" th:text="${totalRegisteredCredits}">0</strong> Tín chỉ
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Alert Cảnh Báo Học Vụ nếu có -->
-    <div th:if="${isWarning}" class="lux-alert lux-alert-warning">
-        <i data-lucide="alert-triangle" style="width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;"></i>
-        <div>
-            <div style="font-weight: 700; margin-bottom: 2px;">Lưu ý điều kiện Học vụ Tín chỉ</div>
-            <div>
-                Bạn đang thuộc diện cảnh báo học vụ: <strong th:text="${student.trangThaiHocVu}">CANH_BAO_1</strong>. 
-                Theo quy chế đào tạo, tổng số tín chỉ đăng ký học kỳ bị giới hạn tối đa <strong>18 tín chỉ</strong>. Sinh viên cần ưu tiên đăng ký học lại các môn chưa đạt trước khi đăng ký môn mới.
+            <div class="table-container">
+                <table class="lux-table">
+                    <thead>
+                    <tr>
+                        <th>Mã LHP</th><th>Tên Học Phần</th><th style="text-align: center;">Số TC</th><th>Thời Khóa Biểu & Phòng</th><th>Phân Loại</th><th>Thời Điểm ĐK</th><th style="text-align: right;">Thao Tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="dk : ${registeredClasses}">
+                        <td><span class="mono" style="font-weight: 700;" th:text="${dk.lopHocPhan.maLHP}">INT1405_01</span></td>
+                        <td>
+                            <div style="font-weight: 600;" th:text="${dk.lopHocPhan.hocPhan.tenHP}">Java</div>
+                            <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${'HP: ' + dk.lopHocPhan.hocPhan.maHP + ' • ' + dk.lopHocPhan.hocPhan.soTCLyThuyet + ' LT, ' + dk.lopHocPhan.hocPhan.soTCThucHanh + ' TH'}">INT1405</div>
+                        </td>
+                        <td class="mono" style="text-align: center; font-weight: 700;" th:text="${dk.lopHocPhan.hocPhan.tongTinChi}">3</td>
+                        <td>
+                            <div th:each="lh : ${dk.lopHocPhan.danhSachLichHoc}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                                <span class="lux-badge" style="font-size: 11px;">Thứ <span th:text="${lh.thu}">2</span></span>
+                                <span class="mono" style="font-size: 12px;">Tiết <span th:text="${lh.tietBatDau + '-' + lh.tietKetThuc}">1-3</span></span>
+                                <span class="mono" style="font-size: 12px; color: var(--text-muted);">(P.<span th:text="${lh.phongHoc}">A301</span>)</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span th:if="${dk.loaiDangKy.name() == 'HOC_MOI'}" class="lux-badge">Học Mới</span>
+                            <span th:if="${dk.loaiDangKy.name() == 'HOC_LAI'}" class="lux-badge lux-badge-danger">Học Lại</span>
+                            <span th:if="${dk.loaiDangKy.name() == 'CAI_THIEN'}" class="lux-badge lux-badge-warning">Cải Thiện</span>
+                        </td>
+                        <td class="mono" style="font-size: 12px; color: var(--text-secondary);" th:text="${#temporals.format(dk.ngayDangKy, 'dd/MM/yyyy HH:mm')}">21/10/2026</td>
+                        <td style="text-align: right;">
+                            <form th:action="@{/Student/Registration/Drop}" method="post" onsubmit="return confirm('Xác nhận hủy đăng ký học phần này?')">
+                                <input type="hidden" name="lopHocPhanId" th:value="${dk.lopHocPhan.id}">
+                                <button type="submit" class="btn-lux btn-lux-danger btn-lux-sm">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                    <span>Hủy Môn</span>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${registeredClasses == null or registeredClasses.isEmpty()}">
+                        <td colspan="7">
+                            <div class="lux-empty-state">
+                                <i data-lucide="inbox" class="lux-empty-icon"></i>
+                                <div style="font-weight: 600;">Chưa có học phần nào được đăng ký</div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
 
-    <!-- Danh Sách Lớp Đã Đăng Ký -->
-    <div class="lux-card">
-        <div class="card-heading">
-            <div class="card-heading-title">
-                <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i>
-                <span>Học Phần Đã Đăng Ký Trong Học Kỳ</span>
-                <span class="lux-badge" style="margin-left: 4px;" th:text="${registeredClasses != null ? registeredClasses.size() + ' Lớp' : '0 Lớp'}">0 Lớp</span>
-            </div>
-            <div style="font-size: 12.5px; color: var(--text-muted); font-family: var(--font-mono);">
-                Tổng: <strong class="mono" style="color: var(--text-primary);" th:text="${totalRegisteredCredits}">0</strong> Tín chỉ
-            </div>
-        </div>
-
-        <div class="table-container">
-            <table class="lux-table">
-                <thead>
-                <tr>
-                    <th>Mã LHP</th>
-                    <th>Tên Học Phần</th>
-                    <th style="text-align: center;">Số TC</th>
-                    <th>Thời Khóa Biểu & Phòng</th>
-                    <th>Phân Loại</th>
-                    <th>Thời Điểm ĐK</th>
-                    <th style="text-align: right;">Thao Tác</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="dk : ${registeredClasses}">
-                    <td>
-                        <span class="mono" style="font-weight: 700;" th:text="${dk.lopHocPhan.maLHP}">INT1405_01</span>
-                    </td>
-                    <td>
-                        <div style="font-weight: 600;" th:text="${dk.lopHocPhan.hocPhan.tenHP}">Lập trình Java Nâng Cao</div>
-                        <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${'HP: ' + dk.lopHocPhan.hocPhan.maHP + ' • ' + dk.lopHocPhan.hocPhan.soTCLyThuyet + ' LT, ' + dk.lopHocPhan.hocPhan.soTCThucHanh + ' TH'}">INT1405</div>
-                    </td>
-                    <td class="mono" style="text-align: center; font-weight: 700;" th:text="${dk.lopHocPhan.hocPhan.tongTinChi}">3</td>
-                    <td>
-                        <div th:each="lh : ${dk.lopHocPhan.danhSachLichHoc}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                            <span class="lux-badge" style="font-size: 11px;">Thứ <span th:text="${lh.thu}">2</span></span>
-                            <span class="mono" style="font-size: 12px;">Tiết <span th:text="${lh.tietBatDau + '-' + lh.tietKetThuc}">1-3</span></span>
-                            <span class="mono" style="font-size: 12px; color: var(--text-muted);">(Phòng <span th:text="${lh.phongHoc}">A301</span>)</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span th:if="${dk.loaiDangKy.name() == 'HOC_MOI'}" class="lux-badge">Học Mới</span>
-                        <span th:if="${dk.loaiDangKy.name() == 'HOC_LAI'}" class="lux-badge lux-badge-danger">Học Lại</span>
-                        <span th:if="${dk.loaiDangKy.name() == 'CAI_THIEN'}" class="lux-badge lux-badge-warning">Cải Thiện</span>
-                    </td>
-                    <td class="mono" style="font-size: 12px; color: var(--text-secondary);" th:text="${#temporals.format(dk.ngayDangKy, 'dd/MM/yyyy HH:mm')}">21/10/2026 14:30</td>
-                    <td style="text-align: right;">
-                        <form th:action="@{/Student/Registration/Drop}" method="post" onsubmit="return confirm('Xác nhận hủy đăng ký học phần này?')">
-                            <input type="hidden" name="lopHocPhanId" th:value="${dk.lopHocPhan.id}">
-                            <button type="submit" class="btn-lux btn-lux-danger btn-lux-sm">
-                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                                <span>Hủy Môn</span>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                <tr th:if="${registeredClasses == null or registeredClasses.isEmpty()}">
-                    <td colspan="7">
-                        <div class="lux-empty-state">
-                            <i data-lucide="inbox" class="lux-empty-icon"></i>
-                            <div style="font-weight: 600; margin-bottom: 4px;">Chưa có học phần nào được đăng ký</div>
-                            <div style="font-size: 13px;">Hãy chọn các lớp học phần đang mở trong danh sách bên dưới để bắt đầu đăng ký.</div>
-                        </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Danh Sách Lớp Học Phần Đang Mở Tuyển Sinh -->
-    <div class="lux-card">
-        <div class="card-heading">
-            <div>
+        <div class="lux-card">
+            <div class="card-heading">
                 <div class="card-heading-title">
                     <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
                     <span>Danh Sách Lớp Học Phần Mở Đăng Ký</span>
                 </div>
-                <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
-                    Quy tắc kiểm tra: Cổng mở • Sĩ số còn chỗ • Điều kiện tiên quyết • Hạn mức tín chỉ • Không trùng lịch học
-                </div>
-            </div>
-            <div>
                 <span class="lux-badge" th:text="${openClasses != null ? openClasses.size() + ' Lớp mở' : '0 Lớp'}">0 Lớp mở</span>
             </div>
-        </div>
-
-        <div class="table-container">
-            <table class="lux-table">
-                <thead>
-                <tr>
-                    <th>Mã LHP</th>
-                    <th>Tên Học Phần</th>
-                    <th style="text-align: center;">Số TC</th>
-                    <th>Giảng Viên Giảng Dạy</th>
-                    <th>Lịch Học Chi Tiết</th>
-                    <th style="width: 160px;">Sĩ Số Lớp</th>
-                    <th style="text-align: right;">Đăng Ký</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="lhp : ${openClasses}">
-                    <td>
-                        <span class="mono" style="font-weight: 700;" th:text="${lhp.maLHP}">INT1405_01</span>
-                    </td>
-                    <td>
-                        <div style="font-weight: 600;" th:text="${lhp.hocPhan.tenHP}">Lập trình Hướng đối tượng</div>
-                        <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${'Mã HP: ' + lhp.hocPhan.maHP + ' • ' + lhp.hocPhan.soTCLyThuyet + ' LT + ' + lhp.hocPhan.soTCThucHanh + ' TH'}">INT1405</div>
-                    </td>
-                    <td class="mono" style="text-align: center; font-weight: 700;" th:text="${lhp.hocPhan.tongTinChi}">3</td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <i data-lucide="user" style="width: 15px; height: 15px; color: var(--text-muted);"></i>
-                            <span style="font-weight: 500;" th:text="${lhp.giangVien != null ? lhp.giangVien.tenDayDu : 'Chưa phân công'}">PGS.TS Nguyễn Văn An</span>
-                        </div>
-                    </td>
-                    <td>
-                        <div th:each="lh : ${lhp.danhSachLichHoc}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                            <span class="lux-badge" style="font-size: 11px;">Thứ <span th:text="${lh.thu}">2</span></span>
-                            <span class="mono" style="font-size: 12px;">Tiết <span th:text="${lh.tietBatDau + '-' + lh.tietKetThuc}">1-3</span></span>
-                            <span class="mono" style="font-size: 12px; color: var(--text-muted);">(P. <span th:text="${lh.phongHoc}">A301</span>)</span>
-                        </div>
-                    </td>
-                    <td>
-                        <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px;">
-                            <span class="mono" style="font-weight: 700;" th:text="${lhp.siSoHienTai + ' / ' + lhp.siSoToiDa}">42/60</span>
-                            <span class="mono" style="color: var(--text-muted);" th:text="${lhp.siSoToiDa > lhp.siSoHienTai ? 'Còn ' + (lhp.siSoToiDa - lhp.siSoHienTai) + ' chỗ' : 'Hết chỗ'}">Còn 18 chỗ</span>
-                        </div>
-                        <div class="lux-progress">
-                            <div class="lux-progress-bar" th:style="'width: ' + ${(lhp.siSoHienTai * 100) / lhp.siSoToiDa} + '%;'"></div>
-                        </div>
-                    </td>
-                    <td style="text-align: right;">
-                        <div th:if="${registeredLhpIds.contains(lhp.id)}">
-                            <span class="lux-badge lux-badge-solid" style="padding: 6px 12px;">
-                                <i data-lucide="check" style="width: 14px; height: 14px;"></i>
-                                ĐÃ ĐĂNG KÝ
-                            </span>
-                        </div>
-                        <div th:unless="${registeredLhpIds.contains(lhp.id)}">
-                            <form th:action="@{/Student/Registration/Register}" method="post">
-                                <input type="hidden" name="lopHocPhanId" th:value="${lhp.id}">
-                                <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm" th:disabled="${lhp.siSoHienTai >= lhp.siSoToiDa}">
-                                    <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
-                                    <span th:text="${lhp.siSoHienTai >= lhp.siSoToiDa ? 'Hết Chỗ' : 'Đăng Ký'}">Đăng Ký</span>
+            <div class="table-container">
+                <table class="lux-table">
+                    <thead>
+                    <tr>
+                        <th>Mã LHP</th><th>Tên Học Phần</th><th style="text-align: center;">Số TC</th><th>Giảng Viên</th><th>Lịch Học Chi Tiết</th><th style="width: 155px;">Sĩ Số</th><th style="text-align: right;">Đăng Ký</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="lhp : ${openClasses}">
+                        <td><span class="mono" style="font-weight: 700;" th:text="${lhp.maLHP}">INT1405_01</span></td>
+                        <td>
+                            <div style="font-weight: 600;" th:text="${lhp.hocPhan.tenHP}">OOP</div>
+                            <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${'HP: ' + lhp.hocPhan.maHP + ' • ' + lhp.hocPhan.soTCLyThuyet + ' LT + ' + lhp.hocPhan.soTCThucHanh + ' TH'}">INT1405</div>
+                        </td>
+                        <td class="mono" style="text-align: center; font-weight: 700;" th:text="${lhp.hocPhan.tongTinChi}">3</td>
+                        <td style="font-weight: 500;" th:text="${lhp.giangVien != null ? lhp.giangVien.tenDayDu : 'Chưa phân công'}">GV</td>
+                        <td>
+                            <div th:each="lh : ${lhp.danhSachLichHoc}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                                <span class="lux-badge" style="font-size: 11px;">Thứ <span th:text="${lh.thu}">2</span></span>
+                                <span class="mono" style="font-size: 12px;">Tiết <span th:text="${lh.tietBatDau + '-' + lh.tietKetThuc}">1-3</span></span>
+                                <span class="mono" style="font-size: 12px; color: var(--text-muted);">(P.<span th:text="${lh.phongHoc}">A301</span>)</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 4px;">
+                                <span class="mono" style="font-weight: 700;" th:text="${lhp.siSoHienTai + ' / ' + lhp.siSoToiDa}">42/60</span>
+                                <span class="mono" style="color: var(--text-muted);" th:text="${lhp.siSoToiDa > lhp.siSoHienTai ? 'Còn ' + (lhp.siSoToiDa - lhp.siSoHienTai) : 'Hết chỗ'}">Còn 18</span>
+                            </div>
+                            <div class="lux-progress">
+                                <div class="lux-progress-bar" th:style="'width: ' + ${(lhp.siSoHienTai * 100) / lhp.siSoToiDa} + '%;'"></div>
+                            </div>
+                        </td>
+                        <td style="text-align: right;">
+                            <div th:if="${registeredLhpIds.contains(lhp.id)}">
+                                <span class="lux-badge lux-badge-solid" style="padding: 5px 11px;">ĐÃ ĐĂNG KÝ</span>
+                            </div>
+                            <div th:unless="${registeredLhpIds.contains(lhp.id)}" style="display: inline-flex; gap: 6px; align-items: center;">
+                                <button type="button" class="ui-btn" style="padding: 5px 9px;" title="Thử xếp vào lịch nháp"
+                                        th:attr="onclick='addToSandboxAndSwitch(' + ${lhp.id} + ')'">
+                                    <i data-lucide="calendar-plus" style="width: 13px; height: 13px;"></i>
                                 </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                <tr th:if="${openClasses == null or openClasses.isEmpty()}">
-                    <td colspan="7">
-                        <div class="lux-empty-state">
-                            <i data-lucide="calendar-off" class="lux-empty-icon"></i>
-                            <div style="font-weight: 600;">Hiện không có lớp học phần nào mở cho học kỳ này.</div>
-                        </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+                                <form th:action="@{/Student/Registration/Register}" method="post" style="margin: 0;">
+                                    <input type="hidden" name="lopHocPhanId" th:value="${lhp.id}">
+                                    <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm" th:disabled="${lhp.siSoHienTai >= lhp.siSoToiDa}">
+                                        <span th:text="${lhp.siSoHienTai >= lhp.siSoToiDa ? 'Hết Chỗ' : 'Đăng Ký'}">Đăng Ký</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
+    <!-- ==================== PANEL 2: ORIGINAL SANDBOX PLANNER ==================== -->
+    <div id="panel-sandbox" style="display: none;">
+        <div class="planner-frame" id="planner-frame">
+            <!-- Collapsible Course Catalog Drawer -->
+            <aside class="catalog-drawer">
+                <div class="catalog-inner">
+                    <div class="cat-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 14.5px; font-weight: 800;">Kho Học Phần Mở</span>
+                            <span class="mode-badge" id="sb-selected-badge">0 chọn</span>
+                        </div>
+                        <button type="button" class="ui-btn" style="padding: 5px 8px;" onclick="toggleCatalogDrawer()" title="Thu gọn danh sách môn">
+                            <i data-lucide="panel-left-close" style="width: 15px; height: 15px;"></i>
+                        </button>
+                    </div>
+
+                    <div class="cat-search">
+                        <i data-lucide="search" class="ic"></i>
+                        <input type="text" id="sb-search-input" placeholder="Lọc môn, mã LHP, giảng viên..." oninput="onSearchInput()">
+                        <button type="button" id="sb-search-clear" class="cat-search-clr" onclick="clearSearch()">×</button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                        <button type="button" class="ui-btn" style="flex: 1; justify-content: center; font-size: 11.5px; padding: 5px 8px;" onclick="loadRegisteredToSandbox()">
+                            <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i>
+                            <span>Nạp lớp ĐK</span>
+                        </button>
+                        <button type="button" class="ui-btn" style="justify-content: center; font-size: 11.5px; padding: 5px 10px;" onclick="clearSandbox()">
+                            <i data-lucide="eraser" style="width: 12px; height: 12px;"></i>
+                            <span>Xóa nháp</span>
+                        </button>
+                    </div>
+
+                    <div style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; padding: 0 2px;">
+                        <span>Rê chuột vào lớp để xem thử trên lưới</span>
+                        <span>Ưu tiên: 1-2-3</span>
+                    </div>
+
+                    <div class="cat-scroll" id="sb-course-list"></div>
+                </div>
+            </aside>
+
+            <!-- Soft-Surface Calendar Stage -->
+            <section class="cal-stage">
+                <div class="cal-head-bar">
+                    <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap;">
+                        <button type="button" class="ui-btn drawer-reopen" onclick="toggleCatalogDrawer()" title="Mở kho học phần">
+                            <i data-lucide="panel-left-open" style="width: 14px; height: 14px;"></i>
+                            <span>Chọn môn</span>
+                        </button>
+                        <span id="sb-conflict-status" class="lux-badge" style="border-color: #86EFAC; color: #15803D; background: #F0FDF4; font-weight: 700;">
+                            0 trùng tiết
+                        </span>
+                        <span id="sb-free-days-pill" class="lux-badge" style="font-size: 11.5px;">Trống 7 ngày</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div class="cal-seg-filter">
+                            <button type="button" id="sb-flt-all" class="cal-flt-btn active" onclick="setSbTypeFilter('ALL')">Tất cả</button>
+                            <button type="button" id="sb-flt-lt" class="cal-flt-btn" onclick="setSbTypeFilter('LT')">Lý thuyết</button>
+                            <button type="button" id="sb-flt-th" class="cal-flt-btn" onclick="setSbTypeFilter('TH')">Thực hành</button>
+                        </div>
+
+                        <button type="button" id="btn-push-official" class="ui-btn brand" onclick="pushSandboxToOfficial()" disabled>
+                            <i data-lucide="send" style="width: 13px; height: 13px;"></i>
+                            <span>Đẩy Sang Đăng Ký Chính Thức (0)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="sb-conflict-banner" class="conflict-strip" style="display: none;"></div>
+
+                <div class="cal-scroll">
+                    <div class="cal-matrix" id="sb-cal-grid"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- ==================== FLOATING TUITION BAR WITH CREDIT PROGRESS ==================== -->
+    <div class="tuition-pill-dock" id="tuition-float-widget">
+        <div class="tpd-sheet">
+            <div class="tpd-sheet-in">
+                <div class="tpd-list" id="tf-details-list"></div>
+            </div>
+        </div>
+        <div class="tpd-prog">
+            <div class="tpd-prog-fill" id="tf-prog-fill" style="width: 0%;"></div>
+        </div>
+        <div class="tpd-bar" onclick="toggleTuitionDetails()">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 10px; background: var(--uit-blue-light); color: var(--uit-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="calculator" style="width: 16px; height: 16px;"></i>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-muted); font-weight: 600;" id="tf-mode-label">Dự toán học phí</div>
+                    <div style="display: flex; align-items: baseline; gap: 7px;">
+                        <span class="mono" style="font-size: 14px; font-weight: 800;" id="tf-credits">0 / 25 TC</span>
+                        <span style="font-size: 11px; color: var(--text-muted);" id="tf-lt-th">0 LT · 0 TH</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="text-align: right;">
+                    <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700; letter-spacing: 0.04em;">TẠM TÍNH</div>
+                    <div class="mono" style="font-size: 15.5px; font-weight: 800; color: var(--uit-blue);" id="tf-amount">0 đ</div>
+                </div>
+                <i data-lucide="chevron-up" id="tf-chevron" style="width: 16px; height: 16px; color: var(--text-muted); transition: transform 0.24s ease;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: TỰ ĐỘNG XẾP LỊCH ==================== -->
+    <div class="modal-backdrop-custom" id="auto-schedule-modal">
+        <div class="modal-dialog-custom" style="max-width: 980px;">
+            <div class="modal-header-custom">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #0EA5E9, #0284C7); color: #fff; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="sparkles" style="width: 17px; height: 17px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 15.5px; font-weight: 800;">Tự Động Xếp Lịch (Auto-Schedule)</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Chọn môn + mức ưu tiên (1-2-3), ca bận & giảng viên muốn né để lọc tổ hợp không trùng tiết</div>
+                    </div>
+                </div>
+                <button type="button" class="action-btn" onclick="closeAutoScheduleModal()" style="border: none; background: transparent; cursor: pointer;">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+            <div class="modal-body-custom">
+                <div class="as-grid">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 13px; font-weight: 700;">1. Môn muốn học & mức ưu tiên</span>
+                            <span class="lux-badge" id="as-subject-count">0 môn</span>
+                        </div>
+                        <div id="as-subjects-container" style="display: flex; flex-direction: column; gap: 6px; max-height: 290px; overflow-y: auto; padding-right: 4px;"></div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">2. Khung giờ bận muốn né</div>
+                            <div class="busy-mat" id="as-busy-matrix"></div>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">3. Giảng viên muốn né</div>
+                            <div id="as-lecturers-container" style="display: flex; flex-wrap: wrap; gap: 5px; max-height: 110px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                    <button type="button" class="ui-btn" onclick="resetAutoScheduleFilters()">Đặt lại</button>
+                    <button type="button" class="ui-btn brand" onclick="runAutoSchedule()">
+                        <i data-lucide="wand-2" style="width: 14px; height: 14px;"></i>
+                        <span>Tìm Tổ Hợp Không Trùng Tiết</span>
+                    </button>
+                </div>
+                <div id="as-results-area" style="margin-top: 16px; display: none;">
+                    <div style="font-size: 13.5px; font-weight: 800; margin-bottom: 10px;" id="as-results-heading"></div>
+                    <div id="as-results-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: KẾT QUẢ ĐẨY CHÍNH THỨC ==================== -->
+    <div class="modal-backdrop-custom" id="batch-result-modal">
+        <div class="modal-dialog-custom" style="max-width: 600px;">
+            <div class="modal-header-custom">
+                <div style="font-size: 15px; font-weight: 800;">Kết Quả Đẩy Sang Đăng Ký Chính Thức</div>
+                <button type="button" class="action-btn" onclick="closeBatchResultAndReload()" style="border: none; background: transparent; cursor: pointer;">
+                    <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+            <div class="modal-body-custom" id="batch-result-body"></div>
+            <div style="padding: 12px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                <button type="button" class="ui-btn brand" onclick="closeBatchResultAndReload()">Hoàn Tất & Làm Mới</button>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const OPEN_CLASSES = JSON.parse(/*[[${openClassesJson}]]*/ '[]');
+        const REGISTERED_CLASSES = JSON.parse(/*[[${registeredClassesJson}]]*/ '[]');
+        const BASE_PRICE_PER_CREDIT = Number(/*[[${basePricePerCredit}]]*/ 550000);
+        const MAX_CREDITS = Number(/*[[${maxCredits}]]*/ 25);
+        const SHARED_LHP_PARAM = /*[[${sharedLhpCodes}]]*/ '';
+    </script>
+
+    <script>
+        (function() {
+            const PERIOD_START = {
+                1: '07:00', 2: '07:50', 3: '08:40', 4: '09:35', 5: '10:25', 6: '11:15',
+                7: '12:30', 8: '13:20', 9: '14:10', 10: '15:05', 11: '15:55', 12: '16:45',
+                13: '17:30', 14: '18:20', 15: '19:10'
+            };
+            const PERIOD_END = {
+                1: '07:50', 2: '08:40', 3: '09:30', 4: '10:25', 5: '11:15', 6: '12:05',
+                7: '13:20', 8: '14:10', 9: '15:00', 10: '15:55', 11: '16:45', 12: '17:35',
+                13: '18:20', 14: '19:10', 15: '20:00'
+            };
+            const DAY_SHORT = { 2: 'T2', 3: 'T3', 4: 'T4', 5: 'T5', 6: 'T6', 7: 'T7', 8: 'CN' };
+            const DAY_LABELS = { 2: 'Thứ 2', 3: 'Thứ 3', 4: 'Thứ 4', 5: 'Thứ 5', 6: 'Thứ 6', 7: 'Thứ 7', 8: 'CN' };
+
+            // Refined Soft-Surface Editorial Accent Colors (Original Palette)
+            const ACCENT_PALETTE = [
+                '#0284C7', // Ocean Sky
+                '#0D9488', // Deep Teal
+                '#7C3AED', // Editorial Violet
+                '#D97706', // Warm Ochre
+                '#E11D48', // Crisp Crimson
+                '#059669', // Botanical Emerald
+                '#4F46E5', // Indigo Ink
+                '#C026D3'  // Fuchsia
+            ];
+
+            const ICO_CHEV = '<svg class="cat-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>';
+            const ICO_CHK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+            const ICO_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+            const ICO_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+            const ICO_PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+
+            let currentMode = 'official';
+            let sbTypeFilter = 'ALL'; // ALL | LT | TH
+            let sandboxSelectedByCourse = new Map();
+            let coursePriorities = new Map();
+            let expandedCourses = new Set();
+            let hoveredPreviewLhpId = null;
+
+            let asSelectedCourses = new Set();
+            let asBusySlots = new Set();
+            let asAvoidLecturers = new Set();
+
+            const coursesMap = new Map();
+            OPEN_CLASSES.forEach(lhp => {
+                if (!coursesMap.has(lhp.hocPhanId)) {
+                    coursesMap.set(lhp.hocPhanId, {
+                        hocPhanId: lhp.hocPhanId, maHP: lhp.maHP, tenHP: lhp.tenHP,
+                        soTCLyThuyet: lhp.soTCLyThuyet, soTCThucHanh: lhp.soTCThucHanh,
+                        tongTinChi: lhp.tongTinChi, heSoHocPhi: lhp.heSoHocPhi, sections: []
+                    });
+                    coursePriorities.set(lhp.hocPhanId, 2);
+                }
+                coursesMap.get(lhp.hocPhanId).sections.push(lhp);
+            });
+            const COURSES_LIST = Array.from(coursesMap.values());
+            const LHP_BY_ID = new Map(OPEN_CLASSES.map(c => [c.id, c]));
+
+            const formatVnd = a => Math.round(a).toLocaleString('vi-VN') + ' đ';
+            const calcLhpTuition = lhp => (Number(lhp.soTCLyThuyet || 0) * BASE_PRICE_PER_CREDIT) + (Number(lhp.soTCThucHanh || 0) * BASE_PRICE_PER_CREDIT * Number(lhp.heSoHocPhi || 1.0));
+            const colorForCourse = hpId => ACCENT_PALETTE[Math.abs(Number(hpId || 0)) % ACCENT_PALETTE.length];
+
+            function sessionsOverlap(a, b) {
+                if (a.thu !== b.thu) return false;
+                return !(a.denTuan < b.tuTuan || a.tuTuan > b.denTuan) && !(a.tietKetThuc < b.tietBatDau || a.tietBatDau > b.tietKetThuc);
+            }
+
+            function lhpListConflicts(list) {
+                const conflicts = [], conflictedLhpIds = new Set();
+                for (let i = 0; i < list.length; i++) {
+                    for (let j = i + 1; j < list.length; j++) {
+                        const A = list[i], B = list[j];
+                        for (const sA of (A.lichHoc || [])) {
+                            for (const sB of (B.lichHoc || [])) {
+                                if (sessionsOverlap(sA, sB)) {
+                                    conflictedLhpIds.add(A.id); conflictedLhpIds.add(B.id);
+                                    conflicts.push({ text: `<strong>${A.maLHP}</strong> (${A.tenHP}) trùng <strong>${B.maLHP}</strong> (${B.tenHP}) — ${DAY_LABELS[sA.thu]}, T${Math.max(sA.tietBatDau, sB.tietBatDau)}-${Math.min(sA.tietKetThuc, sB.tietKetThuc)}` });
+                                }
+                            }
+                        }
+                    }
+                }
+                return { conflicts, conflictedLhpIds };
+            }
+
+            function getSandboxSelectedList() {
+                const arr = [];
+                sandboxSelectedByCourse.forEach(id => { const o = LHP_BY_ID.get(id); if (o) arr.push(o); });
+                return arr;
+            }
+
+            window.switchRegMode = function(mode) {
+                currentMode = mode;
+                document.getElementById('tab-official-btn').classList.toggle('active', mode === 'official');
+                document.getElementById('tab-sandbox-btn').classList.toggle('active', mode === 'sandbox');
+                document.getElementById('panel-official').style.display = mode === 'official' ? 'block' : 'none';
+                document.getElementById('panel-sandbox').style.display = mode === 'sandbox' ? 'block' : 'none';
+                const hdr = document.getElementById('official-page-header');
+                if (hdr) hdr.style.display = mode === 'official' ? 'flex' : 'none';
+                updateTuitionWidget();
+                if (window.lucide) lucide.createIcons();
+            };
+
+            window.toggleCatalogDrawer = function() {
+                const f = document.getElementById('planner-frame');
+                if (!f) return;
+                const collapsed = f.classList.toggle('is-collapsed');
+                try { localStorage.setItem('sandboxSidebarHidden', collapsed ? '1' : '0'); } catch (e) {}
+                if (window.lucide) lucide.createIcons();
+            };
+
+            window.setSbTypeFilter = function(t) {
+                sbTypeFilter = t;
+                document.getElementById('sb-flt-all').classList.toggle('active', t === 'ALL');
+                document.getElementById('sb-flt-lt').classList.toggle('active', t === 'LT');
+                document.getElementById('sb-flt-th').classList.toggle('active', t === 'TH');
+                renderSandboxGrid();
+            };
+
+            window.onSearchInput = function() {
+                const val = document.getElementById('sb-search-input').value;
+                document.getElementById('sb-search-clear').classList.toggle('show', val.length > 0);
+                renderSandboxCourseList();
+            };
+            window.clearSearch = function() {
+                document.getElementById('sb-search-input').value = '';
+                document.getElementById('sb-search-clear').classList.remove('show');
+                renderSandboxCourseList();
+            };
+
+            window.addToSandboxAndSwitch = function(lhpId) {
+                const lhp = LHP_BY_ID.get(lhpId);
+                if (!lhp) return;
+                sandboxSelectedByCourse.set(lhp.hocPhanId, lhp.id);
+                expandedCourses.add(lhp.hocPhanId);
+                switchRegMode('sandbox');
+                renderSandboxAll();
+                if (typeof showToast === 'function') showToast(`Đã thêm ${lhp.maLHP} vào lịch nháp`);
+            };
+
+            window.loadRegisteredToSandbox = function() {
+                sandboxSelectedByCourse.clear();
+                REGISTERED_CLASSES.forEach(c => sandboxSelectedByCourse.set(c.hocPhanId, c.id));
+                renderSandboxAll();
+                if (typeof showToast === 'function') showToast(`Đã nạp ${REGISTERED_CLASSES.length} lớp đã đăng ký vào lịch nháp`);
+            };
+            window.clearSandbox = function() { sandboxSelectedByCourse.clear(); hoveredPreviewLhpId = null; renderSandboxAll(); };
+            window.toggleCourseExpand = function(hpId) {
+                if (expandedCourses.has(hpId)) expandedCourses.delete(hpId); else expandedCourses.add(hpId);
+                renderSandboxCourseList();
+            };
+            window.setCoursePriority = function(e, hpId, p) { e.stopPropagation(); coursePriorities.set(hpId, p); renderSandboxCourseList(); };
+            window.toggleSandboxLhp = function(hpId, lhpId) {
+                hoveredPreviewLhpId = null;
+                if (sandboxSelectedByCourse.get(hpId) === lhpId) sandboxSelectedByCourse.delete(hpId);
+                else sandboxSelectedByCourse.set(hpId, lhpId);
+                renderSandboxAll();
+            };
+            window.removeSandboxLhp = function(hpId) { sandboxSelectedByCourse.delete(hpId); renderSandboxAll(); };
+
+            window.previewLhpOnGrid = function(lhpId) {
+                const lhp = LHP_BY_ID.get(lhpId);
+                if (!lhp || sandboxSelectedByCourse.get(lhp.hocPhanId) === lhpId) return;
+                if (hoveredPreviewLhpId !== lhpId) { hoveredPreviewLhpId = lhpId; renderGhostOverlay(); }
+            };
+            window.clearLhpPreview = function() {
+                if (hoveredPreviewLhpId !== null) { hoveredPreviewLhpId = null; renderGhostOverlay(); }
+            };
+
+            function renderGhostOverlay() {
+                const grid = document.getElementById('sb-cal-grid');
+                if (!grid) return;
+                grid.querySelectorAll('.is-ghost').forEach(el => el.remove());
+                if (!hoveredPreviewLhpId) return;
+                const lhp = LHP_BY_ID.get(hoveredPreviewLhpId);
+                if (!lhp) return;
+
+                const others = getSandboxSelectedList().filter(c => c.hocPhanId !== lhp.hocPhanId);
+                const col = colorForCourse(lhp.hocPhanId);
+                (lhp.lichHoc || []).forEach(lh => {
+                    if (lh.thu < 2 || lh.thu > 8) return;
+                    let clash = false;
+                    for (const o of others) {
+                        for (const sO of (o.lichHoc || [])) if (sessionsOverlap(lh, sO)) { clash = true; break; }
+                        if (clash) break;
+                    }
+                    const startRow = Math.max(1, Math.min(15, lh.tietBatDau)) + 1;
+                    const endRow = Math.max(startRow + 1, Math.min(16, lh.tietKetThuc + 1) + 1);
+                    const g = document.createElement('div');
+                    g.className = 'ev-block is-ghost' + (clash ? ' ghost-clash' : '');
+                    g.style.gridColumn = lh.thu;
+                    g.style.gridRow = `${startRow} / ${endRow}`;
+                    g.style.setProperty('--c-accent', clash ? '#EF4444' : col);
+                    g.innerHTML = `
+                        <div>
+                            <div class="ev-title">${lhp.tenHP}</div>
+                            <div class="ev-badges">
+                                <span class="ev-type-pill">${clash ? 'TRÙNG' : 'XEM THỬ'}</span>
+                                <span class="ev-code">${lhp.maLHP}</span>
+                            </div>
+                        </div>
+                        <div class="ev-meta">
+                            <div class="ev-row">${ICO_USER}<span>${lhp.giangVienTen}</span></div>
+                            <div class="ev-row">${ICO_PIN}<span>${lh.phongHoc} · T${lh.tietBatDau}-${lh.tietKetThuc}</span></div>
+                        </div>
+                    `;
+                    grid.appendChild(g);
+                });
+            }
+
+            window.renderSandboxCourseList = function() {
+                const container = document.getElementById('sb-course-list');
+                const q = (document.getElementById('sb-search-input')?.value || '').trim().toLowerCase();
+                container.innerHTML = '';
+
+                const filtered = COURSES_LIST.filter(c => {
+                    if (!q) return true;
+                    if (c.tenHP.toLowerCase().includes(q) || c.maHP.toLowerCase().includes(q)) return true;
+                    return c.sections.some(s => (s.maLHP || '').toLowerCase().includes(q) || (s.giangVienTen || '').toLowerCase().includes(q));
+                });
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; padding:26px 8px; color:var(--text-muted); font-size:12.5px;">Không tìm thấy môn học phù hợp.</div>';
+                    return;
+                }
+
+                filtered.forEach(course => {
+                    const selectedLhpId = sandboxSelectedByCourse.get(course.hocPhanId);
+                    const selectedLhp = selectedLhpId ? LHP_BY_ID.get(selectedLhpId) : null;
+                    const prio = coursePriorities.get(course.hocPhanId) || 2;
+                    const isOpen = expandedCourses.has(course.hocPhanId);
+                    const col = colorForCourse(course.hocPhanId);
+
+                    const card = document.createElement('div');
+                    card.className = 'cat-card' + (selectedLhp ? ' has-pick' : '') + (isOpen ? ' is-open' : '');
+                    card.style.setProperty('--c-accent', col);
+
+                    const sectionsHtml = course.sections.map(sec => {
+                        const isPicked = selectedLhpId === sec.id;
+                        const hasTH = (sec.lichHoc || []).some(lh => lh.loaiLich === 'THUC_HANH');
+                        const schedLines = (sec.lichHoc && sec.lichHoc.length > 0)
+                            ? sec.lichHoc.map(lh => `<strong>${DAY_SHORT[lh.thu]} · T${lh.tietBatDau}-${lh.tietKetThuc}</strong> · P.${lh.phongHoc} · W${lh.tuTuan}-${lh.denTuan}`).join('<br>')
+                            : 'Chưa xếp lịch';
+                        return `
+                            <div class="lhp-opt ${isPicked ? 'picked' : ''}"
+                                 onclick="toggleSandboxLhp(${course.hocPhanId}, ${sec.id})"
+                                 onmouseenter="previewLhpOnGrid(${sec.id})"
+                                 onmouseleave="clearLhpPreview()">
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:5px;">
+                                    <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                                        <span class="mono" style="font-weight:800; font-size:12px;">${sec.maLHP}</span>
+                                        <span class="lux-badge" style="font-size:10px; padding:1px 6px;">${hasTH ? 'TH' : 'LT'}</span>
+                                        <span class="mono" style="font-size:10.5px; color:var(--text-muted);">${sec.siSoHienTai}/${sec.siSoToiDa}</span>
+                                        ${sec.registered ? '<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:999px; background:#DCFCE7; color:#15803D;">Đã ĐK</span>' : ''}
+                                    </div>
+                                    <span class="lhp-radio">${ICO_CHK}</span>
+                                </div>
+                                <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.45;">
+                                    <div>${schedLines}</div>
+                                    <div style="color:var(--text-muted); margin-top:1px;">GV: ${sec.giangVienTen}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    card.innerHTML = `
+                        <div class="cat-card-hd" onclick="toggleCourseExpand(${course.hocPhanId})">
+                            <span class="cat-dot"></span>
+                            <div class="cat-texts">
+                                <div class="cat-name" title="${course.tenHP}">${course.tenHP}</div>
+                                <div class="cat-sub">
+                                    ${selectedLhp
+                                        ? `<span class="cat-picked-tag">${selectedLhp.maLHP}</span><span>${course.tongTinChi} TC</span>`
+                                        : `<span>${course.maHP} · ${course.sections.length} lớp · ${course.tongTinChi} TC</span>`}
+                                </div>
+                            </div>
+                            <div class="prio-seg" title="Mức ưu tiên (1: Cao nhất)">
+                                <button type="button" class="prio-opt ${prio === 1 ? 'active-1' : ''}" onclick="setCoursePriority(event, ${course.hocPhanId}, 1)">1</button>
+                                <button type="button" class="prio-opt ${prio === 2 ? 'active-2' : ''}" onclick="setCoursePriority(event, ${course.hocPhanId}, 2)">2</button>
+                                <button type="button" class="prio-opt ${prio === 3 ? 'active-3' : ''}" onclick="setCoursePriority(event, ${course.hocPhanId}, 3)">3</button>
+                            </div>
+                            ${ICO_CHEV}
+                        </div>
+                        <div class="cat-acc"><div class="cat-acc-in">${sectionsHtml}</div></div>
+                    `;
+                    container.appendChild(card);
+                });
+            };
+
+            function renderSandboxGrid() {
+                const grid = document.getElementById('sb-cal-grid');
+                const selectedList = getSandboxSelectedList();
+                const { conflicts, conflictedLhpIds } = lhpListConflicts(selectedList);
+
+                document.getElementById('sandbox-count-pill').textContent = selectedList.length;
+                document.getElementById('sb-selected-badge').textContent = `${selectedList.length} chọn`;
+
+                const usedDays = new Set();
+                selectedList.forEach(c => (c.lichHoc || []).forEach(lh => usedDays.add(lh.thu)));
+                document.getElementById('sb-free-days-pill').textContent = `Trống ${7 - usedDays.size} ngày`;
+
+                const statusEl = document.getElementById('sb-conflict-status');
+                const bannerEl = document.getElementById('sb-conflict-banner');
+                if (conflicts.length > 0) {
+                    statusEl.style.borderColor = '#FCA5A5'; statusEl.style.color = '#B91C1C'; statusEl.style.background = '#FEF2F2';
+                    statusEl.textContent = `Trùng ${conflicts.length} lịch`;
+                    bannerEl.style.display = 'block';
+                    bannerEl.innerHTML = `<div style="font-weight:700; margin-bottom:3px;">Phát hiện trùng thời khóa biểu:</div>` + conflicts.map(c => `<div>• ${c.text}</div>`).join('');
+                } else {
+                    statusEl.style.borderColor = '#86EFAC'; statusEl.style.color = '#15803D'; statusEl.style.background = '#F0FDF4';
+                    statusEl.textContent = '0 trùng tiết';
+                    bannerEl.style.display = 'none';
+                }
+
+                const newToReg = selectedList.filter(c => !c.registered);
+                const pushBtn = document.getElementById('btn-push-official');
+                pushBtn.disabled = (newToReg.length === 0 || conflicts.length > 0);
+                pushBtn.innerHTML = `<i data-lucide="send" style="width: 13px; height: 13px;"></i><span>Đẩy Sang Đăng Ký Chính Thức (${newToReg.length})</span>`;
+
+                grid.innerHTML = '';
+                ['Giờ / Tiết', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'].forEach((h, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'cm-day-hd'; el.style.gridColumn = i + 1; el.style.gridRow = 1;
+                    el.textContent = h;
+                    grid.appendChild(el);
+                });
+
+                for (let p = 1; p <= 15; p++) {
+                    const isEnd = (p === 6 || p === 12);
+                    const pCell = document.createElement('div');
+                    pCell.className = 'cm-time' + (isEnd ? ' session-end' : '');
+                    pCell.style.gridColumn = 1; pCell.style.gridRow = p + 1;
+                    pCell.innerHTML = `<span class="t-lbl">Tiết ${p}</span><span class="t-hr">${PERIOD_START[p] || ''}</span>`;
+                    grid.appendChild(pCell);
+
+                    for (let d = 2; d <= 8; d++) {
+                        const slot = document.createElement('div');
+                        slot.className = 'cm-slot' + (isEnd ? ' session-end' : '');
+                        slot.style.gridColumn = d; slot.style.gridRow = p + 1;
+                        grid.appendChild(slot);
+                    }
+                }
+
+                selectedList.forEach(lhp => {
+                    const col = colorForCourse(lhp.hocPhanId);
+                    const isConflict = conflictedLhpIds.has(lhp.id);
+                    (lhp.lichHoc || []).forEach(lh => {
+                        if (lh.thu < 2 || lh.thu > 8) return;
+                        const isTH = lh.loaiLich === 'THUC_HANH';
+                        if (sbTypeFilter === 'LT' && isTH) return;
+                        if (sbTypeFilter === 'TH' && !isTH) return;
+
+                        const startRow = Math.max(1, Math.min(15, lh.tietBatDau)) + 1;
+                        const endRow = Math.max(startRow + 1, Math.min(16, lh.tietKetThuc + 1) + 1);
+                        const ev = document.createElement('div');
+                        ev.className = 'ev-block' + (isConflict ? ' is-conflict' : '');
+                        ev.style.gridColumn = lh.thu;
+                        ev.style.gridRow = `${startRow} / ${endRow}`;
+                        ev.style.setProperty('--c-accent', isConflict ? '#DC2626' : col);
+                        ev.title = `${lhp.tenHP} (${lhp.maLHP}) • GV: ${lhp.giangVienTen} • P.${lh.phongHoc} • Tuần ${lh.tuTuan}-${lh.denTuan}`;
+
+                        const timeRange = `${PERIOD_START[lh.tietBatDau] || ('T'+lh.tietBatDau)}–${PERIOD_END[lh.tietKetThuc] || ('T'+lh.tietKetThuc)}`;
+                        ev.innerHTML = `
+                            <div>
+                                <div class="ev-hd">
+                                    <div class="ev-title">${lhp.tenHP}</div>
+                                    <button type="button" class="ev-rm" title="Bỏ lớp này" onclick="removeSandboxLhp(${lhp.hocPhanId})">×</button>
+                                </div>
+                                <div class="ev-badges">
+                                    <span class="ev-type-pill">${isConflict ? 'TRÙNG' : (isTH ? 'TH' : 'LT')}</span>
+                                    <span class="ev-code">${lhp.maLHP}${lhp.registered ? ' · ĐK' : ''}</span>
+                                </div>
+                            </div>
+                            <div class="ev-meta">
+                                <div class="ev-row">${ICO_USER}<span>${lhp.giangVienTen}</span></div>
+                                <div class="ev-row">${ICO_CLOCK}<span>${timeRange} · W${lh.tuTuan}-${lh.denTuan}</span></div>
+                                <div class="ev-row">${ICO_PIN}<span>Phòng ${lh.phongHoc}</span></div>
+                            </div>
+                        `;
+                        grid.appendChild(ev);
+                    });
+                });
+
+                renderGhostOverlay();
+                if (window.lucide) lucide.createIcons();
+            }
+
+            function updateTuitionWidget() {
+                const list = (currentMode === 'sandbox') ? getSandboxSelectedList() : REGISTERED_CLASSES;
+                let totalCredits = 0, totalLt = 0, totalTh = 0, totalTuition = 0;
+                list.forEach(item => {
+                    totalCredits += Number(item.tongTinChi || 0);
+                    totalLt += Number(item.soTCLyThuyet || 0);
+                    totalTh += Number(item.soTCThucHanh || 0);
+                    totalTuition += calcLhpTuition(item);
+                });
+
+                document.getElementById('tf-mode-label').textContent = (currentMode === 'sandbox')
+                    ? `Dự toán lịch nháp (${list.length} lớp)` : `Học phí chính thức (${list.length} lớp)`;
+                document.getElementById('tf-credits').innerHTML = `<span style="color:${totalCredits > MAX_CREDITS ? '#DC2626' : 'var(--text-primary)'}">${totalCredits}</span> <span style="font-size:12px; font-weight:500; color:var(--text-muted);">/ ${MAX_CREDITS} TC</span>`;
+                document.getElementById('tf-lt-th').textContent = `${totalLt} LT · ${totalTh} TH`;
+                document.getElementById('tf-amount').textContent = formatVnd(totalTuition);
+
+                const pct = Math.min(100, Math.round((totalCredits / Math.max(1, MAX_CREDITS)) * 100));
+                const fill = document.getElementById('tf-prog-fill');
+                fill.style.width = pct + '%';
+                fill.style.background = totalCredits > MAX_CREDITS ? '#EF4444' : 'linear-gradient(90deg, #0EA5E9, #005BAB)';
+
+                document.getElementById('tf-details-list').innerHTML = list.length === 0
+                    ? '<div style="color:var(--text-muted); text-align:center; padding:6px 0;">Chưa có học phần nào được chọn.</div>'
+                    : list.map(item => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border-color); gap:8px;">
+                            <div style="min-width:0;">
+                                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.tenHP}</div>
+                                <div style="font-size:10.5px; color:var(--text-muted);">${item.maLHP} · ${item.tongTinChi} TC</div>
+                            </div>
+                            <div class="mono" style="font-weight:700; color:var(--uit-blue); white-space:nowrap;">${formatVnd(calcLhpTuition(item))}</div>
+                        </div>
+                    `).join('') + `<div style="margin-top:6px; font-size:10.5px; color:var(--text-muted); text-align:right;">Đơn giá: ${formatVnd(BASE_PRICE_PER_CREDIT)}/TC</div>`;
+            }
+
+            window.toggleTuitionDetails = function() {
+                const w = document.getElementById('tuition-float-widget');
+                const opened = w.classList.toggle('open');
+                document.getElementById('tf-chevron').style.transform = opened ? 'rotate(180deg)' : 'rotate(0deg)';
+            };
+
+            function renderSandboxAll() {
+                renderSandboxCourseList();
+                renderSandboxGrid();
+                updateTuitionWidget();
+            }
+
+            window.copyShareLink = function() {
+                const selectedList = getSandboxSelectedList();
+                if (selectedList.length === 0) {
+                    if (typeof showToast === 'function') showToast('Hãy chọn ít nhất 1 lớp trong Xếp lịch nháp để tạo link chia sẻ!', 'error');
+                    return;
+                }
+                const shareUrl = `${window.location.origin}/Student/Registration?lhp=${encodeURIComponent(selectedList.map(c => c.maLHP).join(','))}`;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        if (typeof showToast === 'function') showToast(`Đã copy link chia sẻ ${selectedList.length} lớp học phần`);
+                    }).catch(() => fallbackCopy(shareUrl, selectedList.length));
+                } else fallbackCopy(shareUrl, selectedList.length);
+            };
+
+            function fallbackCopy(text, count) {
+                const ta = document.createElement('textarea');
+                ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+                if (typeof showToast === 'function') showToast(`Đã copy link chia sẻ ${count} lớp học phần`);
+            }
+
+            window.pushSandboxToOfficial = async function() {
+                const selectedList = getSandboxSelectedList();
+                const { conflicts } = lhpListConflicts(selectedList);
+                if (conflicts.length > 0) return;
+                const toRegister = selectedList.filter(c => !c.registered);
+                if (toRegister.length === 0) return;
+                if (!confirm(`Xác nhận đẩy ${toRegister.length} lớp học phần mới sang đăng ký chính thức?`)) return;
+
+                const btn = document.getElementById('btn-push-official');
+                btn.disabled = true; btn.textContent = 'Đang đăng ký...';
+                try {
+                    const resp = await fetch('/api/student/registration/batch-register', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ lhpIds: toRegister.map(c => c.id) })
+                    });
+                    const data = await resp.json();
+                    const body = document.getElementById('batch-result-body');
+                    if (!resp.ok) body.innerHTML = `<div class="lux-alert lux-alert-danger">${data.error || 'Có lỗi xảy ra.'}</div>`;
+                    else {
+                        body.innerHTML = `
+                            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                                <span class="lux-badge" style="background:#DCFCE7; color:#15803D; border-color:#86EFAC;">Thành công: ${data.successCount}</span>
+                                <span class="lux-badge" style="background:#FEE2E2; color:#B91C1C; border-color:#FCA5A5;">Lỗi: ${data.failCount}</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                ${(data.results || []).map(r => `
+                                    <div style="padding:10px 12px; border-radius:10px; border:1px solid ${r.success ? '#86EFAC' : '#FCA5A5'}; background:${r.success ? '#F0FDF4' : '#FEF2F2'};">
+                                        <div style="font-weight:700; font-size:13px; color:${r.success ? '#15803D' : '#B91C1C'};">${r.maLHP} — ${r.tenHP}</div>
+                                        <div style="font-size:12px; color:#475569; margin-top:2px;">${r.message}</div>
+                                    </div>
+                                `).join('')}
+                            </div>`;
+                    }
+                    document.getElementById('batch-result-modal').classList.add('show');
+                } catch (e) {
+                    if (typeof showToast === 'function') showToast('Lỗi kết nối máy chủ', 'error');
+                } finally { renderSandboxGrid(); }
+            };
+
+            window.closeBatchResultAndReload = function() {
+                document.getElementById('batch-result-modal').classList.remove('show');
+                window.location.href = '/Student/Registration';
+            };
+
+            // ==================== AUTO-SCHEDULE ====================
+            window.openAutoScheduleModal = function() {
+                if (asSelectedCourses.size === 0) {
+                    if (sandboxSelectedByCourse.size > 0) sandboxSelectedByCourse.forEach((_, hpId) => asSelectedCourses.add(hpId));
+                    else COURSES_LIST.slice(0, Math.min(5, COURSES_LIST.length)).forEach(c => asSelectedCourses.add(c.hocPhanId));
+                }
+                renderAutoScheduleModal();
+                document.getElementById('auto-schedule-modal').classList.add('show');
+                if (window.lucide) lucide.createIcons();
+            };
+            window.closeAutoScheduleModal = () => document.getElementById('auto-schedule-modal').classList.remove('show');
+            window.resetAutoScheduleFilters = () => { asBusySlots.clear(); asAvoidLecturers.clear(); document.getElementById('as-results-area').style.display = 'none'; renderAutoScheduleModal(); };
+            window.toggleAsCourse = hpId => { if (asSelectedCourses.has(hpId)) asSelectedCourses.delete(hpId); else asSelectedCourses.add(hpId); renderAutoScheduleModal(); };
+            window.setAsCoursePrio = (e, hpId, p) => { e.stopPropagation(); coursePriorities.set(hpId, p); asSelectedCourses.add(hpId); renderAutoScheduleModal(); renderSandboxCourseList(); };
+            window.toggleBusySlot = key => { if (asBusySlots.has(key)) asBusySlots.delete(key); else asBusySlots.add(key); renderAutoScheduleModal(); };
+            window.toggleAvoidLecturer = name => { if (asAvoidLecturers.has(name)) asAvoidLecturers.delete(name); else asAvoidLecturers.add(name); renderAutoScheduleModal(); };
+
+            function renderAutoScheduleModal() {
+                document.getElementById('as-subject-count').textContent = `${asSelectedCourses.size} môn`;
+                document.getElementById('as-subjects-container').innerHTML = COURSES_LIST.map(c => {
+                    const checked = asSelectedCourses.has(c.hocPhanId);
+                    const prio = coursePriorities.get(c.hocPhanId) || 2;
+                    return `
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-radius:10px; border:1px solid ${checked ? '#0284C7' : 'var(--border-color)'}; background:${checked ? 'var(--uit-blue-light)' : 'var(--bg-card)'}; cursor:pointer;" onclick="toggleAsCourse(${c.hocPhanId})">
+                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                <input type="checkbox" ${checked ? 'checked' : ''} style="accent-color:#005BAB;" onclick="event.stopPropagation(); toggleAsCourse(${c.hocPhanId})">
+                                <div style="min-width:0;">
+                                    <div style="font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.tenHP}</div>
+                                    <div style="font-size:10.5px; color:var(--text-muted);">${c.maHP} · ${c.tongTinChi} TC (${c.sections.length} lớp)</div>
+                                </div>
+                            </div>
+                            <div class="prio-seg">
+                                <button type="button" class="prio-opt ${prio === 1 ? 'active-1' : ''}" onclick="setAsCoursePrio(event, ${c.hocPhanId}, 1)">1</button>
+                                <button type="button" class="prio-opt ${prio === 2 ? 'active-2' : ''}" onclick="setAsCoursePrio(event, ${c.hocPhanId}, 2)">2</button>
+                                <button type="button" class="prio-opt ${prio === 3 ? 'active-3' : ''}" onclick="setAsCoursePrio(event, ${c.hocPhanId}, 3)">3</button>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                const days = [2, 3, 4, 5, 6, 7, 8];
+                let matHtml = '<div></div>' + days.map(d => `<div style="text-align:center; font-weight:700; color:var(--text-secondary); padding:3px 0;">${DAY_SHORT[d]}</div>`).join('');
+                [{ code: 'S', label: 'Sáng' }, { code: 'C', label: 'Chiều' }, { code: 'T', label: 'Tối' }].forEach(s => {
+                    matHtml += `<div style="display:flex; align-items:center; font-weight:600; color:var(--text-secondary);">${s.label}</div>`;
+                    days.forEach(d => {
+                        const key = `${d}_${s.code}`, isBusy = asBusySlots.has(key);
+                        matHtml += `<button type="button" class="busy-btn ${isBusy ? 'busy' : ''}" onclick="toggleBusySlot('${key}')">${isBusy ? 'Bận' : 'Rảnh'}</button>`;
+                    });
+                });
+                document.getElementById('as-busy-matrix').innerHTML = matHtml;
+
+                const lecSet = new Set();
+                OPEN_CLASSES.forEach(c => { if (c.giangVienTen && c.giangVienTen !== 'Chưa phân công') lecSet.add(c.giangVienTen); });
+                document.getElementById('as-lecturers-container').innerHTML = Array.from(lecSet).sort().map(name => {
+                    const avoided = asAvoidLecturers.has(name);
+                    return `<button type="button" class="lec-pill ${avoided ? 'avoided' : ''}" onclick="toggleAvoidLecturer('${name.replace(/'/g, "\\'")}')">${name}</button>`;
+                }).join('');
+            }
+
+            function lhpViolatesConstraints(lhp) {
+                if (lhp.giangVienTen && asAvoidLecturers.has(lhp.giangVienTen)) return true;
+                for (const lh of (lhp.lichHoc || [])) {
+                    const hit = new Set();
+                    for (let t = lh.tietBatDau; t <= lh.tietKetThuc; t++) hit.add(t <= 6 ? 'S' : (t <= 12 ? 'C' : 'T'));
+                    for (const sc of hit) if (asBusySlots.has(`${lh.thu}_${sc}`)) return true;
+                }
+                return false;
+            }
+
+            window.runAutoSchedule = function() {
+                if (asSelectedCourses.size === 0) return;
+                const targetCourses = COURSES_LIST.filter(c => asSelectedCourses.has(c.hocPhanId))
+                    .sort((a, b) => (coursePriorities.get(a.hocPhanId) || 2) - (coursePriorities.get(b.hocPhanId) || 2));
+                const candidates = targetCourses.map(c => ({
+                    course: c, prio: coursePriorities.get(c.hocPhanId) || 2,
+                    sections: c.sections.filter(sec => (sec.registered || sec.siSoHienTai < sec.siSoToiDa) && !lhpViolatesConstraints(sec))
+                }));
+
+                const solutions = [];
+                let steps = 0;
+                function backtrack(idx, chosen, score, credits) {
+                    if (steps++ > 4000) return;
+                    if (idx === candidates.length) {
+                        if (chosen.length > 0) {
+                            const used = new Set();
+                            chosen.forEach(lhp => (lhp.lichHoc || []).forEach(lh => used.add(lh.thu)));
+                            solutions.push({ classes: chosen.slice(), score: score * 100 + (7 - used.size) * 5 + credits, courseCount: chosen.length, credits, freeDays: 7 - used.size });
+                        }
+                        return;
+                    }
+                    const item = candidates[idx], w = item.prio === 1 ? 10 : (item.prio === 2 ? 5 : 2);
+                    for (const sec of item.sections) {
+                        if (credits + Number(sec.tongTinChi || 0) > MAX_CREDITS) continue;
+                        let clash = false;
+                        for (const prev of chosen) {
+                            for (const sA of (prev.lichHoc || [])) {
+                                for (const sB of (sec.lichHoc || [])) if (sessionsOverlap(sA, sB)) { clash = true; break; }
+                                if (clash) break;
+                            }
+                            if (clash) break;
+                        }
+                        if (!clash) {
+                            chosen.push(sec);
+                            backtrack(idx + 1, chosen, score + w, credits + Number(sec.tongTinChi || 0));
+                            chosen.pop();
+                        }
+                    }
+                    backtrack(idx + 1, chosen, score, credits);
+                }
+
+                backtrack(0, [], 0, 0);
+                solutions.sort((a, b) => b.score - a.score);
+                const seen = new Set(), top = [];
+                for (const s of solutions) {
+                    const k = s.classes.map(c => c.id).sort((a, b) => a - b).join(',');
+                    if (!seen.has(k)) { seen.add(k); top.push(s); if (top.length >= 6) break; }
+                }
+                window.__AUTO_SOLUTIONS__ = top;
+
+                const area = document.getElementById('as-results-area');
+                const list = document.getElementById('as-results-list');
+                const hd = document.getElementById('as-results-heading');
+                area.style.display = 'block';
+                if (top.length === 0) {
+                    hd.style.color = '#B91C1C'; hd.textContent = 'Không tìm thấy tổ hợp phù hợp';
+                    list.innerHTML = '<div class="lux-alert lux-alert-warning">Thử bỏ bớt khung giờ bận hoặc giảng viên muốn né.</div>';
+                    return;
+                }
+                hd.style.color = '#15803D'; hd.textContent = `Tìm thấy ${top.length} tổ hợp không trùng tiết tối ưu`;
+                list.innerHTML = top.map((sol, idx) => {
+                    const tuition = sol.classes.reduce((sum, c) => sum + calcLhpTuition(c), 0);
+                    return `
+                        <div class="combo-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    <span class="lux-badge lux-badge-solid">Phương án #${idx + 1}</span>
+                                    <span class="lux-badge" style="background:#DCFCE7; color:#15803D; border-color:#86EFAC;">${sol.courseCount}/${targetCourses.length} môn</span>
+                                    <span class="lux-badge">${sol.credits} TC</span>
+                                    <span class="lux-badge">Trống ${sol.freeDays} ngày</span>
+                                    <span class="mono" style="font-size:12.5px; font-weight:700; color:var(--uit-blue);">~${formatVnd(tuition)}</span>
+                                </div>
+                                <button type="button" class="ui-btn brand" onclick="applyAutoSolution(${idx})">Áp Dụng Vào Lịch Nháp</button>
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px; font-size:11.5px;">
+                                ${sol.classes.map(c => `<div style="padding:7px 10px; border-radius:9px; background:var(--bg-subtle); border:1px solid var(--border-color);">
+                                    <div style="font-weight:700;">${c.tenHP}</div>
+                                    <div style="color:var(--text-muted);">${c.maLHP} · ${(c.lichHoc || []).map(lh => `${DAY_SHORT[lh.thu]} (T${lh.tietBatDau}-${lh.tietKetThuc})`).join(', ')}</div>
+                                </div>`).join('')}
+                            </div>
+                        </div>`;
+                }).join('');
+            };
+
+            window.applyAutoSolution = function(idx) {
+                const sol = (window.__AUTO_SOLUTIONS__ || [])[idx];
+                if (!sol) return;
+                sandboxSelectedByCourse.clear();
+                sol.classes.forEach(c => sandboxSelectedByCourse.set(c.hocPhanId, c.id));
+                closeAutoScheduleModal();
+                switchRegMode('sandbox');
+                renderSandboxAll();
+                if (typeof showToast === 'function') showToast(`Đã áp dụng phương án #${idx + 1} (${sol.classes.length} lớp) vào lịch nháp`);
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                try {
+                    if (localStorage.getItem('sandboxSidebarHidden') === '1') {
+                        document.getElementById('planner-frame')?.classList.add('is-collapsed');
+                    }
+                } catch (e) {}
+                REGISTERED_CLASSES.forEach(c => sandboxSelectedByCourse.set(c.hocPhanId, c.id));
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const rawShared = (urlParams.get('lhp') || SHARED_LHP_PARAM || '').trim();
+                if (rawShared) {
+                    const tokens = rawShared.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+                    if (tokens.length > 0) {
+                        sandboxSelectedByCourse.clear();
+                        let matched = 0;
+                        tokens.forEach(tok => {
+                            const found = OPEN_CLASSES.find(c => (c.maLHP && c.maLHP.toLowerCase() === tok) || String(c.id) === tok || (c.maLHP && c.maLHP.toLowerCase().endsWith(tok)));
+                            if (found) { sandboxSelectedByCourse.set(found.hocPhanId, found.id); matched++; }
+                        });
+                        switchRegMode('sandbox');
+                        renderSandboxAll();
+                        setTimeout(() => { if (typeof showToast === 'function') showToast(matched > 0 ? `Đã khôi phục ${matched} lớp từ link chia sẻ` : 'Không tìm thấy lớp khớp với link chia sẻ'); }, 250);
+                        return;
+                    }
+                }
+                renderSandboxAll();
+            });
+        })();
+    </script>
 </div>
 </body>
 </html>

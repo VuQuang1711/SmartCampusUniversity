@@ -2,6 +2,7 @@ package com.example.sis.controller;
 
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
+import com.example.sis.service.CourseRegistrationService;
 import com.example.sis.service.ExcelService;
 import com.example.sis.service.FileStorageService;
 import com.example.sis.service.ScheduleConflictService;
@@ -26,6 +27,8 @@ public class ApiController {
     @Autowired private ExcelService excelService;
     @Autowired private FileStorageService fileStorageService;
     @Autowired private ScheduleConflictService scheduleConflictService;
+    @Autowired private CourseRegistrationService courseRegistrationService;
+    @Autowired private LopHocPhanRepository lopHocPhanRepository;
 
     public static class CommandItem {
         public String title;
@@ -185,5 +188,65 @@ public class ApiController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=BaoCao_DoanhThu_HocPhi.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
+    }
+
+    /**
+     * ĐẨY HÀNG LOẠT LỚP HỌC PHẦN TỪ CHẾ ĐỘ XẾP LỊCH NHÁP (SANDBOX) SANG ĐĂNG KÝ CHÍNH THỨC
+     */
+    @PostMapping("/student/registration/batch-register")
+    public ResponseEntity<?> batchRegisterFromSandbox(@RequestBody Map<String, Object> payload, HttpSession session) {
+        NguoiDung u = (NguoiDung) session.getAttribute("currentUser");
+        if (u == null || u.getVaiTro() != VaiTro.SINH_VIEN) {
+            return ResponseEntity.status(401).body(Map.of("error", "Phiên đăng nhập sinh viên không hợp lệ!"));
+        }
+        SinhVien sv = sinhVienRepository.findByNguoiDungId(u.getId()).orElse(null);
+        if (sv == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "Không tìm thấy hồ sơ sinh viên!"));
+        }
+
+        Object rawIds = payload.get("lhpIds");
+        if (!(rawIds instanceof List<?> idList) || idList.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Danh sách lớp học phần cần đăng ký đang trống!"));
+        }
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        int successCount = 0;
+        int failCount = 0;
+
+        for (Object item : idList) {
+            Long lhpId;
+            try {
+                lhpId = Long.valueOf(String.valueOf(item));
+            } catch (NumberFormatException ex) {
+                continue;
+            }
+            LopHocPhan lhp = lopHocPhanRepository.findById(lhpId).orElse(null);
+            String maLHP = lhp != null ? lhp.getMaLHP() : ("#" + lhpId);
+            String tenHP = (lhp != null && lhp.getHocPhan() != null) ? lhp.getHocPhan().getTenHP() : "";
+
+            CourseRegistrationService.RegistrationResult res;
+            try {
+                res = courseRegistrationService.registerCourse(sv.getId(), lhpId);
+            } catch (Exception ex) {
+                res = new CourseRegistrationService.RegistrationResult(false, "Lỗi hệ thống: " + ex.getMessage());
+            }
+
+            if (res.isSuccess()) successCount++;
+            else failCount++;
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("lhpId", lhpId);
+            row.put("maLHP", maLHP);
+            row.put("tenHP", tenHP);
+            row.put("success", res.isSuccess());
+            row.put("message", res.getMessage());
+            results.add(row);
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("successCount", successCount);
+        response.put("failCount", failCount);
+        response.put("results", results);
+        return ResponseEntity.ok(response);
     }
 }

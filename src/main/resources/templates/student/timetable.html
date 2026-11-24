@@ -3,196 +3,800 @@
       layout:decorate="~{fragments/layout}">
 <head>
     <title>Thời Khóa Biểu Tuần</title>
+    <style>
+        @keyframes softIn {
+            from { opacity: 0; transform: translateY(5px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ===== CLEAN UNIFIED TIMETABLE FRAME ===== */
+        .tt-shell {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .tt-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .tt-grp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+        .seg-box {
+            display: inline-flex;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            padding: 3px;
+            border-radius: 11px;
+            gap: 2px;
+        }
+        .seg-item {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 6px 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .seg-item:hover { color: var(--text-primary); }
+        .seg-item.active {
+            background: var(--bg-card);
+            color: var(--uit-blue);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+        }
+        [data-theme="dark"] .seg-item.active { color: #38BDF8; }
+
+        .week-stepper {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 11px;
+            background: var(--bg-card);
+            padding: 2px 3px;
+        }
+        .wk-arrow {
+            border: none; background: transparent; color: var(--text-secondary);
+            width: 28px; height: 28px; border-radius: 8px; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: background 0.14s;
+        }
+        .wk-arrow:hover { background: var(--bg-subtle); color: var(--text-primary); }
+        .wk-select {
+            border: none; background: transparent; color: var(--text-primary);
+            font-size: 12.5px; font-weight: 700; padding: 4px 8px; outline: none; cursor: pointer; min-width: 170px;
+        }
+
+        .hol-notice {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 18px;
+            background: #FFFBEB;
+            border-bottom: 1px solid #FDE68A;
+            color: #92400E;
+            font-size: 12.5px;
+        }
+
+        /* ===== SOFT-SURFACE CALENDAR GRID (NOTION/LINEAR INSPIRED) ===== */
+        .cal-matrix {
+            display: grid;
+            grid-template-columns: 74px repeat(7, minmax(136px, 1fr));
+            grid-template-rows: 42px repeat(15, 52px);
+            min-width: 1026px;
+            background: var(--bg-card);
+        }
+        .cm-day-hd {
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color); border-right: 1px solid var(--border-subtle);
+            background: var(--bg-subtle);
+        }
+        .cm-time {
+            display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+            padding-right: 10px; border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-subtle); background: var(--bg-card);
+        }
+        .cm-time .t-lbl { font-size: 11px; font-weight: 700; color: var(--text-secondary); line-height: 1.1; }
+        .cm-time .t-hr { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+        .cm-time.session-end, .cm-slot.session-end { border-bottom: 1.5px dashed var(--border-color); }
+        .cm-slot { border-bottom: 1px solid var(--border-subtle); border-right: 1px solid var(--border-subtle); }
+
+        .ev-block {
+            margin: 3px 4px;
+            border-radius: 10px;
+            padding: 8px 10px 8px 11px;
+            background: color-mix(in srgb, var(--c-accent, #0284C7) 10%, var(--bg-card));
+            border: 1px solid color-mix(in srgb, var(--c-accent, #0284C7) 28%, transparent);
+            border-left: 4px solid var(--c-accent, #0284C7);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            z-index: 2;
+            animation: softIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease;
+        }
+        [data-theme="dark"] .ev-block { background: color-mix(in srgb, var(--c-accent, #0284C7) 18%, #0F172A); }
+        .ev-block:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--c-accent, #0284C7) 35%, transparent);
+            z-index: 6;
+        }
+        .ev-title { font-size: 12px; font-weight: 700; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ev-badges { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+        .ev-type-pill { font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 5px; background: var(--c-accent); color: #FFFFFF; flex-shrink: 0; }
+        .ev-code { font-size: 10.5px; font-weight: 700; color: var(--c-accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+        .ev-meta { margin-top: 5px; display: flex; flex-direction: column; gap: 2px; font-size: 10.5px; color: var(--text-secondary); }
+        .ev-row { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ev-row svg { width: 11px; height: 11px; flex-shrink: 0; color: var(--c-accent); opacity: 0.85; }
+
+        /* ===== ORIGINAL EDITORIAL BENTO ANALYTICS ===== */
+        #tt-panel-analytics { animation: softIn 0.24s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        .bento-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        @media (max-width: 960px) { .bento-kpis { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 560px) { .bento-kpis { grid-template-columns: 1fr; } }
+
+        .bento-kpi {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 18px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .bk-top { display: flex; align-items: center; justify-content: space-between; }
+        .bk-lbl { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+        .bk-ic {
+            width: 32px; height: 32px; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .bk-val { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .bk-sub { font-size: 11.5px; color: var(--text-muted); }
+
+        .dual-bar {
+            height: 7px; border-radius: 999px; background: var(--bg-subtle);
+            overflow: hidden; display: flex; margin-top: 6px;
+        }
+        .day-pill-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+        .day-pill {
+            font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
+            background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;
+        }
+
+        .bento-2col {
+            display: grid;
+            grid-template-columns: 1.55fr 1fr;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        @media (max-width: 920px) { .bento-2col { grid-template-columns: 1fr; } }
+
+        .bento-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+        }
+
+        .heavy-callout {
+            display: flex; align-items: flex-start; gap: 11px;
+            padding: 13px 16px; border-radius: 14px;
+            background: #FFF1F2; border: 1px solid #FECDD3; color: #BE123C;
+            margin-bottom: 16px; font-size: 13px;
+        }
+
+        /* Original 16-Week Clickable Tile Map (8x2 Bento) */
+        .week-map-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+        @media (max-width: 900px) { .week-map-grid { grid-template-columns: repeat(4, 1fr); } }
+        .wk-tile {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 11px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .wk-tile:hover {
+            border-color: var(--uit-blue-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px -4px rgba(2, 132, 199, 0.16);
+        }
+        .wk-tile.is-hol {
+            background: #FFFBEB;
+            border-color: #FDE68A;
+        }
+        .wk-tile-bar {
+            height: 5px;
+            border-radius: 999px;
+            background: var(--bg-subtle);
+            overflow: hidden;
+        }
+        .wk-tile-fill { height: 100%; border-radius: 999px; }
+
+        .sess-row {
+            display: flex; align-items: center; gap: 10px; font-size: 12px; margin-bottom: 8px;
+        }
+        .sess-track { flex: 1; height: 7px; border-radius: 999px; background: var(--bg-subtle); overflow: hidden; }
+        .sess-fill { height: 100%; border-radius: 999px; }
+    </style>
 </head>
 <body>
 <div layout:fragment="content">
 
-    <!-- Page Header -->
-    <div class="page-header">
+    <!-- Clean Compact Page Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
         <div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                <span class="lux-badge lux-badge-solid">LỊCH HỌC TÍN CHỈ</span>
-                <span class="lux-badge">
-                    <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-                    15 TIẾT / NGÀY
-                </span>
-            </div>
-            <h1 class="page-title">Thời Khóa Biểu Học Kỳ</h1>
-            <p class="page-desc">Lưới thời khóa biểu tuần từ Thứ 2 đến Chủ Nhật, hiển thị theo các ca học chuẩn</p>
+            <h1 style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin: 0;">Thời Khóa Biểu Học Kỳ</h1>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Xem lịch học theo tuần, lọc nhanh Lý thuyết / Thực hành và thống kê mật độ học tập</p>
         </div>
-
-        <!-- Semester Filter Form -->
-        <form th:action="@{/Student/Timetable}" method="get" style="display: flex; gap: 12px; align-items: center;">
-            <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
-                <i data-lucide="filter" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
-                Học Kỳ:
-            </label>
-            <select name="hocKyId" onchange="this.form.submit()" class="lux-select" style="min-width: 200px;">
+        <form th:action="@{/Student/Timetable}" method="get" style="display: flex; gap: 8px; align-items: center;">
+            <span style="font-size: 12.5px; font-weight: 600; color: var(--text-muted);">Học kỳ:</span>
+            <select name="hocKyId" onchange="this.form.submit()" class="lux-select" style="min-width: 220px; border-radius: 11px; padding: 7px 12px; font-weight: 600;">
                 <option th:each="hk : ${semesters}" th:value="${hk.id}" th:text="${hk.tenHocKy + ' (' + hk.namHoc + ')'}" th:selected="${selectedSemester != null and selectedSemester.id == hk.id}">Học kỳ 2 (2025-2026)</option>
             </select>
         </form>
     </div>
 
-    <!-- Weekly Grid Timetable -->
-    <div class="lux-card" style="padding: 20px;">
-        <div class="card-heading">
-            <div class="card-heading-title">
-                <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
-                <span>Lưới Lịch Học Tuần</span>
+    <!-- Unified Timetable Shell -->
+    <div class="tt-shell">
+        <div class="tt-head">
+            <div class="tt-grp">
+                <!-- View Switcher -->
+                <div class="seg-box">
+                    <button type="button" id="tt-tab-calendar" class="seg-item active" onclick="switchTimetableTab('calendar')">
+                        <i data-lucide="calendar-days" style="width: 14px; height: 14px;"></i>
+                        <span>Lịch biểu</span>
+                    </button>
+                    <button type="button" id="tt-tab-analytics" class="seg-item" onclick="switchTimetableTab('analytics')">
+                        <i data-lucide="pie-chart" style="width: 14px; height: 14px;"></i>
+                        <span>Thống kê / Phân tích</span>
+                    </button>
+                </div>
+
+                <!-- Week Stepper -->
+                <div class="week-stepper">
+                    <button type="button" class="wk-arrow" onclick="stepWeek(-1)" title="Tuần trước">
+                        <i data-lucide="chevron-left" style="width: 15px; height: 15px;"></i>
+                    </button>
+                    <select id="tt-week-select" class="wk-select" onchange="onFilterChange()"></select>
+                    <button type="button" class="wk-arrow" onclick="stepWeek(1)" title="Tuần sau">
+                        <i data-lucide="chevron-right" style="width: 15px; height: 15px;"></i>
+                    </button>
+                </div>
             </div>
-            <div style="display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary);">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <span style="display: inline-block; width: 10px; height: 10px; background: var(--text-primary); border-radius: 2px;"></span>
-                    <span>Lớp chính khóa</span>
+
+            <!-- 3-Way Quick Filter: Tất cả / Lý thuyết / Thực hành -->
+            <div class="seg-box">
+                <button type="button" id="flt-all" class="seg-item active" onclick="setTypeFilter('ALL')">Tất cả</button>
+                <button type="button" id="flt-lt" class="seg-item" onclick="setTypeFilter('LT')">
+                    <span>Lý thuyết</span>
+                    <span class="mono" id="count-lt" style="font-size: 11px; opacity: 0.75;">(0)</span>
+                </button>
+                <button type="button" id="flt-th" class="seg-item" onclick="setTypeFilter('TH')">
+                    <span>Thực hành</span>
+                    <span class="mono" id="count-th" style="font-size: 11px; opacity: 0.75;">(0)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Calendar Grid Body -->
+        <div id="tt-cal-inner">
+            <div id="tt-holiday-banner" class="hol-notice" style="display: none;"></div>
+            <div style="overflow-x: auto;">
+                <div class="cal-matrix" id="tt-cal-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extra Schedule & Exam Tables (Under Calendar Tab) -->
+    <div id="tt-panel-calendar-extra">
+        <div class="lux-card" th:if="${examSchedules != null and !examSchedules.isEmpty()}">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="file-clock" style="width: 18px; height: 18px; color: #DC2626;"></i>
+                    <span>Lịch Thi Kết Thúc Học Phần</span>
+                    <span class="lux-badge lux-badge-danger" style="margin-left: 6px;" th:text="${examSchedules.size() + ' Môn thi'}">1 Môn thi</span>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="lux-table">
+                    <thead>
+                    <tr><th>Mã LHP</th><th>Môn Thi</th><th>Thứ / Tuần Thi</th><th>Ca Thi (Tiết)</th><th>Phòng Thi</th><th>Giảng Viên</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="ex : ${examSchedules}">
+                        <td class="mono" style="font-weight: 700;" th:text="${ex.lopHocPhan.maLHP}">IT003_01</td>
+                        <td style="font-weight: 700;" th:text="${ex.lopHocPhan.hocPhan.tenHP}">CTDL</td>
+                        <td><span class="lux-badge lux-badge-danger" th:text="${'Thứ ' + ex.thu + ' · Tuần ' + ex.tuTuan}">Thứ 6 · Tuần 16</span></td>
+                        <td class="mono" th:text="${'Tiết ' + ex.tietBatDau + ' - ' + ex.tietKetThuc}">Tiết 1-2</td>
+                        <td><span class="lux-badge lux-badge-solid" th:text="${ex.phongHoc}">Hội trường A</span></td>
+                        <td th:text="${ex.lopHocPhan.giangVien != null ? ex.lopHocPhan.giangVien.tenDayDu : 'P.Khảo thí'}">GV</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                    <span>Chi Tiết Lịch Học Theo Tiến Độ Học Kỳ</span>
+                </div>
+                <span class="lux-badge" th:text="${schedules != null ? schedules.size() + ' Buổi học' : '0 Buổi'}">0 Buổi</span>
+            </div>
+            <div class="table-container">
+                <table class="lux-table">
+                    <thead>
+                    <tr>
+                        <th>Mã LHP</th><th>Tên Học Phần</th><th>Ngày Học</th><th>Tiết Học</th><th>Phòng</th><th>Tuần Học</th><th>Hình Thức</th><th>Giảng Viên</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="lh : ${schedules}">
+                        <td class="mono" style="font-weight: 700;" th:text="${lh.lopHocPhan.maLHP}">INT1405_01</td>
+                        <td>
+                            <div style="font-weight: 600;" th:text="${lh.lopHocPhan.hocPhan.tenHP}">Java</div>
+                            <div class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${lh.lopHocPhan.hocPhan.maHP}">INT1405</div>
+                        </td>
+                        <td>
+                            <span class="lux-badge">
+                                <span th:if="${lh.thu == 2}">Thứ Hai</span><span th:if="${lh.thu == 3}">Thứ Ba</span><span th:if="${lh.thu == 4}">Thứ Tư</span><span th:if="${lh.thu == 5}">Thứ Năm</span><span th:if="${lh.thu == 6}">Thứ Sáu</span><span th:if="${lh.thu == 7}">Thứ Bảy</span><span th:if="${lh.thu == 8}">Chủ Nhật</span>
+                            </span>
+                        </td>
+                        <td class="mono"><strong th:text="${'Tiết ' + lh.tietBatDau + ' - ' + lh.tietKetThuc}">1-3</strong> <span style="font-size: 11px; color: var(--text-muted);" th:text="${'(' + lh.soTiet + 't)'}">(3t)</span></td>
+                        <td><span class="lux-badge lux-badge-solid" th:text="${lh.phongHoc}">A301</span></td>
+                        <td class="mono" style="font-size: 12px;" th:text="${'Tuần ' + lh.tuTuan + ' - ' + lh.denTuan}">1 - 15</td>
+                        <td>
+                            <span th:if="${lh.loaiLich.name() == 'LY_THUYET'}" class="lux-badge" style="background:#EFF6FF; color:#0284C7; border-color:#BAE6FD;">Lý thuyết</span>
+                            <span th:if="${lh.loaiLich.name() == 'THUC_HANH'}" class="lux-badge" style="background:#FFF7ED; color:#D97706; border-color:#FDE68A;">Thực hành</span>
+                        </td>
+                        <td th:text="${lh.lopHocPhan.giangVien != null ? lh.lopHocPhan.giangVien.tenDayDu : 'Chưa phân công'}">GV</td>
+                    </tr>
+                    <tr th:if="${schedules == null or schedules.isEmpty()}">
+                        <td colspan="8">
+                            <div class="lux-empty-state">
+                                <i data-lucide="calendar-x" class="lux-empty-icon"></i>
+                                <div style="font-weight: 600;">Không có lịch học nào trong học kỳ được chọn.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TAB 2: ORIGINAL BENTO ANALYTICS ==================== -->
+    <div id="tt-panel-analytics" style="display: none;">
+        <!-- Heavy Day Alert (Shown only when any day >= 8 periods) -->
+        <div id="an-heavy-callout" class="heavy-callout" style="display: none;"></div>
+
+        <!-- Row 1: 4 Minimalist Bento KPIs -->
+        <div class="bento-kpis">
+            <div class="bento-kpi">
+                <div class="bk-top">
+                    <span class="bk-lbl">Khối lượng tuần</span>
+                    <span class="bk-ic" style="background: #E0F2FE; color: #0284C7;"><i data-lucide="clock" style="width: 16px; height: 16px;"></i></span>
+                </div>
+                <div>
+                    <div class="bk-val" id="an-total-periods">0 tiết</div>
+                    <div class="bk-sub" id="an-total-hours">0.0 giờ thực học / tuần</div>
+                </div>
+            </div>
+
+            <div class="bento-kpi">
+                <div class="bk-top">
+                    <span class="bk-lbl">Tỷ lệ Lý thuyết / Thực hành</span>
+                    <span class="bk-ic" style="background: #FEF3C7; color: #D97706;"><i data-lucide="layers" style="width: 16px; height: 16px;"></i></span>
+                </div>
+                <div>
+                    <div class="bk-val" id="an-lt-th-ratio">0% / 0%</div>
+                    <div class="dual-bar">
+                        <div id="bar-lt-seg" style="background: #0284C7; width: 50%; transition: width 0.3s;"></div>
+                        <div id="bar-th-seg" style="background: #D97706; width: 50%; transition: width 0.3s;"></div>
+                    </div>
+                    <div class="bk-sub" style="margin-top: 4px;" id="an-lt-th-periods">0t LT · 0t TH</div>
+                </div>
+            </div>
+
+            <div class="bento-kpi">
+                <div class="bk-top">
+                    <span class="bk-lbl">Ngày trống hoàn toàn</span>
+                    <span class="bk-ic" style="background: #ECFDF5; color: #059669;"><i data-lucide="coffee" style="width: 16px; height: 16px;"></i></span>
+                </div>
+                <div>
+                    <div class="bk-val" id="an-free-days-count" style="color: #059669;">0 ngày</div>
+                    <div class="day-pill-row" id="an-free-days-pills"></div>
+                </div>
+            </div>
+
+            <div class="bento-kpi">
+                <div class="bk-top">
+                    <span class="bk-lbl">Đánh giá mật độ</span>
+                    <span class="bk-ic" id="an-health-ic" style="background: #ECFDF5; color: #059669;"><i data-lucide="activity" style="width: 16px; height: 16px;"></i></span>
+                </div>
+                <div>
+                    <div class="bk-val" id="an-heaviest-day" style="font-size: 20px;">Cân bằng</div>
+                    <div class="bk-sub" id="an-heaviest-note">Không có ngày quá 7 tiết</div>
                 </div>
             </div>
         </div>
 
-        <div style="overflow-x: auto;">
-            <div class="matrix-timetable">
-                <!-- Headers -->
-                <div class="matrix-header">Tiết</div>
-                <div class="matrix-header">Thứ Hai</div>
-                <div class="matrix-header">Thứ Ba</div>
-                <div class="matrix-header">Thứ Tư</div>
-                <div class="matrix-header">Thứ Năm</div>
-                <div class="matrix-header">Thứ Sáu</div>
-                <div class="matrix-header">Thứ Bảy</div>
-                <div class="matrix-header">Chủ Nhật</div>
-
-                <!-- 15 Periods Row-by-Row -->
-                <th:block th:each="period : ${#numbers.sequence(1, 15)}">
-                    <div class="matrix-cell matrix-period">
-                        <span th:text="${'Tiết ' + period}">Tiết 1</span>
+        <!-- Row 2: Daily Load Chart + Session & LT/TH Distribution -->
+        <div class="bento-2col">
+            <div class="bento-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <div style="font-size: 14.5px; font-weight: 800;">Số tiết mỗi ngày trong tuần</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Cảnh báo màu đỏ nếu mật độ học đạt từ 8 tiết/ngày trở lên</div>
                     </div>
+                    <div style="display: flex; gap: 10px; font-size: 11px; font-weight: 600;">
+                        <span style="color: #0284C7;">● Bình thường</span>
+                        <span style="color: #D97706;">● Khá dày (5-7t)</span>
+                        <span style="color: #E11D48;">● Quá nặng (≥ 8t)</span>
+                    </div>
+                </div>
+                <div style="height: 250px; position: relative;"><canvas id="chart-daily-load"></canvas></div>
+            </div>
 
-                    <!-- Days Monday (2) to Sunday (8) -->
-                    <th:block th:each="day : ${#numbers.sequence(2, 8)}">
-                        <div class="matrix-cell">
-                            <div th:if="${grid != null and grid.containsKey(day + '_' + period)}" class="schedule-card">
-                                <div class="title" th:text="${grid.get(day + '_' + period).lopHocPhan.hocPhan.tenHP}">Lập trình Java</div>
-                                <div class="room">
-                                    <i data-lucide="map-pin" style="width: 11px; height: 11px; display: inline-block; vertical-align: middle;"></i>
-                                    P: <strong th:text="${grid.get(day + '_' + period).phongHoc}">A301</strong> • 
-                                    <span th:text="${grid.get(day + '_' + period).loaiLich.name() == 'THUC_HANH' ? 'Thực hành' : 'Lý thuyết'}">LT</span>
-                                </div>
-                                <div style="font-size: 10px; opacity: 0.85;" class="mono" th:text="${'Tuần ' + grid.get(day + '_' + period).tuTuan + '-' + grid.get(day + '_' + period).denTuan}">Tuần 1-15</div>
+            <div class="bento-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 14px;">
+                <div>
+                    <div style="font-size: 14.5px; font-weight: 800;">Cơ cấu buổi học & hình thức</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Phân bổ Sáng / Chiều / Tối và Lý thuyết / Thực hành</div>
+                    <div id="an-session-bars"></div>
+                </div>
+                <div style="height: 155px; position: relative;"><canvas id="chart-lt-th"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Row 3: 16-Week Clickable Tile Map -->
+        <div class="bento-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <div style="font-size: 14.5px; font-weight: 800;">Bản đồ 16 tuần học kỳ</div>
+                    <div style="font-size: 12px; color: var(--text-muted);">Bấm vào bất kỳ ô tuần nào để nhảy thẳng sang lưới lịch tuần đó · Ô màu vàng là tuần nghỉ lễ</div>
+                </div>
+            </div>
+            <div class="week-map-grid" id="an-week-map"></div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const TIMETABLE_SCHEDULES = JSON.parse(/*[[${schedulesJson}]]*/ '[]');
+        const HOLIDAY_WEEKS = JSON.parse(/*[[${holidayWeeksJson}]]*/ '{}');
+    </script>
+
+    <script>
+        (function() {
+            const PERIOD_START = {
+                1: '07:00', 2: '07:50', 3: '08:40', 4: '09:35', 5: '10:25', 6: '11:15',
+                7: '12:30', 8: '13:20', 9: '14:10', 10: '15:05', 11: '15:55', 12: '16:45',
+                13: '17:30', 14: '18:20', 15: '19:10'
+            };
+            const PERIOD_END = {
+                1: '07:50', 2: '08:40', 3: '09:30', 4: '10:25', 5: '11:15', 6: '12:05',
+                7: '13:20', 8: '14:10', 9: '15:00', 10: '15:55', 11: '16:45', 12: '17:35',
+                13: '18:20', 14: '19:10', 15: '20:00'
+            };
+            const DAY_SHORT = { 2: 'T2', 3: 'T3', 4: 'T4', 5: 'T5', 6: 'T6', 7: 'T7', 8: 'CN' };
+            const DAY_NAMES = { 2: 'Thứ Hai', 3: 'Thứ Ba', 4: 'Thứ Tư', 5: 'Thứ Năm', 6: 'Thứ Sáu', 7: 'Thứ Bảy', 8: 'Chủ Nhật' };
+            const LT_ACCENTS = ['#0284C7', '#0D9488', '#7C3AED', '#059669', '#4F46E5'];
+            const TH_ACCENTS = ['#D97706', '#E11D48', '#C026D3'];
+
+            const ICO_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+            const ICO_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+            const ICO_PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+
+            let activeTab = 'calendar';
+            let typeFilter = 'ALL'; // ALL | LT | TH
+            let selectedWeek = 'ALL';
+            let dailyChart = null, ratioChart = null;
+
+            function populateWeekSelector() {
+                const sel = document.getElementById('tt-week-select');
+                let html = '<option value="ALL">Toàn học kỳ (Tuần 1–15)</option>';
+                for (let w = 1; w <= 16; w++) {
+                    const hol = HOLIDAY_WEEKS[String(w)];
+                    html += hol ? `<option value="${w}">Tuần ${w} — Nghỉ lễ (${hol})</option>` : `<option value="${w}">Tuần ${w}</option>`;
+                }
+                sel.innerHTML = html;
+            }
+
+            window.switchTimetableTab = function(tab) {
+                activeTab = tab;
+                document.getElementById('tt-tab-calendar').classList.toggle('active', tab === 'calendar');
+                document.getElementById('tt-tab-analytics').classList.toggle('active', tab === 'analytics');
+                document.getElementById('tt-cal-inner').style.display = tab === 'calendar' ? 'block' : 'none';
+                document.getElementById('tt-panel-calendar-extra').style.display = tab === 'calendar' ? 'block' : 'none';
+                document.getElementById('tt-panel-analytics').style.display = tab === 'analytics' ? 'block' : 'none';
+                if (tab === 'analytics') renderAnalytics();
+                if (window.lucide) lucide.createIcons();
+            };
+
+            window.jumpToWeek = function(w) {
+                document.getElementById('tt-week-select').value = String(w);
+                switchTimetableTab('calendar');
+                onFilterChange();
+            };
+
+            window.setTypeFilter = function(t) {
+                typeFilter = t;
+                document.getElementById('flt-all').classList.toggle('active', t === 'ALL');
+                document.getElementById('flt-lt').classList.toggle('active', t === 'LT');
+                document.getElementById('flt-th').classList.toggle('active', t === 'TH');
+                onFilterChange();
+            };
+
+            window.stepWeek = function(delta) {
+                const sel = document.getElementById('tt-week-select');
+                sel.selectedIndex = Math.max(0, Math.min(sel.options.length - 1, sel.selectedIndex + delta));
+                onFilterChange();
+            };
+
+            function getFilteredSchedules() {
+                selectedWeek = document.getElementById('tt-week-select').value;
+                return TIMETABLE_SCHEDULES.filter(s => {
+                    const isTH = s.loaiLich === 'THUC_HANH';
+                    if (typeFilter === 'LT' && isTH) return false;
+                    if (typeFilter === 'TH' && !isTH) return false;
+                    if (selectedWeek !== 'ALL') {
+                        const w = Number(selectedWeek);
+                        if (w < s.tuTuan || w > s.denTuan) return false;
+                    }
+                    return true;
+                });
+            }
+
+            window.onFilterChange = function() {
+                selectedWeek = document.getElementById('tt-week-select').value;
+                renderCalendarGrid();
+                if (activeTab === 'analytics') renderAnalytics();
+            };
+
+            function renderCalendarGrid() {
+                const filtered = getFilteredSchedules();
+                const weekScoped = TIMETABLE_SCHEDULES.filter(s => selectedWeek === 'ALL' || (Number(selectedWeek) >= s.tuTuan && Number(selectedWeek) <= s.denTuan));
+                document.getElementById('count-lt').textContent = `(${weekScoped.filter(s => s.loaiLich !== 'THUC_HANH').length})`;
+                document.getElementById('count-th').textContent = `(${weekScoped.filter(s => s.loaiLich === 'THUC_HANH').length})`;
+
+                const holBanner = document.getElementById('tt-holiday-banner');
+                if (selectedWeek === 'ALL') {
+                    const entries = Object.entries(HOLIDAY_WEEKS);
+                    if (entries.length > 0) {
+                        holBanner.style.display = 'flex';
+                        holBanner.innerHTML = `<i data-lucide="calendar-heart" style="width:15px; height:15px; flex-shrink:0;"></i>
+                            <div><strong>Các tuần nghỉ lễ trong kỳ:</strong> ${entries.map(([w, n]) => `Tuần ${w} (${n})`).join(' · ')}</div>`;
+                    } else holBanner.style.display = 'none';
+                } else {
+                    const holName = HOLIDAY_WEEKS[String(selectedWeek)];
+                    if (holName) {
+                        holBanner.style.display = 'flex';
+                        holBanner.innerHTML = `<i data-lucide="sparkles" style="width:15px; height:15px; flex-shrink:0;"></i>
+                            <div><strong>Tuần ${selectedWeek} — Nghỉ lễ:</strong> ${holName}. Theo dõi thông báo nghỉ/học bù từ Giảng viên.</div>`;
+                    } else holBanner.style.display = 'none';
+                }
+
+                const grid = document.getElementById('tt-cal-grid');
+                grid.innerHTML = '';
+                ['Giờ / Tiết', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'].forEach((h, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'cm-day-hd'; el.style.gridColumn = i + 1; el.style.gridRow = 1;
+                    el.textContent = h;
+                    grid.appendChild(el);
+                });
+
+                for (let p = 1; p <= 15; p++) {
+                    const isEnd = (p === 6 || p === 12);
+                    const pCell = document.createElement('div');
+                    pCell.className = 'cm-time' + (isEnd ? ' session-end' : '');
+                    pCell.style.gridColumn = 1; pCell.style.gridRow = p + 1;
+                    pCell.innerHTML = `<span class="t-lbl">Tiết ${p}</span><span class="t-hr">${PERIOD_START[p] || ''}</span>`;
+                    grid.appendChild(pCell);
+                    for (let d = 2; d <= 8; d++) {
+                        const slot = document.createElement('div');
+                        slot.className = 'cm-slot' + (isEnd ? ' session-end' : '');
+                        slot.style.gridColumn = d; slot.style.gridRow = p + 1;
+                        grid.appendChild(slot);
+                    }
+                }
+
+                filtered.forEach(s => {
+                    if (s.thu < 2 || s.thu > 8) return;
+                    const startRow = Math.max(1, Math.min(15, s.tietBatDau)) + 1;
+                    const endRow = Math.max(startRow + 1, Math.min(16, s.tietKetThuc + 1) + 1);
+                    const isTH = s.loaiLich === 'THUC_HANH';
+                    const palette = isTH ? TH_ACCENTS : LT_ACCENTS;
+                    const col = palette[Math.abs(Number(s.lhpId || 0)) % palette.length];
+                    const timeRange = `${PERIOD_START[s.tietBatDau] || ('T'+s.tietBatDau)}–${PERIOD_END[s.tietKetThuc] || ('T'+s.tietKetThuc)}`;
+
+                    const card = document.createElement('div');
+                    card.className = 'ev-block';
+                    card.style.gridColumn = s.thu; card.style.gridRow = `${startRow} / ${endRow}`;
+                    card.style.setProperty('--c-accent', col);
+                    card.title = `${s.tenHP} (${s.maLHP}) • GV: ${s.giangVien} • P.${s.phongHoc} • Tuần ${s.tuTuan}-${s.denTuan}`;
+                    card.innerHTML = `
+                        <div>
+                            <div class="ev-title">${s.tenHP}</div>
+                            <div class="ev-badges">
+                                <span class="ev-type-pill">${isTH ? 'TH' : 'LT'}</span>
+                                <span class="ev-code">${s.maLHP}</span>
                             </div>
                         </div>
-                    </th:block>
-                </th:block>
-            </div>
-        </div>
-    </div>
-
-    <!-- Schedule List Details Table (Lịch theo tiến độ & Lịch thi) -->
-    <div class="lux-card" th:if="${examSchedules != null and !examSchedules.isEmpty()}">
-        <div class="card-heading">
-            <div class="card-heading-title">
-                <i data-lucide="file-clock" style="width: 18px; height: 18px; color: #DC2626;"></i>
-                <span>Lịch Thi Kết Thúc Học Phần</span>
-                <span class="lux-badge lux-badge-danger" style="margin-left: 6px;" th:text="${examSchedules.size() + ' Môn thi'}">1 Môn thi</span>
-            </div>
-        </div>
-        <div class="table-container">
-            <table class="lux-table">
-                <thead>
-                <tr><th>Mã LHP</th><th>Môn Thi</th><th>Thứ / Tuần Thi</th><th>Ca Thi (Tiết)</th><th>Phòng Thi</th><th>Giảng Viên</th></tr>
-                </thead>
-                <tbody>
-                <tr th:each="ex : ${examSchedules}">
-                    <td class="mono" style="font-weight: 700;" th:text="${ex.lopHocPhan.maLHP}">IT003_01</td>
-                    <td style="font-weight: 700;" th:text="${ex.lopHocPhan.hocPhan.tenHP}">CTDL</td>
-                    <td><span class="lux-badge lux-badge-danger" th:text="${'Thứ ' + ex.thu + ' • Tuần ' + ex.tuTuan}">Thứ 6 • Tuần 16</span></td>
-                    <td class="mono" th:text="${'Tiết ' + ex.tietBatDau + ' - ' + ex.tietKetThuc}">Tiết 1-2</td>
-                    <td><span class="lux-badge lux-badge-solid" th:text="${ex.phongHoc}">Hội trường A</span></td>
-                    <td th:text="${ex.lopHocPhan.giangVien != null ? ex.lopHocPhan.giangVien.tenDayDu : 'P.Khảo thí'}">GV</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="lux-card">
-        <div class="card-heading">
-            <div class="card-heading-title">
-                <i data-lucide="list" style="width: 18px; height: 18px;"></i>
-                <span>Lịch Học Theo Tiến Độ Học Kỳ (Tự Động Cập Nhật Khi Admin Duyệt Đổi Lịch)</span>
-            </div>
-            <div>
-                <span class="lux-badge" th:text="${schedules != null ? schedules.size() + ' Buổi học' : '0 Buổi'}">0 Buổi</span>
-            </div>
-        </div>
-
-        <div class="table-container">
-            <table class="lux-table">
-                <thead>
-                <tr>
-                    <th>Mã LHP</th>
-                    <th>Tên Học Phần</th>
-                    <th>Ngày Học</th>
-                    <th>Tiết Học</th>
-                    <th>Phòng Học</th>
-                    <th>Tuần Học</th>
-                    <th>Hình Thức</th>
-                    <th>Giảng Viên Giảng Dạy</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="lh : ${schedules}">
-                    <td>
-                        <span class="mono" style="font-weight: 700;" th:text="${lh.lopHocPhan.maLHP}">INT1405_01</span>
-                    </td>
-                    <td>
-                        <div style="font-weight: 600;" th:text="${lh.lopHocPhan.hocPhan.tenHP}">Lập trình Java Nâng Cao</div>
-                        <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${lh.lopHocPhan.hocPhan.maHP}">INT1405</div>
-                    </td>
-                    <td>
-                        <span class="lux-badge">
-                            <span th:if="${lh.thu == 2}">Thứ Hai</span>
-                            <span th:if="${lh.thu == 3}">Thứ Ba</span>
-                            <span th:if="${lh.thu == 4}">Thứ Tư</span>
-                            <span th:if="${lh.thu == 5}">Thứ Năm</span>
-                            <span th:if="${lh.thu == 6}">Thứ Sáu</span>
-                            <span th:if="${lh.thu == 7}">Thứ Bảy</span>
-                            <span th:if="${lh.thu == 8}">Chủ Nhật</span>
-                        </span>
-                    </td>
-                    <td class="mono">
-                        <strong th:text="${'Tiết ' + lh.tietBatDau + ' - ' + lh.tietKetThuc}">Tiết 1-3</strong>
-                        <span style="font-size: 11.5px; color: var(--text-muted);" th:text="${' (' + lh.soTiet + ' tiết)'}"> (3 tiết)</span>
-                    </td>
-                    <td>
-                        <span class="lux-badge lux-badge-solid" style="padding: 2px 8px;">
-                            <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
-                            <span th:text="${lh.phongHoc}">A301</span>
-                        </span>
-                    </td>
-                    <td class="mono" style="font-size: 12px;" th:text="${'Tuần ' + lh.tuTuan + ' → ' + lh.denTuan}">Tuần 1 → 15</td>
-                    <td>
-                        <span th:if="${lh.loaiLich.name() == 'LY_THUYET'}" class="lux-badge">Lý thuyết</span>
-                        <span th:if="${lh.loaiLich.name() == 'THUC_HANH'}" class="lux-badge lux-badge-solid">Thực hành</span>
-                    </td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="user" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
-                            <span th:text="${lh.lopHocPhan.giangVien != null ? lh.lopHocPhan.giangVien.tenDayDu : 'Chưa phân công'}">PGS.TS Nguyễn Văn An</span>
+                        <div class="ev-meta">
+                            <div class="ev-row">${ICO_USER}<span>${s.giangVien}</span></div>
+                            <div class="ev-row">${ICO_CLOCK}<span>${timeRange} · W${s.tuTuan}-${s.denTuan}</span></div>
+                            <div class="ev-row">${ICO_PIN}<span>Phòng ${s.phongHoc}</span></div>
                         </div>
-                    </td>
-                </tr>
-                <tr th:if="${schedules == null or schedules.isEmpty()}">
-                    <td colspan="8">
-                        <div class="lux-empty-state">
-                            <i data-lucide="calendar-x" class="lux-empty-icon"></i>
-                            <div style="font-weight: 600;">Không có lịch học nào trong học kỳ được chọn.</div>
-                        </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+                    `;
+                    grid.appendChild(card);
+                });
 
+                if (window.lucide) lucide.createIcons();
+            }
+
+            function renderAnalytics() {
+                const filtered = getFilteredSchedules();
+                const dayStats = {};
+                for (let d = 2; d <= 8; d++) dayStats[d] = 0;
+
+                let totalPeriods = 0, totalLT = 0, totalTH = 0, sMorn = 0, sAftn = 0, sEven = 0;
+                filtered.forEach(s => {
+                    if (dayStats[s.thu] === undefined) return;
+                    const cnt = Number(s.soTiet || (s.tietKetThuc - s.tietBatDau + 1));
+                    totalPeriods += cnt; dayStats[s.thu] += cnt;
+                    if (s.loaiLich === 'THUC_HANH') totalTH += cnt; else totalLT += cnt;
+                    for (let t = s.tietBatDau; t <= s.tietKetThuc; t++) {
+                        if (t <= 6) sMorn++; else if (t <= 12) sAftn++; else sEven++;
+                    }
+                });
+
+                const freeDays = [], heavyDays = [];
+                let maxDay = null, maxVal = -1;
+                for (let d = 2; d <= 8; d++) {
+                    const v = dayStats[d];
+                    if (v === 0) freeDays.push(d);
+                    if (v >= 8) heavyDays.push({ day: DAY_NAMES[d], count: v });
+                    if (v > maxVal) { maxVal = v; maxDay = DAY_NAMES[d]; }
+                }
+
+                // KPI 1
+                document.getElementById('an-total-periods').textContent = `${totalPeriods} tiết`;
+                document.getElementById('an-total-hours').textContent = `${(totalPeriods * 50 / 60).toFixed(1)} giờ thực học · ${filtered.length} buổi`;
+
+                // KPI 2
+                const ltPct = totalPeriods > 0 ? Math.round((totalLT / totalPeriods) * 100) : 0;
+                const thPct = totalPeriods > 0 ? (100 - ltPct) : 0;
+                document.getElementById('an-lt-th-ratio').textContent = `${ltPct}% / ${thPct}%`;
+                document.getElementById('bar-lt-seg').style.width = ltPct + '%';
+                document.getElementById('bar-th-seg').style.width = thPct + '%';
+                document.getElementById('an-lt-th-periods').textContent = `${totalLT} tiết LT · ${totalTH} tiết TH`;
+
+                // KPI 3
+                document.getElementById('an-free-days-count').textContent = `${freeDays.length} ngày`;
+                document.getElementById('an-free-days-pills').innerHTML = freeDays.length > 0
+                    ? freeDays.map(d => `<span class="day-pill">${DAY_SHORT[d]}</span>`).join('')
+                    : '<span style="font-size:11.5px; color:var(--text-muted);">Học kín cả tuần</span>';
+
+                // KPI 4 + Heavy Callout
+                const hEl = document.getElementById('an-heaviest-day');
+                const hNote = document.getElementById('an-heaviest-note');
+                const hIc = document.getElementById('an-health-ic');
+                const callout = document.getElementById('an-heavy-callout');
+                if (heavyDays.length > 0) {
+                    hEl.textContent = `${maxDay} (${maxVal}t)`;
+                    hEl.style.color = '#E11D48';
+                    hNote.textContent = `Có ${heavyDays.length} ngày vượt ngưỡng ≥ 8 tiết`;
+                    hIc.style.background = '#FFF1F2'; hIc.style.color = '#E11D48';
+                    callout.style.display = 'flex';
+                    callout.innerHTML = `<i data-lucide="alert-triangle" style="width:18px; height:18px; flex-shrink:0; margin-top:2px;"></i>
+                        <div><strong>Cảnh báo ngày học quá nặng (≥ 8 tiết/ngày):</strong> ${heavyDays.map(h => `${h.day} (${h.count} tiết)`).join(', ')}. Nên cân nhắc giãn lịch hoặc phân bổ nghỉ ngơi hợp lý.</div>`;
+                } else {
+                    hEl.textContent = maxVal > 0 ? `${maxDay} (${maxVal}t)` : 'Trống lịch';
+                    hEl.style.color = 'var(--text-primary)';
+                    hNote.textContent = 'Mật độ học tập cân bằng tốt (≤ 7 tiết/ngày)';
+                    hIc.style.background = '#ECFDF5'; hIc.style.color = '#059669';
+                    callout.style.display = 'none';
+                }
+
+                // Session Mini-Bars
+                const sessMax = Math.max(1, totalPeriods);
+                document.getElementById('an-session-bars').innerHTML = [
+                    { lbl: 'Sáng (T1–6)', val: sMorn, col: '#0284C7' },
+                    { lbl: 'Chiều (T7–12)', val: sAftn, col: '#0D9488' },
+                    { lbl: 'Tối (T13–15)', val: sEven, col: '#7C3AED' }
+                ].map(item => `
+                    <div class="sess-row">
+                        <span style="width: 92px; color: var(--text-secondary); font-weight: 600;">${item.lbl}</span>
+                        <div class="sess-track"><div class="sess-fill" style="width:${Math.round((item.val / sessMax) * 100)}%; background:${item.col};"></div></div>
+                        <span class="mono" style="width: 44px; text-align: right; font-weight: 700;">${item.val}t</span>
+                    </div>
+                `).join('');
+
+                // Chart 1: Daily Bar Chart
+                const vals = [2, 3, 4, 5, 6, 7, 8].map(d => dayStats[d]);
+                const cols = vals.map(v => v >= 8 ? '#E11D48' : (v >= 5 ? '#D97706' : (v > 0 ? '#0284C7' : '#E2E8F0')));
+                if (dailyChart) dailyChart.destroy();
+                dailyChart = new Chart(document.getElementById('chart-daily-load').getContext('2d'), {
+                    type: 'bar',
+                    data: { labels: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'], datasets: [{ label: 'Số tiết', data: vals, backgroundColor: cols, borderRadius: 8, maxBarThickness: 36 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, suggestedMax: 10, ticks: { stepSize: 2 } } } }
+                });
+
+                // Chart 2: Doughnut
+                if (ratioChart) ratioChart.destroy();
+                ratioChart = new Chart(document.getElementById('chart-lt-th').getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: [`Lý thuyết (${totalLT}t)`, `Thực hành (${totalTH}t)`], datasets: [{ data: (totalLT + totalTH) > 0 ? [totalLT, totalTH] : [1, 0], backgroundColor: (totalLT + totalTH) > 0 ? ['#0284C7', '#D97706'] : ['#E2E8F0', '#E2E8F0'], borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { position: 'right' } } }
+                });
+
+                // Row 3: 16-Week Clickable Bento Tile Map
+                let maxW = 1;
+                const wkData = [];
+                for (let w = 1; w <= 16; w++) {
+                    const hol = HOLIDAY_WEEKS[String(w)];
+                    const sum = hol ? 0 : TIMETABLE_SCHEDULES.filter(s => w >= s.tuTuan && w <= s.denTuan)
+                        .reduce((acc, s) => acc + Number(s.soTiet || (s.tietKetThuc - s.tietBatDau + 1)), 0);
+                    wkData.push({ w, sum, hol });
+                    if (sum > maxW) maxW = sum;
+                }
+                document.getElementById('an-week-map').innerHTML = wkData.map(it => {
+                    const pct = it.sum > 0 ? Math.max(12, Math.round((it.sum / maxW) * 100)) : 0;
+                    const c = it.sum >= 24 ? '#E11D48' : (it.sum >= 16 ? '#D97706' : '#0284C7');
+                    return `
+                        <div class="wk-tile ${it.hol ? 'is-hol' : ''}" onclick="jumpToWeek(${it.w})" title="${it.hol ? it.hol : ('Bấm để xem lịch Tuần ' + it.w)}">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:12px; font-weight:800;">Tuần ${it.w}</span>
+                                ${it.hol ? '<span style="font-size:9.5px; font-weight:800; color:#B45309;">Nghỉ lễ</span>' : `<span class="mono" style="font-size:11px; font-weight:700; color:var(--text-muted);">${it.sum}t</span>`}
+                            </div>
+                            <div class="wk-tile-bar">
+                                <div class="wk-tile-fill" style="width:${it.hol ? 100 : pct}%; background:${it.hol ? '#F59E0B' : c};"></div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                if (window.lucide) lucide.createIcons();
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                populateWeekSelector();
+                renderCalendarGrid();
+            });
+        })();
+    </script>
 </div>
 </body>
 </html>

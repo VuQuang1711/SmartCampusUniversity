@@ -3,6 +3,7 @@ package com.example.sis.controller;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import com.example.sis.service.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -45,6 +46,7 @@ public class StudentController {
     @Autowired private FileStorageService fileStorageService;
     @Autowired private NotificationService notificationService;
     @Autowired private AuditLogService auditLogService;
+    @Autowired private ObjectMapper objectMapper;
 
     private SinhVien getStudent(HttpSession session) {
         NguoiDung u = (NguoiDung) session.getAttribute("currentUser");
@@ -298,19 +300,116 @@ public class StudentController {
                 }
             }
             model.addAttribute("grid", timetableGrid);
+
+            // JSON payload cho lưới lịch tương tác, bộ lọc nhanh LT/TH, chọn tuần & tab Phân tích
+            List<Map<String, Object>> schedDtos = new ArrayList<>();
+            for (LichHoc lh : regularSchedules) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                LopHocPhan lhp = lh.getLopHocPhan();
+                HocPhan hp = lhp.getHocPhan();
+                m.put("id", lh.getId());
+                m.put("lhpId", lhp.getId());
+                m.put("maLHP", lhp.getMaLHP());
+                m.put("tenLHP", lhp.getTenLHP());
+                m.put("maHP", hp.getMaHP());
+                m.put("tenHP", hp.getTenHP());
+                m.put("tongTinChi", hp.getTongTinChi());
+                m.put("thu", lh.getThu());
+                m.put("tietBatDau", lh.getTietBatDau());
+                m.put("tietKetThuc", lh.getTietKetThuc());
+                m.put("soTiet", lh.getSoTiet());
+                m.put("phongHoc", lh.getPhongHoc() != null ? lh.getPhongHoc() : "Chưa xếp");
+                m.put("tuTuan", lh.getTuTuan() != null ? lh.getTuTuan() : 1);
+                m.put("denTuan", lh.getDenTuan() != null ? lh.getDenTuan() : 15);
+                m.put("loaiLich", lh.getLoaiLich() != null ? lh.getLoaiLich().name() : "LY_THUYET");
+                m.put("giangVien", lhp.getGiangVien() != null ? lhp.getGiangVien().getTenDayDu() : "Chưa phân công");
+                schedDtos.add(m);
+            }
+
+            // Đánh dấu các tuần nghỉ lễ theo loại học kỳ
+            Map<Integer, String> holidayWeeks = new LinkedHashMap<>();
+            if (selectedSemester.getLoaiHocKy() == HocKy.LoaiHocKy.CHINH_1) {
+                holidayWeeks.put(1, "Nghỉ Lễ Quốc Khánh 02/9");
+                holidayWeeks.put(12, "Kỷ niệm Ngày Nhà giáo VN 20/11");
+            } else if (selectedSemester.getLoaiHocKy() == HocKy.LoaiHocKy.CHINH_2) {
+                holidayWeeks.put(5, "Nghỉ Tết Nguyên Đán");
+                holidayWeeks.put(11, "Nghỉ Lễ Giỗ Tổ Hùng Vương (10/3 ÂL)");
+                holidayWeeks.put(13, "Nghỉ Lễ 30/4 - Quốc tế Lao động 01/5");
+            } else {
+                holidayWeeks.put(4, "Tuần nghỉ giữa kỳ hè");
+            }
+
+            try {
+                model.addAttribute("schedulesJson", objectMapper.writeValueAsString(schedDtos));
+                model.addAttribute("holidayWeeksJson", objectMapper.writeValueAsString(holidayWeeks));
+            } catch (Exception e) {
+                model.addAttribute("schedulesJson", "[]");
+                model.addAttribute("holidayWeeksJson", "{}");
+            }
+        } else {
+            model.addAttribute("schedulesJson", "[]");
+            model.addAttribute("holidayWeeksJson", "{}");
         }
 
         return "student/timetable";
     }
 
+    private Map<String, Object> buildLhpDto(LopHocPhan lhp, boolean isRegistered) {
+        Map<String, Object> dto = new LinkedHashMap<>();
+        HocPhan hp = lhp.getHocPhan();
+        dto.put("id", lhp.getId());
+        dto.put("maLHP", lhp.getMaLHP());
+        dto.put("tenLHP", lhp.getTenLHP());
+        dto.put("hocPhanId", hp.getId());
+        dto.put("maHP", hp.getMaHP());
+        dto.put("tenHP", hp.getTenHP());
+        dto.put("soTCLyThuyet", hp.getSoTCLyThuyet() != null ? hp.getSoTCLyThuyet() : 0);
+        dto.put("soTCThucHanh", hp.getSoTCThucHanh() != null ? hp.getSoTCThucHanh() : 0);
+        dto.put("tongTinChi", hp.getTongTinChi() != null ? hp.getTongTinChi() : 0);
+        dto.put("heSoHocPhi", hp.getHeSoHocPhi() != null ? hp.getHeSoHocPhi() : 1.0);
+        dto.put("giangVienId", lhp.getGiangVien() != null ? lhp.getGiangVien().getId() : null);
+        dto.put("giangVienTen", lhp.getGiangVien() != null ? lhp.getGiangVien().getTenDayDu() : "Chưa phân công");
+        dto.put("siSoHienTai", lhp.getSiSoHienTai() != null ? lhp.getSiSoHienTai() : 0);
+        dto.put("siSoToiDa", lhp.getSiSoToiDa() != null ? lhp.getSiSoToiDa() : 50);
+        dto.put("registered", isRegistered);
+
+        List<LichHoc> lichList = lhp.getDanhSachLichHoc();
+        if (lichList == null || lichList.isEmpty()) {
+            lichList = lichHocRepository.findByLopHocPhanId(lhp.getId());
+        }
+        List<Map<String, Object>> schedList = new ArrayList<>();
+        for (LichHoc lh : lichList) {
+            if (lh.getLoaiLich() == LichHoc.LoaiLich.LICH_THI) continue;
+            Map<String, Object> sm = new LinkedHashMap<>();
+            sm.put("id", lh.getId());
+            sm.put("thu", lh.getThu());
+            sm.put("tietBatDau", lh.getTietBatDau());
+            sm.put("tietKetThuc", lh.getTietKetThuc());
+            sm.put("soTiet", lh.getSoTiet());
+            sm.put("phongHoc", lh.getPhongHoc() != null ? lh.getPhongHoc() : "Chưa xếp");
+            sm.put("tuTuan", lh.getTuTuan() != null ? lh.getTuTuan() : 1);
+            sm.put("denTuan", lh.getDenTuan() != null ? lh.getDenTuan() : 15);
+            sm.put("loaiLich", lh.getLoaiLich() != null ? lh.getLoaiLich().name() : "LY_THUYET");
+            schedList.add(sm);
+        }
+        dto.put("lichHoc", schedList);
+        return dto;
+    }
+
     @GetMapping("/Registration")
-    public String registration(HttpSession session, Model model) {
+    public String registration(HttpSession session, Model model, @RequestParam(required = false) String lhp) {
         SinhVien sv = getStudent(session);
         if (sv == null) return "redirect:/Account/Login";
 
         HocKy activeHocKy = hocKyRepository.findFirstByTrangThaiDangKy(HocKy.TrangThaiDangKy.DANG_MO).orElse(null);
         model.addAttribute("activeHocKy", activeHocKy);
         model.addAttribute("student", sv);
+        model.addAttribute("sharedLhpCodes", lhp != null ? lhp.trim() : "");
+
+        double basePricePerCredit = (sv.getNganhHoc() != null && sv.getNganhHoc().getDonGiaTinChiRieng() != null && sv.getNganhHoc().getDonGiaTinChiRieng() > 0)
+                ? sv.getNganhHoc().getDonGiaTinChiRieng()
+                : (activeHocKy != null && activeHocKy.getDonGiaTinChi() != null ? activeHocKy.getDonGiaTinChi() : 550000.0);
+        model.addAttribute("basePricePerCredit", basePricePerCredit);
 
         if (activeHocKy != null) {
             // CHỈ hiển thị các lớp học phần ĐÃ ĐƯỢC ADMIN DUYỆT MỞ (DANG_MO)
@@ -334,6 +433,35 @@ public class StudentController {
             boolean isWarning = sv.getTrangThaiHocVu() != null && sv.getTrangThaiHocVu().startsWith("CANH_BAO");
             model.addAttribute("maxCredits", isWarning ? 18 : 25);
             model.addAttribute("isWarning", isWarning);
+
+            // JSON dữ liệu cho Sandbox Xếp lịch nháp, Tự động xếp lịch, Dự toán học phí & Chia sẻ link
+            List<Map<String, Object>> openDtos = new ArrayList<>();
+            Set<Long> includedIds = new HashSet<>();
+            for (LopHocPhan item : openClasses) {
+                openDtos.add(buildLhpDto(item, registeredLhpIds.contains(item.getId())));
+                includedIds.add(item.getId());
+            }
+            List<Map<String, Object>> regDtos = new ArrayList<>();
+            for (DangKyHocPhan dk : registeredClasses) {
+                Map<String, Object> rdto = buildLhpDto(dk.getLopHocPhan(), true);
+                regDtos.add(rdto);
+                if (!includedIds.contains(dk.getLopHocPhan().getId())) {
+                    openDtos.add(rdto);
+                }
+            }
+            try {
+                model.addAttribute("openClassesJson", objectMapper.writeValueAsString(openDtos));
+                model.addAttribute("registeredClassesJson", objectMapper.writeValueAsString(regDtos));
+            } catch (Exception e) {
+                model.addAttribute("openClassesJson", "[]");
+                model.addAttribute("registeredClassesJson", "[]");
+            }
+        } else {
+            model.addAttribute("openClassesJson", "[]");
+            model.addAttribute("registeredClassesJson", "[]");
+            model.addAttribute("totalRegisteredCredits", 0);
+            model.addAttribute("maxCredits", 25);
+            model.addAttribute("isWarning", false);
         }
 
         return "student/registration";
