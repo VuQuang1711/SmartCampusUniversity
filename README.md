@@ -350,5 +350,5 @@ Nếu cần, có thể tách tài liệu này thành 2 file riêng:
 
 ---
 
-**Disclaimer:** Đây là dự án đồ án môn học phục vụ mục đích học tập và nghiên cứu, được xây dựng hoàn toàn độc lập lấy cảm hứng từ quy trình đào tạo tín chỉ đại học (HUIT/UIT). Hệ thống và dữ liệu mẫu trong dự án không phải là cổng thông tin chính thức của nhà trường.
+**Disclaimer:** Đây là dự án đồ án môn học phục vụ mục đích học tập và nghiên cứu, được xây dựng hoàn toàn độc lập lấy cảm hứng từ quy trình đào tạo tín chỉ đại học (HUIT). Hệ thống và dữ liệu mẫu trong dự án không phải là cổng thông tin chính thức của nhà trường.
 
