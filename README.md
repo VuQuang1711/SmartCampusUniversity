@@ -1,6 +1,6 @@
 # Hệ thống Quản lý Đào tạo & Sinh viên Đại học theo Học chế Tín chỉ (University SIS & HUIT E-Learning)
 
-Tài liệu này mô tả lại toàn bộ hệ thống quản lý đào tạo đại học theo học chế tín chỉ (SIS) tích hợp cổng học trực tuyến HUIT E-Learning theo đúng code hiện tại của nhóm, theo mô hình 3 lớp, có công thức nghiệp vụ và ví dụ thế số.
+Tài liệu này mô tả lại toàn bộ hệ thống quản lý đào tạo đại học theo học chế tín chỉ (SIS) tích hợp cổng học trực tuyến HUIT E-Learning theo đúng code hiện tại của nhóm, xây dựng theo **mô hình MVC (Model – View – Controller)** kết hợp phân tầng **Service – Repository**, có công thức nghiệp vụ và ví dụ thế số.
 
 ## 0. Mục tiêu bài toán
 
@@ -36,39 +36,43 @@ Hệ thống tách toàn bộ luật nghiệp vụ vào tầng Service:
 - Tự động giải phóng cổng `8081` nếu có tiến trình cũ chiếm dụng trước khi khởi chạy Tomcat (`SisApplication.java`).
 - Tự động khởi tạo và đóng đường hầm HTTPS công khai qua `CloudflareTunnelService.java` khi chạy/dừng ứng dụng.
 
-## 2. Mô hình 3 lớp trong dự án
+## 2. Mô hình MVC trong dự án
 
-### 2.1. Tổng quan 3 lớp
+### 2.1. Tổng quan mô hình MVC (kết hợp phân tầng Service – Repository)
 
-1. Presentation Layer (điều hướng giao diện và HTTP): gói `com.example.sis.controller` và thư mục `src/main/resources/templates`.
-2. Business/Service Layer (xử lý toàn bộ logic nghiệp vụ): gói `com.example.sis.service`.
-3. Data Layer (ánh xạ CSDL và truy vấn): gói `com.example.sis.entity`, `com.example.sis.repository` và thư mục `database/`.
+Hệ thống áp dụng **Spring Web MVC** tách biệt rõ 3 thành phần:
 
-Luồng tổng quát:
+1. **View (Giao diện hiển thị):** thư mục `src/main/resources/templates/` (Thymeleaf HTML) và `src/main/resources/static/` (CSS, JS, hình ảnh).
+2. **Controller (Điều hướng yêu cầu):** gói `com.example.sis.controller` tiếp nhận HTTP request, kiểm tra phiên đăng nhập/phân quyền và trả về View hoặc JSON.
+3. **Model (Dữ liệu & Nghiệp vụ):** được phân tầng rõ thành:
+   - **Service Layer** (`com.example.sis.service`): xử lý toàn bộ luật nghiệp vụ tín chỉ.
+   - **Repository & Entity Layer** (`com.example.sis.repository`, `com.example.sis.entity`): ánh xạ CSDL MySQL chuẩn 3NF qua Spring Data JPA / Hibernate.
 
-1. Người dùng gửi request HTTP đến Controller tương ứng với vai trò.
-2. Controller kiểm tra phiên đăng nhập (`HttpSession`) và quyền truy cập (RBAC).
-3. Controller gọi các Service nghiệp vụ để kiểm tra ràng buộc và tính toán.
-4. Service thao tác với MySQL thông qua Repository (Spring Data JPA).
-5. Controller trả dữ liệu vào Model để Thymeleaf render giao diện HTML hoặc trả JSON qua `ApiController`.
+Luồng xử lý tổng quát trong Spring MVC:
 
-### 2.2. Vai trò từng lớp
+1. Người dùng gửi request HTTP từ trình duyệt (View) đến `Controller`.
+2. `Controller` kiểm tra phiên đăng nhập (`HttpSession`) và quyền truy cập (RBAC).
+3. `Controller` gọi `Service` (Model) để kiểm tra ràng buộc và tính toán nghiệp vụ.
+4. `Service` đọc/ghi dữ liệu MySQL thông qua `Repository` và trả kết quả về `Controller`.
+5. `Controller` đưa dữ liệu vào `Model` để Thymeleaf render trang HTML (View) trả về trình duyệt, hoặc trả JSON qua `ApiController`.
 
-#### Presentation Layer (`controller/`, `templates/`)
+### 2.2. Vai trò từng thành phần
+
+#### View (`templates/`, `static/`)
+
+- Hiển thị giao diện theo từng phân hệ: Đăng nhập, Sinh viên, Giảng viên, Quản trị viên và HUIT E-Learning.
+- Sử dụng Thymeleaf Layout Dialect, biểu đồ Chart.js và hệ thống giao diện Monochrome Luxury.
+
+#### Controller (`controller/`)
 
 - Tiếp nhận request từ trình duyệt và kiểm tra phân quyền theo vai trò (`VaiTro`).
 - Ràng buộc dữ liệu đầu vào (kiểm tra trùng mã/email, số tiền thanh toán hợp lệ, điểm rèn luyện trong `[0, 100]`).
-- Trả về giao diện Thymeleaf hoặc JSON cho biểu đồ và mô phỏng GPA.
+- Điều phối dữ liệu giữa `Model` và `View`.
 
-#### Business/Service Layer (`service/`)
+#### Model (`service/`, `entity/`, `repository/`)
 
-- Chứa 13 service chuyên biệt cho từng mảng nghiệp vụ: đăng ký học phần, kiểm tra trùng lịch, điểm danh, tính điểm, mô phỏng GPA, cảnh báo học vụ, học phí, E-Learning, xuất/nhập Excel, lưu file, thông báo, nhật ký hệ thống và Cloudflare Tunnel.
-- Đảm bảo tính toàn vẹn giao dịch bằng `@Transactional`.
-
-#### Data Layer (`entity/`, `repository/`, `database/`)
-
-- Gồm 25 Entity và 24 Repository ánh xạ trực tiếp hệ thống bảng chuẩn 3NF trong MySQL (`university_sis`).
-- Tích hợp các getter an toàn (null-safe) và chuẩn hóa hiển thị danh xưng giảng viên (`GiangVien.getTenDayDu()`).
+- **Service (`service/`):** gồm 13 service chuyên biệt cho từng mảng nghiệp vụ (đăng ký học phần, trùng lịch, điểm danh, tính điểm, mô phỏng GPA, cảnh báo học vụ, học phí, E-Learning, Excel, lưu file, thông báo, nhật ký hệ thống, Cloudflare Tunnel), đảm bảo toàn vẹn giao dịch bằng `@Transactional`.
+- **Entity & Repository (`entity/`, `repository/`):** gồm 25 Entity và 24 Repository ánh xạ trực tiếp hệ thống bảng chuẩn 3NF trong MySQL (`university_sis`), tích hợp các getter null-safe và chuẩn hóa danh xưng giảng viên (`GiangVien.getTenDayDu()`).
 
 ## 3. Quy trình chi tiết: Đăng nhập -> ĐKHP -> Điểm danh -> Nhập điểm -> GPA -> Học phí -> E-Learning
 
@@ -214,7 +218,7 @@ Khi sinh viên thanh toán trực tuyến, hệ thống kiểm tra $0 < \text{s�
 3. `src/main/resources/application.properties`
    - Cấu hình kết nối MySQL, cổng `8081`, JPA/Hibernate và upload file.
 
-### 4.2. Nhóm Controller (Presentation Layer)
+### 4.2. Nhóm Controller (C - Điều hướng MVC)
 
 1. `AccountController.java`: đăng nhập, đăng xuất, đổi mật khẩu, quản lý session.
 2. `HomeController.java`: điều hướng trang chủ theo vai trò.
@@ -225,7 +229,7 @@ Khi sinh viên thanh toán trực tuyến, hệ thống kiểm tra $0 < \text{s�
 7. `ApiController.java`: cung cấp REST API cho biểu đồ và mô phỏng GPA.
 8. `GlobalControllerAdvice.java`: nạp dữ liệu dùng chung (thông tin user, số thông báo chưa đọc) cho mọi view.
 
-### 4.3. Nhóm Service (Business Layer)
+### 4.3. Nhóm Service (M - Logic nghiệp vụ)
 
 1. `CourseRegistrationService.java`: đăng ký/hủy học phần có Pessimistic Locking.
 2. `ScheduleConflictService.java`: kiểm tra xung đột thời khóa biểu và phòng học.
@@ -241,7 +245,7 @@ Khi sinh viên thanh toán trực tuyến, hệ thống kiểm tra $0 < \text{s�
 12. `AuditLogService.java`: ghi nhật ký thao tác hệ thống.
 13. `CloudflareTunnelService.java`: tự động khởi tạo và đóng đường hầm HTTPS công khai khi chạy/dừng app.
 
-### 4.4. Nhóm Entity & Repository (Data Layer)
+### 4.4. Nhóm Entity & Repository (M - Dữ liệu & Truy vấn JPA)
 
 - Gồm 25 lớp Entity trong `com.example.sis.entity` và 24 interface Repository trong `com.example.sis.repository`, tương ứng với các nhóm bảng:
   - Tổ chức & Người dùng: `NguoiDung`, `VaiTro`, `Khoa`, `NganhHoc`, `ChuyenNganh`, `SinhVien`, `GiangVien`, `LopDanhNghia`.
@@ -249,11 +253,11 @@ Khi sinh viên thanh toán trực tuyến, hệ thống kiểm tra $0 < \text{s�
   - Đánh giá & Học vụ: `DiemDanh`, `DiemHocPhan`, `DiemRenLuyen`, `ChungChiChuanDauRa`, `YeuCauDichVuMotCua`, `YeuCauDoiLich`.
   - Tài chính & Hệ thống: `CongNoHocKy`, `PhieuThuHocPhi`, `ThongBao`, `NhatKyHeThong`.
 
-### 4.5. Nhóm giao diện và CSDL
+### 4.5. Nhóm View (V - Thymeleaf Templates) và CSDL
 
-- `src/main/resources/templates/`: chia theo phân hệ `account/`, `student/`, `faculty/`, `admin/`, `elearning/`, `layout/`.
-- `src/main/resources/static/`: CSS hệ thống (Monochrome Luxury) và tài nguyên tĩnh.
-- `database/init_schema_and_data.sql` và `database/seed_huit_khdl_and_receipts.sql`: khởi tạo schema MySQL và dữ liệu mẫu ngành Khoa học Dữ liệu HUIT.
+- `src/main/resources/templates/`: chia theo phân hệ `account/`, `student/`, `faculty/`, `admin/`, `elearning/`, `fragments/`.
+- `src/main/resources/static/`: CSS hệ thống (`monochrome.css`, `huit-theme.css`, `uit-theme.css`), JS và hình ảnh.
+- `database/`: gồm `init_schema_and_data.sql`, `seed_huit_khdl_and_receipts.sql` và `upgrade_v2_workflows.sql` để khởi tạo và nâng cấp schema MySQL.
 
 ## 5. Ví dụ luồng thực tế end-to-end
 
