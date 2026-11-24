@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">HUIT SYSTEM - Trường Đại Học Công Thương Thành Phố Hồ Chí Minh</title>
+
+    <!-- Vietnamese-Optimized Typography: Be Vietnam Pro + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Base CSS & HUIT Polished Theme CSS (cache-busted) -->
+    <link rel="stylesheet" th:href="@{/css/monochrome.css(v=4)}">
+    <link rel="stylesheet" th:href="@{/css/uit-theme.css(v=4)}">
+
+    <!-- Lucide Icons & Chart.js -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Core Controller -->
+    <script th:src="@{/js/monochrome.js(v=4)}" defer></script>
+
+    <style>
+        .nav-pill-badge {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: #EF4444;
+            color: #FFFFFF;
+            font-family: var(--font-mono);
+        }
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 10px 16px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active {
+            color: var(--uit-blue-primary);
+            border-bottom-color: var(--uit-blue-primary);
+        }
+        .modal-backdrop-custom {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-backdrop-custom.show { display: flex; }
+        .modal-dialog-custom {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        }
+        .modal-header-custom {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-body-custom {
+            padding: 20px 22px;
+            overflow-y: auto;
+            flex: 1;
+        }
+    </style>
+</head>
+<body class="sidebar-collapsed" th:data-flash-success="${success}" th:data-flash-error="${error}">
+<script>
+    (function() {
+        try {
+            var saved = localStorage.getItem('sidebarCollapsed');
+            if (saved === 'false') {
+                document.body.classList.remove('sidebar-collapsed');
+            }
+        } catch (e) {}
+    })();
+
+    window.toggleSidebar = function() {
+        var isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+        try {
+            localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
+        } catch (e) {}
+    };
+</script>
+
+<div class="app-shell">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar" id="app-sidebar">
+        <!-- HUIT Brand Header -->
+        <div class="sidebar-brand" style="display: flex; align-items: center; gap: 10px;">
+            <div style="background: #ffffff; padding: 4px; border-radius: 10px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.16);">
+                <img th:src="@{/images/huit-logo.png}" alt="HUIT Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+            </div>
+            <div class="brand-info-uit">
+                <span class="title">HUIT SYSTEM</span>
+                <span class="subtitle">ĐH CÔNG THƯƠNG TP.HCM</span>
+            </div>
+            <button type="button" id="sidebar-close-btn" class="sidebar-close-btn" onclick="window.toggleSidebar()" title="Thu gọn thanh bên" aria-label="Thu gọn thanh bên">
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2"/>
+                    <path d="M9 3v18"/>
+                    <path d="m16 15-3-3 3-3"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- User Profile Card -->
+        <div class="sidebar-user-card" th:if="${currentUser != null}">
+            <div class="user-avatar-pill" th:text="${currentUser.hoTen.substring(0, 1)}">U</div>
+            <div class="user-meta-uit">
+                <div class="name" th:text="${currentUser.hoTen}">Người dùng</div>
+                <div class="role" th:text="${currentUser.vaiTro != null ? currentUser.vaiTro.tenHienThi : 'Khách'}">Sinh Viên</div>
+            </div>
+        </div>
+
+        <!-- Navigation Menus -->
+        <nav class="sidebar-menu">
+            <!-- ==================== 1. CỔNG SINH VIÊN (5 NHÓM CHÍNH) ==================== -->
+            <th:block th:if="${currentUser != null and currentUser.vaiTro.name() == 'SINH_VIEN'}">
+                <div class="menu-category">1. TỔNG QUAN</div>
+                <a th:href="@{/Student/Dashboard}" class="menu-link">
+                    <i data-lucide="layout-dashboard" style="width: 17px; height: 17px;"></i>
+                    <span>Tổng Quan & Tiến Độ</span>
+                </a>
+
+                <div class="menu-category">2. HỒ SƠ & CHỨNG CHỈ</div>
+                <a th:href="@{/Student/Profile}" class="menu-link">
+                    <i data-lucide="id-card" style="width: 17px; height: 17px;"></i>
+                    <span>Thông Tin Sinh Viên</span>
+                </a>
+                <a th:href="@{/Student/Certificates}" class="menu-link">
+                    <i data-lucide="file-badge" style="width: 17px; height: 17px;"></i>
+                    <span>Chứng Chỉ (PDF)</span>
+                </a>
+
+                <div class="menu-category">3. HỌC TẬP</div>
+                <a th:href="@{/Student/Curriculum}" class="menu-link">
+                    <i data-lucide="book-open" style="width: 17px; height: 17px;"></i>
+                    <span>Chương Trình Khung</span>
+                </a>
+                <a th:href="@{/Student/Registration}" class="menu-link">
+                    <i data-lucide="edit-3" style="width: 17px; height: 17px;"></i>
+                    <span>Đăng Ký Học Phần</span>
+                </a>
+                <a th:href="@{/Student/Timetable}" class="menu-link">
+                    <i data-lucide="calendar" style="width: 17px; height: 17px;"></i>
+                    <span>Lịch Tuần & Lịch Thi</span>
+                </a>
+                <a th:href="@{/Student/Grades}" class="menu-link">
+                    <i data-lucide="award" style="width: 17px; height: 17px;"></i>
+                    <span>Kết Quả Học Tập</span>
+                </a>
+                <a th:href="@{/Student/Conduct}" class="menu-link">
+                    <i data-lucide="star" style="width: 17px; height: 17px;"></i>
+                    <span>Điểm Rèn Luyện</span>
+                </a>
+                <a th:href="@{/ELearning}" class="menu-link">
+                    <i data-lucide="monitor-play" style="width: 17px; height: 17px;"></i>
+                    <span>E-Learning HUIT</span>
+                </a>
+
+                <div class="menu-category">4. TÀI CHÍNH</div>
+                <a th:href="@{/Student/Tuition}" class="menu-link">
+                    <i data-lucide="credit-card" style="width: 17px; height: 17px;"></i>
+                    <span>Công Nợ & Thanh Toán</span>
+                </a>
+                <a th:href="@{/Student/Receipts}" class="menu-link">
+                    <i data-lucide="receipt" style="width: 17px; height: 17px;"></i>
+                    <span>Biên Lai Điện Tử</span>
+                </a>
+
+                <div class="menu-category">5. HỘP THƯ & HỖ TRỢ</div>
+                <a th:href="@{/Student/Inbox}" class="menu-link">
+                    <i data-lucide="mail" style="width: 17px; height: 17px;"></i>
+                    <span>Hộp Thư Sinh Viên</span>
+                    <span th:if="${unreadInboxCount != null and unreadInboxCount > 0}" class="nav-pill-badge" th:text="${unreadInboxCount}">2</span>
+                </a>
+                <a th:href="@{/Student/OneStop}" class="menu-link">
+                    <i data-lucide="file-check" style="width: 17px; height: 17px;"></i>
+                    <span>Dịch Vụ Một Cửa</span>
+                </a>
+                <a th:href="@{/Student/GpaSimulator}" class="menu-link">
+                    <i data-lucide="compass" style="width: 17px; height: 17px;"></i>
+                    <span>Mô Phỏng GPA</span>
+                </a>
+            </th:block>
+
+            <!-- ==================== 2. CỔNG GIẢNG VIÊN (4 TRỤC + CỐ VẤN) ==================== -->
+            <th:block th:if="${currentUser != null and (currentUser.vaiTro.name() == 'GIANG_VIEN' or currentUser.vaiTro.name() == 'CO_VAN_HOC_TAP')}">
+                <div class="menu-category">TỔNG QUAN & HỘP THƯ</div>
+                <a th:href="@{/Faculty/Dashboard}" class="menu-link">
+                    <i data-lucide="layout-grid" style="width: 17px; height: 17px;"></i>
+                    <span>Tổng Quan Giảng Dạy</span>
+                </a>
+                <a th:href="@{/Faculty/Inbox}" class="menu-link">
+                    <i data-lucide="mail" style="width: 17px; height: 17px;"></i>
+                    <span>Hộp Thư Giảng Viên</span>
+                    <span th:if="${unreadInboxCount != null and unreadInboxCount > 0}" class="nav-pill-badge" th:text="${unreadInboxCount}">1</span>
+                </a>
+
+                <div class="menu-category">ĐỀ XUẤT & LỚP HỌC PHẦN</div>
+                <a th:href="@{/Faculty/Proposals}" class="menu-link">
+                    <i data-lucide="plus-circle" style="width: 17px; height: 17px;"></i>
+                    <span>Đề Xuất Mở Học Phần</span>
+                </a>
+                <a th:href="@{/Faculty/Classes}" class="menu-link">
+                    <i data-lucide="book-open" style="width: 17px; height: 17px;"></i>
+                    <span>Danh Sách Lớp & SV</span>
+                </a>
+
+                <div class="menu-category">QUẢN LÝ LỊCH GIẢNG</div>
+                <a th:href="@{/Faculty/Schedule}" class="menu-link">
+                    <i data-lucide="calendar-clock" style="width: 17px; height: 17px;"></i>
+                    <span>Lịch Giảng & Đổi Lịch</span>
+                </a>
+
+                <div class="menu-category">ĐIỂM DANH & ĐIỂM SỐ</div>
+                <a th:href="@{/Faculty/Attendance}" class="menu-link">
+                    <i data-lucide="check-circle" style="width: 17px; height: 17px;"></i>
+                    <span>Điểm Danh & Cấm Thi</span>
+                </a>
+                <a th:href="@{/Faculty/Grading}" class="menu-link">
+                    <i data-lucide="clipboard-list" style="width: 17px; height: 17px;"></i>
+                    <span>Nhập & Chốt Điểm</span>
+                </a>
+
+                <div class="menu-category">CỐ VẤN HỌC TẬP</div>
+                <a th:href="@{/Faculty/Advisees}" class="menu-link">
+                    <i data-lucide="users" style="width: 17px; height: 17px;"></i>
+                    <span>Lớp Cố Vấn & Điểm RL</span>
+                </a>
+            </th:block>
+
+            <!-- ==================== 3. CỔNG ADMIN (4 PHÂN HỆ LỚN) ==================== -->
+            <th:block th:if="${currentUser != null and (currentUser.vaiTro.name() == 'ADMIN' or currentUser.vaiTro.name() == 'PHONG_DAO_TAO' or currentUser.vaiTro.name() == 'KE_TOAN')}">
+                <div class="menu-category">1. TRUNG TÂM PHÊ DUYỆT</div>
+                <a th:href="@{/Admin/Approvals}" class="menu-link">
+                    <i data-lucide="check-square" style="width: 17px; height: 17px;"></i>
+                    <span>Trung Tâm Phê Duyệt</span>
+                    <span th:if="${pendingApprovalsCount != null and pendingApprovalsCount > 0}" class="nav-pill-badge" th:text="${pendingApprovalsCount}">3</span>
+                </a>
+                <a th:href="@{/Admin/Dashboard}" class="menu-link">
+                    <i data-lucide="activity" style="width: 17px; height: 17px;"></i>
+                    <span>Tổng Quan Điều Hành</span>
+                </a>
+
+                <div class="menu-category">2. QUẢN LÝ ĐÀO TẠO</div>
+                <a th:href="@{/Admin/Curriculum}" class="menu-link">
+                    <i data-lucide="layers" style="width: 17px; height: 17px;"></i>
+                    <span>Chương Trình Khung</span>
+                </a>
+                <a th:href="@{/Admin/Semesters}" class="menu-link">
+                    <i data-lucide="calendar-range" style="width: 17px; height: 17px;"></i>
+                    <span>Học Kỳ & Đợt Đăng Ký</span>
+                </a>
+                <a th:href="@{/Admin/Classes}" class="menu-link">
+                    <i data-lucide="book-open" style="width: 17px; height: 17px;"></i>
+                    <span>Lớp HP & Lịch Học</span>
+                </a>
+                <a th:href="@{/Admin/Grades}" class="menu-link">
+                    <i data-lucide="award" style="width: 17px; height: 17px;"></i>
+                    <span>Điểm & Điểm Rèn Luyện</span>
+                </a>
+                <a th:href="@{/Admin/Students}" class="menu-link">
+                    <i data-lucide="user-check" style="width: 17px; height: 17px;"></i>
+                    <span>Hồ Sơ Sinh Viên</span>
+                </a>
+
+                <div class="menu-category">3. QUẢN LÝ TÀI CHÍNH</div>
+                <a th:href="@{/Admin/Tuition}" class="menu-link">
+                    <i data-lucide="dollar-sign" style="width: 17px; height: 17px;"></i>
+                    <span>Học Phí & Doanh Thu</span>
+                </a>
+
+                <div class="menu-category">4. NGƯỜI DÙNG & HỆ THỐNG</div>
+                <a th:href="@{/Admin/Users}" class="menu-link">
+                    <i data-lucide="shield" style="width: 17px; height: 17px;"></i>
+                    <span>Tài Khoản & RBAC</span>
+                </a>
+                <a th:href="@{/Admin/Notifications}" class="menu-link">
+                    <i data-lucide="megaphone" style="width: 17px; height: 17px;"></i>
+                    <span>Thông Báo Toàn Trường</span>
+                    <span th:if="${unreadInboxCount != null and unreadInboxCount > 0}" class="nav-pill-badge" th:text="${unreadInboxCount}">1</span>
+                </a>
+                <a th:href="@{/Admin/AuditLog}" class="menu-link">
+                    <i data-lucide="history" style="width: 17px; height: 17px;"></i>
+                    <span>Nhật Ký Hệ Thống</span>
+                </a>
+            </th:block>
+        </nav>
+
+        <!-- Bottom Logout Trigger -->
+        <div style="padding: 14px 20px; border-top: 1px solid var(--sidebar-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 11px; color: #64748B;">Hệ thống Tín chỉ V2</span>
+            <a th:href="@{/Account/Logout}" style="color: #94A3B8; display: flex; align-items: center; gap: 6px; font-size: 12px; text-decoration: none;" title="Đăng xuất">
+                <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
+                <span>Thoát</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Shell -->
+    <div class="app-content">
+        <!-- HUIT Institutional Header Strip -->
+        <div class="uit-topbar-strip">
+            <div style="display: flex; gap: 18px; align-items: center; flex-wrap: wrap;">
+                <span style="font-weight: 700; color: #FFFFFF; letter-spacing: 0.02em;">Trường Đại Học Công Thương Thành Phố Hồ Chí Minh</span>
+                <span style="color: #E2E8F0; display: inline-flex; align-items: center; gap: 5px;">
+                    <i data-lucide="map-pin" style="width: 13px; height: 13px; color: #93C5FD;"></i>
+                    140 Lê Trọng Tấn, Tây Thạnh, Thành Phố Hồ Chí Minh
+                </span>
+                <span style="color: #CBD5E1; display: inline-flex; align-items: center; gap: 5px;">
+                    <i data-lucide="mail" style="width: 13px; height: 13px; color: #93C5FD;"></i>
+                    info@huit.edu.vn
+                </span>
+            </div>
+            <div style="display: flex; gap: 16px;">
+                <a href="https://ts.huit.edu.vn/" target="_blank" rel="noopener noreferrer">Tuyển sinh</a>
+                <a th:if="${currentUser == null or currentUser.vaiTro.name() == 'SINH_VIEN'}" th:href="@{/ELearning}">E-Learning</a>
+                <a href="https://thuvien.huit.edu.vn/" target="_blank" rel="noopener noreferrer">Thư viện</a>
+            </div>
+        </div>
+
+        <!-- Sticky Modern Topbar -->
+        <header class="app-topbar">
+            <div class="topbar-left-group">
+                <!-- Nút Ẩn/Mở thanh bên -->
+                <button type="button" id="sidebar-toggle-btn" class="sidebar-toggle-btn" onclick="window.toggleSidebar()" title="Mở / Ẩn thanh điều hướng" aria-label="Mở / Ẩn thanh điều hướng">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" x2="20" y1="6" y2="6"/>
+                        <line x1="4" x2="20" y1="12" y2="12"/>
+                        <line x1="4" x2="20" y1="18" y2="18"/>
+                    </svg>
+                </button>
+
+                <!-- Thương hiệu trường HUIT luôn hiển thị khi thanh bên ẩn gọn -->
+                <a th:href="@{/}" class="topbar-brand-huit">
+                    <div class="topbar-brand-logo">
+                        <img th:src="@{/images/huit-logo.png}" alt="HUIT Logo">
+                    </div>
+                    <div class="topbar-brand-text">
+                        <span class="t-main">HUIT SYSTEM</span>
+                        <span class="t-sub">ĐH Công Thương TP.HCM</span>
+                    </div>
+                </a>
+
+                <button id="command-trigger-btn" class="command-palette-btn" type="button" style="border-radius: var(--radius-md);">
+                    <i data-lucide="search" style="width: 16px; height: 16px; color: var(--uit-blue-primary);"></i>
+                    <span>Tìm nhanh (MSSV, Môn học, Chức năng)...</span>
+                    <span class="kbd-badge">Ctrl K</span>
+                </button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <button id="theme-toggle" class="action-btn" title="Chuyển đổi giao diện Sáng / Tối" type="button">
+                    <span id="theme-icon">
+                        <i data-lucide="moon" style="width: 17px; height: 17px;"></i>
+                    </span>
+                </button>
+
+                <div style="display: flex; align-items: center; gap: 10px; border-left: 1px solid var(--border-color); padding-left: 14px;">
+                    <span class="lux-badge" style="background-color: var(--uit-blue-light); color: var(--uit-blue-primary); border-color: var(--uit-blue-soft);">
+                        <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
+                        <span th:text="${currentUser != null and currentUser.vaiTro != null ? currentUser.vaiTro.tenHienThi : 'Khách'}">Sinh Viên</span>
+                    </span>
+                    <a th:href="@{/Account/Logout}" class="action-btn" title="Đăng xuất khỏi hệ thống">
+                        <i data-lucide="log-out" style="width: 16px; height: 16px; color: #EF4444;"></i>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Page Body -->
+        <main class="app-main" layout:fragment="content">
+        </main>
+    </div>
+</div>
+
+<!-- Command Palette Modal (Ctrl + K) -->
+<div id="command-overlay" class="command-backdrop">
+    <div class="command-box">
+        <div class="command-search-header">
+            <i data-lucide="search" style="width: 20px; height: 20px; color: var(--uit-blue-primary);"></i>
+            <input id="command-input" class="command-search-input" type="text" placeholder="Tìm theo MSSV, tên môn, trang..." autocomplete="off">
+            <span class="kbd-badge">ESC</span>
+        </div>
+        <div id="command-results" class="command-list"></div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+</script>
+</body>
+</html>

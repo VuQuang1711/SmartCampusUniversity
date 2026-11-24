@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Tổng Quan & Tiến Độ - HUIT SYSTEM</title>
+    <style>
+        /* Original Bento Identity Header (clean, modern, non-cloned) */
+        .sv-identity-banner {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 22px 26px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .sv-identity-banner::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: linear-gradient(180deg, #005BAB 0%, #0EA5E9 100%);
+        }
+        .sv-id-left {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            min-width: 0;
+            flex: 1;
+        }
+        .sv-monogram {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #005BAB 0%, #0EA5E9 100%);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            flex-shrink: 0;
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.24);
+        }
+        .sv-id-meta {
+            min-width: 0;
+            flex: 1;
+        }
+        .sv-name-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .sv-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.015em;
+            line-height: 1.25;
+        }
+        .sv-fields-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 22px;
+            font-size: 13.5px;
+            color: var(--text-secondary);
+        }
+        .sv-field-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sv-field-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .sv-field-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .sv-gpa-panel {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 18px;
+            border-radius: 14px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .sv-gpa-score {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--uit-blue);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+        [data-theme="dark"] .sv-gpa-score {
+            color: #38BDF8;
+        }
+
+        /* 4-Column Metric Strip */
+        .sv-kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 1024px) {
+            .sv-kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 560px) {
+            .sv-kpi-strip { grid-template-columns: 1fr; }
+        }
+        .sv-kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px 18px;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+        }
+        .sv-kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--uit-blue-primary);
+            box-shadow: var(--card-shadow-hover);
+        }
+        .sv-kpi-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .sv-kpi-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        .sv-kpi-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.3;
+        }
+        .sv-kpi-sub {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+        }
+
+        /* Quick Action Chips */
+        .sv-quick-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 14px;
+            margin-top: 14px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .sv-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 12px;
+            border-radius: 9px;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 12.5px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .sv-chip:hover {
+            background: var(--uit-blue-light);
+            border-color: var(--uit-blue-soft);
+            color: var(--uit-blue);
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- 1. THẺ ĐỊNH DANH SINH VIÊN (CHỈ HIỆN ĐÚNG 7 TRƯỜNG: HỌ TÊN, MSSV, LỚP, NGÀNH, CHUYÊN NGÀNH, KHÓA, GPA) -->
+    <section class="sv-identity-banner">
+        <div class="sv-id-left">
+            <div class="sv-monogram" th:text="${student.nguoiDung.hoTen.substring(0, 1)}">K</div>
+            <div class="sv-id-meta">
+                <div class="sv-name-row">
+                    <h1 class="sv-name" th:text="${student.nguoiDung.hoTen}">Nguyễn Minh Khoa</h1>
+                    <span class="lux-badge lux-badge-solid mono" th:text="${'MSSV: ' + student.mssv}">MSSV: 2180601234</span>
+                    <span class="lux-badge" th:text="${activeSemester != null ? activeSemester.tenHocKy : 'Học kỳ hiện tại'}">HK2</span>
+                </div>
+                <div class="sv-fields-grid">
+                    <div class="sv-field-item">
+                        <span class="sv-field-label">Lớp:</span>
+                        <span class="sv-field-value mono" th:text="${student.lopDanhNghia != null ? student.lopDanhNghia.maLop : 'N/A'}">15DHKHDL03</span>
+                    </div>
+                    <div class="sv-field-item">
+                        <span class="sv-field-label">Khóa:</span>
+                        <span class="sv-field-value mono" th:text="${student.khoaTuyenSinh}">2023</span>
+                    </div>
+                    <div class="sv-field-item">
+                        <span class="sv-field-label">Ngành:</span>
+                        <span class="sv-field-value" th:text="${student.nganhHoc.tenNganh}">Khoa Học Dữ Liệu</span>
+                    </div>
+                    <div class="sv-field-item" th:if="${student.chuyenNganh != null and student.chuyenNganh.nganhHoc.id == student.nganhHoc.id}">
+                        <span class="sv-field-label">Chuyên ngành:</span>
+                        <span class="sv-field-value" th:text="${student.chuyenNganh.tenChuyenNganh}">Phân Tích Dữ Liệu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sv-gpa-panel">
+            <div>
+                <div style="font-size: 11.5px; font-weight: 600; color: var(--text-muted);">GPA Tích Lũy</div>
+                <div class="sv-gpa-score">
+                    <span th:text="${#numbers.formatDecimal(student.cpaTichLuy, 1, 2)}">3.55</span>
+                    <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">/ 4.00</span>
+                </div>
+            </div>
+            <div style="height: 36px; width: 1px; background: var(--border-color);"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <a th:href="@{/Student/Profile}" class="btn-lux btn-lux-secondary btn-lux-sm">Hồ sơ chi tiết</a>
+                <a th:href="@{/Student/Registration}" class="btn-lux btn-lux-primary btn-lux-sm">Đăng ký HP</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. DẢI 4 CHỈ SỐ NHẮC NHỞ HỌC TẬP & TÀI CHÍNH -->
+    <section class="sv-kpi-strip">
+        <a th:href="@{/Student/Timetable}" class="sv-kpi-card">
+            <div class="sv-kpi-icon" style="background: #E0F2FE; color: #0284C7;">
+                <i data-lucide="calendar-days" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <div class="sv-kpi-label">Lịch học trong tuần</div>
+                <div class="sv-kpi-val" th:text="${(upcomingSchedules != null ? upcomingSchedules.size() : 0) + ' buổi'}">3 buổi</div>
+                <div class="sv-kpi-sub">Xem thời khóa biểu</div>
+            </div>
+        </a>
+
+        <a th:href="@{/Student/Timetable}" class="sv-kpi-card">
+            <div class="sv-kpi-icon" style="background: #FEF3C7; color: #D97706;">
+                <i data-lucide="file-clock" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <div class="sv-kpi-label">Lịch thi sắp tới</div>
+                <div class="sv-kpi-val" th:text="${(examSchedules != null ? examSchedules.size() : 0) + ' môn'}">1 môn</div>
+                <div class="sv-kpi-sub">Phòng & ca thi dự kiến</div>
+            </div>
+        </a>
+
+        <a th:href="@{/Student/Tuition}" class="sv-kpi-card">
+            <div class="sv-kpi-icon"
+                 th:style="${currentDebt != null and currentDebt.conNo > 0 ? 'background:#FEE2E2; color:#DC2626;' : 'background:#DCFCE7; color:#16A34A;'}">
+                <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <div class="sv-kpi-label">Công nợ học kỳ</div>
+                <div class="sv-kpi-val"
+                     th:style="${currentDebt != null and currentDebt.conNo > 0 ? 'color:#DC2626; font-size:17px;' : 'color:#16A34A;'}"
+                     th:text="${currentDebt != null and currentDebt.conNo > 0 ? #numbers.formatDecimal(currentDebt.conNo, 0, 'POINT', 0, 'POINT') + ' đ' : '0 đ'}">0 đ</div>
+                <div class="sv-kpi-sub" th:text="${currentDebt != null and currentDebt.conNo > 0 ? 'Cần thanh toán' : 'Đã hoàn tất học phí'}">Hoàn tất</div>
+            </div>
+        </a>
+
+        <a th:href="@{/Student/Inbox}" class="sv-kpi-card">
+            <div class="sv-kpi-icon" style="background: #EDE9FE; color: #7C3AED;">
+                <i data-lucide="mail" style="width: 20px; height: 20px;"></i>
+            </div>
+            <div>
+                <div class="sv-kpi-label">Hộp thư sinh viên</div>
+                <div class="sv-kpi-val" th:text="${(unreadInboxCount != null ? unreadInboxCount : 0) + ' chưa đọc'}">0 chưa đọc</div>
+                <div class="sv-kpi-sub">Đổi lịch & chứng chỉ</div>
+            </div>
+        </a>
+    </section>
+
+    <!-- 3. BIỂU ĐỒ TIẾN ĐỘ TÍN CHỈ + HỘP THƯ & LỐI TẮT NGHIỆP VỤ -->
+    <div class="split-layout" style="margin-bottom: 20px;">
+        <!-- Biểu đồ tiến độ học tập -->
+        <div class="uit-card" style="margin-bottom: 0;">
+            <div class="uit-card-header">
+                <div>
+                    <div class="uit-card-title">
+                        <i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i>
+                        <span>Biểu Đồ Tiến Độ Tích Lũy Chương Trình Khung</span>
+                    </div>
+                    <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">Bấm vào biểu đồ hoặc từng nhóm để xem chi tiết danh sách môn</div>
+                </div>
+                <span class="lux-badge lux-badge-solid mono" style="font-size: 13px;" th:text="${creditsEarned + ' / ' + creditsRequired + ' TC'}">40 / 123 TC</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 185px 1fr; gap: 20px; align-items: center;">
+                <div style="height: 185px; position: relative;">
+                    <canvas id="creditProgressChart" style="cursor: pointer;"></canvas>
+                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+                        <span style="font-size: 22px; font-weight: 700; color: var(--uit-blue);" th:text="${progressPercent + '%'}">33%</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">Tích lũy</span>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button type="button" onclick="openSubjectDetail('passed')" class="btn-lux btn-lux-secondary" style="justify-content: space-between; font-weight: 500;">
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #10B981;"></span>
+                            Đã hoàn thành (<span th:text="${passedSubjects.size()}">6</span> môn)
+                        </span>
+                        <strong class="mono" th:text="${passedCredits + ' TC'}">19 TC</strong>
+                    </button>
+                    <button type="button" onclick="openSubjectDetail('taking')" class="btn-lux btn-lux-secondary" style="justify-content: space-between; font-weight: 500;">
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #0EA5E9;"></span>
+                            Đang theo học (<span th:text="${takingSubjects.size()}">3</span> môn)
+                        </span>
+                        <strong class="mono" th:text="${takingCredits + ' TC'}">11 TC</strong>
+                    </button>
+                    <button type="button" onclick="openSubjectDetail('failed')" class="btn-lux btn-lux-secondary" style="justify-content: space-between; font-weight: 500;">
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #EF4444;"></span>
+                            Đang nợ môn (<span th:text="${failedSubjects.size()}">0</span> môn)
+                        </span>
+                        <strong class="mono" th:text="${failedCredits + ' TC'}">0 TC</strong>
+                    </button>
+                    <button type="button" onclick="openSubjectDetail('remaining')" class="btn-lux btn-lux-secondary" style="justify-content: space-between; font-weight: 500;">
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #CBD5E1;"></span>
+                            Chưa học (<span th:text="${remainingSubjects.size()}">30</span> môn)
+                        </span>
+                        <strong class="mono" th:text="${remainingCredits + ' TC'}">93 TC</strong>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sv-quick-chips">
+                <a th:href="@{/Student/Curriculum}" class="sv-chip"><i data-lucide="book-open" style="width:14px;height:14px;"></i> Chương trình khung</a>
+                <a th:href="@{/Student/Grades}" class="sv-chip"><i data-lucide="award" style="width:14px;height:14px;"></i> Kết quả học tập</a>
+                <a th:href="@{/Student/Conduct}" class="sv-chip"><i data-lucide="star" style="width:14px;height:14px;"></i> Điểm rèn luyện</a>
+                <a th:href="@{/Student/Certificates}" class="sv-chip"><i data-lucide="file-badge" style="width:14px;height:14px;"></i> Nộp chứng chỉ PDF</a>
+                <a th:href="@{/Student/Receipts}" class="sv-chip"><i data-lucide="receipt" style="width:14px;height:14px;"></i> Biên lai điện tử</a>
+            </div>
+        </div>
+
+        <!-- Nhắc nhở chuẩn đầu ra & Thông báo mới nhất -->
+        <div class="uit-card" style="margin-bottom: 0;">
+            <div class="uit-card-header">
+                <div class="uit-card-title">
+                    <i data-lucide="bell-ring" style="width: 18px; height: 18px;"></i>
+                    <span>Nhắc Nhở & Thông Báo Mới Nhất</span>
+                </div>
+                <a th:href="@{/Student/Inbox}" class="btn-lux btn-lux-secondary btn-lux-sm">Mở hộp thư</a>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 15px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-subtle); margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i data-lucide="shield-check" style="width: 18px; height: 18px; color: var(--uit-blue-primary);"></i>
+                    <div>
+                        <div style="font-size: 13px; font-weight: 600;">Chuẩn đầu ra (Ngoại ngữ, Tin học, GDQP)</div>
+                        <div style="font-size: 12px; color: var(--text-muted);"
+                             th:text="${gradAudit.certificatesPassed ? 'Đã hoàn thành điều kiện chứng chỉ cơ bản' : 'Cần nộp minh chứng PDF để Phòng Đào Tạo duyệt'}">Trạng thái</div>
+                    </div>
+                </div>
+                <a th:href="@{/Student/Certificates}" class="lux-badge"
+                   th:style="${gradAudit.certificatesPassed ? 'border-color:#BBF7D0; color:#15803D; background:#F0FDF4;' : 'border-color:#FDE68A; color:#B45309; background:#FFFBEB;'}"
+                   th:text="${gradAudit.certificatesPassed ? 'Đạt chuẩn ✓' : 'Nộp PDF →'}">Đạt</a>
+            </div>
+
+            <div class="inbox-list" style="gap: 10px;">
+                <div th:each="tb : ${recentInbox}" class="inbox-item" th:classappend="${!tb.daDoc} ? 'unread'" style="padding: 13px 16px;">
+                    <div class="inbox-item-header" style="margin-bottom: 5px;">
+                        <span style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);" th:text="${tb.tieuDe}">Tiêu đề</span>
+                        <span th:if="${!tb.daDoc}" class="lux-badge lux-badge-danger" style="font-size: 10.5px;">Mới</span>
+                    </div>
+                    <div style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;" th:text="${#strings.abbreviate(tb.noiDung, 105)}">Nội dung</div>
+                </div>
+                <div th:if="${recentInbox == null or recentInbox.isEmpty()}" style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">
+                    Chưa có thông báo mới trong hộp thư.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. LỚP HỌC PHẦN ĐANG THEO HỌC -->
+    <div class="uit-card">
+        <div class="uit-card-header">
+            <div class="uit-card-title">
+                <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+                <span>Lớp Học Phần Đang Theo Học</span>
+                <span class="lux-badge lux-badge-solid" style="margin-left: 4px;" th:text="${currentClasses != null ? currentClasses.size() + ' lớp • ' + (currentCredits != null ? currentCredits : 0) + ' TC' : '0 lớp'}">3 lớp</span>
+            </div>
+            <a th:href="@{/Student/Registration}" class="btn-uit btn-uit-primary btn-uit-sm">
+                <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                <span>Đăng ký thêm</span>
+            </a>
+        </div>
+
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr>
+                    <th>Mã LHP</th>
+                    <th>Tên học phần</th>
+                    <th style="text-align: center;">Số TC</th>
+                    <th>Lịch học tuần</th>
+                    <th>Phòng</th>
+                    <th>Giảng viên</th>
+                    <th style="text-align: right;">Trạng thái</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="dk : ${currentClasses}">
+                    <td><span class="mono" style="font-weight: 600; color: var(--uit-blue);" th:text="${dk.lopHocPhan.maLHP}">IT003_01</span></td>
+                    <td>
+                        <div style="font-weight: 600;" th:text="${dk.lopHocPhan.hocPhan.tenHP}">Cấu trúc dữ liệu</div>
+                        <div style="font-size: 12px; color: var(--text-muted);" th:text="${dk.lopHocPhan.hocPhan.maHP}">IT003</div>
+                    </td>
+                    <td class="mono" style="text-align: center; font-weight: 600;" th:text="${dk.lopHocPhan.hocPhan.tongTinChi}">4</td>
+                    <td>
+                        <div th:each="lh : ${dk.lopHocPhan.danhSachLichHoc}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                            <span class="lux-badge">Thứ <span th:text="${lh.thu}">2</span></span>
+                            <span class="mono" style="font-size: 12.5px;">Tiết <span th:text="${lh.tietBatDau + '-' + lh.tietKetThuc}">1-3</span></span>
+                        </div>
+                    </td>
+                    <td>
+                        <span th:each="lh : ${dk.lopHocPhan.danhSachLichHoc}" class="lux-badge lux-badge-solid" style="margin-right: 4px;" th:text="${lh.phongHoc}">A302</span>
+                    </td>
+                    <td th:text="${dk.lopHocPhan.giangVien != null ? dk.lopHocPhan.giangVien.tenDayDu : 'Chưa phân công'}">PGS.TS Nguyễn Văn An</td>
+                    <td style="text-align: right;">
+                        <span class="lux-badge" style="border-color: #BBF7D0; color: #15803D; background: #F0FDF4;">Đang học</span>
+                    </td>
+                </tr>
+                <tr th:if="${currentClasses == null or currentClasses.isEmpty()}">
+                    <td colspan="7"><div class="lux-empty-state">Chưa có lớp học phần nào được đăng ký trong học kỳ này.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL CHI TIẾT TIẾN ĐỘ TỪNG MÔN HỌC -->
+    <div id="subjectDetailModal" class="modal-backdrop-custom" onclick="if(event.target===this) closeSubjectDetail()">
+        <div class="modal-dialog-custom">
+            <div class="modal-header-custom">
+                <h3 id="modalDetailTitle" style="font-size: 16px; font-weight: 700;">Chi tiết môn học theo tiến độ</h3>
+                <button type="button" onclick="closeSubjectDetail()" class="action-btn"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
+            </div>
+            <div class="modal-body-custom">
+                <div class="tab-bar">
+                    <button type="button" class="tab-btn" id="tab-passed" onclick="switchSubjectTab('passed')">Đã hoàn thành (<span th:text="${passedSubjects.size()}">0</span>)</button>
+                    <button type="button" class="tab-btn" id="tab-taking" onclick="switchSubjectTab('taking')">Đang học (<span th:text="${takingSubjects.size()}">0</span>)</button>
+                    <button type="button" class="tab-btn" id="tab-failed" onclick="switchSubjectTab('failed')">Đang nợ (<span th:text="${failedSubjects.size()}">0</span>)</button>
+                    <button type="button" class="tab-btn" id="tab-remaining" onclick="switchSubjectTab('remaining')">Chưa học (<span th:text="${remainingSubjects.size()}">0</span>)</button>
+                </div>
+
+                <div id="pane-passed" class="subject-pane">
+                    <table class="lux-table">
+                        <thead><tr><th>Mã HP</th><th>Tên học phần</th><th>HK</th><th>TC</th><th>Điểm 10</th><th>Điểm chữ</th></tr></thead>
+                        <tbody>
+                        <tr th:each="s : ${passedSubjects}">
+                            <td class="mono" style="font-weight: 600;" th:text="${s.maHP}">IT001</td>
+                            <td th:text="${s.tenHP}">Môn học</td>
+                            <td class="mono" th:text="${'HK' + s.hocKy}">HK1</td>
+                            <td class="mono" th:text="${s.tinChi}">4</td>
+                            <td class="mono" th:text="${s.diemHe10 != null ? s.diemHe10 : '-'}">9.0</td>
+                            <td><span class="lux-badge lux-badge-solid" th:text="${s.diemChu}">A</span></td>
+                        </tr>
+                        <tr th:if="${passedSubjects.isEmpty()}"><td colspan="6" style="text-align:center; padding: 20px; color: var(--text-muted);">Chưa có môn hoàn thành.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="pane-taking" class="subject-pane" style="display:none;">
+                    <table class="lux-table">
+                        <thead><tr><th>Mã HP</th><th>Tên học phần</th><th>HK dự kiến</th><th>TC</th><th>Trạng thái</th></tr></thead>
+                        <tbody>
+                        <tr th:each="s : ${takingSubjects}">
+                            <td class="mono" style="font-weight: 600;" th:text="${s.maHP}">IT003</td>
+                            <td th:text="${s.tenHP}">Môn học</td>
+                            <td class="mono" th:text="${'HK' + s.hocKy}">HK2</td>
+                            <td class="mono" th:text="${s.tinChi}">4</td>
+                            <td><span class="lux-badge lux-badge-solid">Đang học</span></td>
+                        </tr>
+                        <tr th:if="${takingSubjects.isEmpty()}"><td colspan="5" style="text-align:center; padding: 20px; color: var(--text-muted);">Không có môn đang học.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="pane-failed" class="subject-pane" style="display:none;">
+                    <table class="lux-table">
+                        <thead><tr><th>Mã HP</th><th>Tên học phần</th><th>HK</th><th>TC</th><th>Điểm</th><th>Trạng thái</th></tr></thead>
+                        <tbody>
+                        <tr th:each="s : ${failedSubjects}">
+                            <td class="mono" style="font-weight: 600;" th:text="${s.maHP}">MA004</td>
+                            <td th:text="${s.tenHP}">Môn học</td>
+                            <td class="mono" th:text="${'HK' + s.hocKy}">HK2</td>
+                            <td class="mono" th:text="${s.tinChi}">4</td>
+                            <td class="mono" th:text="${s.diemHe10}">3.5</td>
+                            <td><span class="lux-badge lux-badge-danger">Nợ môn (F)</span></td>
+                        </tr>
+                        <tr th:if="${failedSubjects.isEmpty()}"><td colspan="6" style="text-align:center; padding: 20px; color: #16A34A; font-weight: 600;">Tuyệt vời! Bạn không nợ môn học nào.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="pane-remaining" class="subject-pane" style="display:none;">
+                    <table class="lux-table">
+                        <thead><tr><th>Mã HP</th><th>Tên học phần</th><th>HK dự kiến</th><th>TC</th></tr></thead>
+                        <tbody>
+                        <tr th:each="s : ${remainingSubjects}">
+                            <td class="mono" style="font-weight: 600;" th:text="${s.maHP}">DS102</td>
+                            <td th:text="${s.tenHP}">Môn học</td>
+                            <td class="mono" th:text="${'HK' + s.hocKy}">HK4</td>
+                            <td class="mono" th:text="${s.tinChi}">4</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        const chartData = [
+            /*[[${passedCredits}]]*/ 19,
+            /*[[${takingCredits}]]*/ 11,
+            /*[[${failedCredits}]]*/ 0,
+            /*[[${remainingCredits}]]*/ 93
+        ];
+        const tabKeys = ['passed', 'taking', 'failed', 'remaining'];
+
+        function openSubjectDetail(tab) {
+            document.getElementById('subjectDetailModal').classList.add('show');
+            switchSubjectTab(tab);
+        }
+        function closeSubjectDetail() {
+            document.getElementById('subjectDetailModal').classList.remove('show');
+        }
+        function switchSubjectTab(tab) {
+            tabKeys.forEach(k => {
+                document.getElementById('pane-' + k).style.display = (k === tab) ? 'block' : 'none';
+                document.getElementById('tab-' + k).classList.toggle('active', k === tab);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('creditProgressChart');
+            if (ctx && window.Chart) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Đã tích lũy (TC)', 'Đang học (TC)', 'Đang nợ (TC)', 'Chưa học (TC)'],
+                        datasets: [{
+                            data: chartData,
+                            backgroundColor: ['#10B981', '#0EA5E9', '#EF4444', '#E2E8F0'],
+                            borderWidth: 2,
+                            borderColor: '#FFFFFF'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: { legend: { display: false } },
+                        onClick: function(evt, elements) {
+                            if (elements.length > 0) {
+                                openSubjectDetail(tabKeys[elements[0].index]);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
+</div>
+</body>
+</html>

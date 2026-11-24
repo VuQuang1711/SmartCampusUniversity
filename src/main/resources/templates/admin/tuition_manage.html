@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Quản Lý Tài Chính Học Phí & Doanh Thu</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">QUẢN LÝ TÀI CHÍNH</span>
+                <span class="lux-badge">CẤU HÌNH ĐƠN GIÁ • ĐỐI SOÁT CÔNG NỢ • BÁO CÁO DOANH THU</span>
+            </div>
+            <h1 class="page-title">Quản Lý Học Phí, Công Nợ & Báo Cáo Doanh Thu</h1>
+            <p class="page-desc">Thiết lập đơn giá tín chỉ (học mới / học lại / cải thiện), đối soát thanh toán thủ công và xuất báo cáo doanh thu theo học kỳ</p>
+        </div>
+        <a th:href="@{/api/export/tuition-report}" class="btn-lux btn-lux-primary">
+            <i data-lucide="file-spreadsheet" style="width: 15px; height: 15px;"></i>
+            <span>Xuất Báo Cáo Doanh Thu (.xlsx)</span>
+        </a>
+    </div>
+
+    <!-- Cấu hình đơn giá học phí + Ghi nhận thanh toán thủ công -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 22px;">
+        <!-- Cấu hình đơn giá tín chỉ -->
+        <div class="lux-card" style="padding: 22px; margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title"><i data-lucide="sliders" style="width: 18px; height: 18px;"></i><span>Cấu Hình Đơn Giá Tín Chỉ & Hệ Số Học Lại</span></div>
+            </div>
+            <form th:action="@{/Admin/Tuition/Config}" method="post" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="grid-column: 1 / -1;">
+                    <label class="form-label">Học Kỳ Áp Dụng</label>
+                    <select name="hocKyId" required class="lux-select">
+                        <option th:each="hk : ${semesters}" th:value="${hk.id}" th:text="${hk.tenHocKy + ' (Hiện tại: ' + #numbers.formatDecimal(hk.donGiaTinChi, 0, 'POINT', 0, 'POINT') + ' đ/TC)'}">HK2</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Đơn Giá / Tín Chỉ (VNĐ)</label>
+                    <input type="number" name="donGiaTinChi" value="570000" step="10000" required class="lux-input mono">
+                </div>
+                <div>
+                    <label class="form-label">Hệ Số Học Lại</label>
+                    <input type="number" name="heSoHocLai" value="1.5" step="0.1" min="1.0" required class="lux-input mono">
+                </div>
+                <div>
+                    <label class="form-label">Hệ Số Học Cải Thiện</label>
+                    <input type="number" name="heSoCaiThien" value="1.2" step="0.1" min="1.0" required class="lux-input mono">
+                </div>
+                <div>
+                    <label class="form-label">Đồng Bộ Hóa Đơn Công Nợ</label>
+                    <select name="syncNow" class="lux-select">
+                        <option value="true">Tự động tính lại công nợ SV kỳ này</option>
+                        <option value="false">Chỉ lưu cấu hình mới</option>
+                    </select>
+                </div>
+                <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn-lux btn-lux-primary">Lưu Cấu Hình & Đồng Bộ Công Nợ</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Ghi nhận thu tiền mặt / đối soát chuyển khoản -->
+        <div class="lux-card" style="padding: 22px; margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title"><i data-lucide="credit-card" style="width: 18px; height: 18px;"></i><span>Xác Nhận Thanh Toán Thủ Công (Quầy / Chuyển Khoản)</span></div>
+            </div>
+            <form th:action="@{/Admin/Tuition/RecordPayment}" method="post" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="grid-column: 1 / -1;">
+                    <label class="form-label">Chọn Hồ Sơ Công Nợ Sinh Viên</label>
+                    <select name="congNoId" required class="lux-select">
+                        <option th:each="cn : ${allDebts}" th:value="${cn.id}"
+                                th:text="${cn.sinhVien.mssv + ' - ' + cn.sinhVien.nguoiDung.hoTen + ' (' + cn.hocKy.maHocKy + ' • Nợ: ' + #numbers.formatDecimal(cn.conNo, 0, 'POINT', 0, 'POINT') + ' đ)'}">SV</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Số Tiền Thu (VNĐ)</label>
+                    <input type="number" step="10000" min="50000" name="soTien" required placeholder="2000000" class="lux-input mono">
+                </div>
+                <div>
+                    <label class="form-label">Phương Thức</label>
+                    <select name="phuongThuc" required class="lux-select">
+                        <option value="TIEN_MAT">Tiền mặt tại quầy</option>
+                        <option value="CHUYEN_KHOAN">Đối soát chuyển khoản</option>
+                        <option value="VIETQR">Cổng VietQR</option>
+                    </select>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label class="form-label">Ghi Chú Đối Soát</label>
+                    <input type="text" name="ghiChu" placeholder="VD: Đã đối soát sao kê ngân hàng ngày..." class="lux-input">
+                </div>
+                <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn-lux btn-lux-primary">Xác Nhận & Xuất Phiếu Thu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Báo cáo doanh thu học phí theo học kỳ -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title"><i data-lucide="bar-chart-3" style="width: 18px; height: 18px;"></i><span>Báo Cáo Doanh Thu Học Phí Theo Học Kỳ</span></div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Học Kỳ</th><th style="text-align: center;">Đơn Giá / TC</th><th style="text-align: center;">Số Hồ Sơ SV</th><th style="text-align: right;">Tổng Phải Thu</th><th style="text-align: right;">Thực Thu (Doanh Thu)</th><th style="text-align: right;">Còn Nợ</th><th style="text-align: right;">Xuất Excel</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${revenueBySemester}">
+                    <td style="font-weight: 700;" th:text="${r.hocKy.tenHocKy}">HK2</td>
+                    <td class="mono" style="text-align: center;" th:text="${#numbers.formatDecimal(r.hocKy.donGiaTinChi, 0, 'POINT', 0, 'POINT') + ' đ'}">570.000 đ</td>
+                    <td class="mono" style="text-align: center;" th:text="${r.soHoSo}">3</td>
+                    <td class="mono" style="text-align: right;" th:text="${#numbers.formatDecimal(r.tongPhatSinh, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</td>
+                    <td class="mono" style="text-align: right; color: #16A34A; font-weight: 700;" th:text="${#numbers.formatDecimal(r.daThu, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</td>
+                    <td class="mono" style="text-align: right; color: #DC2626; font-weight: 700;" th:text="${#numbers.formatDecimal(r.conNo, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</td>
+                    <td style="text-align: right;">
+                        <a th:href="@{'/api/export/tuition-report?hocKyId=' + ${r.hocKy.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">Xuất Kỳ Này</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Danh sách công nợ có bộ lọc trạng thái & nút nhắc nợ -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="table" style="width: 18px; height: 18px;"></i>
+                <span>Theo Dõi Công Nợ Sinh Viên</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <a th:href="@{/Admin/Tuition(statusFilter='ALL')}" class="btn-lux btn-lux-sm" th:classappend="${statusFilter == 'ALL'} ? 'btn-lux-primary' : 'btn-lux-secondary'">Tất cả</a>
+                <a th:href="@{/Admin/Tuition(statusFilter='DA_HOAN_THANH')}" class="btn-lux btn-lux-sm" th:classappend="${statusFilter == 'DA_HOAN_THANH'} ? 'btn-lux-primary' : 'btn-lux-secondary'">Đã đóng đủ</a>
+                <a th:href="@{/Admin/Tuition(statusFilter='DONG_MOT_PHAN')}" class="btn-lux btn-lux-sm" th:classappend="${statusFilter == 'DONG_MOT_PHAN'} ? 'btn-lux-primary' : 'btn-lux-secondary'">Đóng một phần</a>
+                <a th:href="@{/Admin/Tuition(statusFilter='CHUA_DONG')}" class="btn-lux btn-lux-sm" th:classappend="${statusFilter == 'CHUA_DONG'} ? 'btn-lux-primary' : 'btn-lux-secondary'">Chưa đóng / Nợ</a>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>MSSV</th><th>Sinh Viên</th><th>Học Kỳ</th><th style="text-align: center;">TC</th><th style="text-align: right;">Tổng HP</th><th style="text-align: right;">Đã Nộp</th><th style="text-align: right;">Còn Nợ</th><th>Trạng Thái</th><th style="text-align: right;">Nhắc Nợ</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="cn : ${debts}">
+                    <td class="mono" style="font-weight: 700;" th:text="${cn.sinhVien.mssv}">2180601234</td>
+                    <td style="font-weight: 600;" th:text="${cn.sinhVien.nguoiDung.hoTen}">Nguyễn Minh Khoa</td>
+                    <td class="mono" th:text="${cn.hocKy.maHocKy}">2024_2</td>
+                    <td class="mono" style="text-align: center;" th:text="${cn.tongSoTC}">11</td>
+                    <td class="mono" style="text-align: right;" th:text="${#numbers.formatDecimal(cn.tongHocPhi, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</td>
+                    <td class="mono" style="text-align: right; color: #16A34A;" th:text="${#numbers.formatDecimal(cn.daDong, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</td>
+                    <td class="mono" style="text-align: right; font-weight: 800;" th:text="${#numbers.formatDecimal(cn.conNo, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</td>
+                    <td>
+                        <span th:if="${cn.trangThai.name() == 'DA_HOAN_THANH'}" class="lux-badge" style="border-color:#22C55E; color:#16A34A;">HOÀN TẤT</span>
+                        <span th:if="${cn.trangThai.name() == 'DONG_MOT_PHAN'}" class="lux-badge lux-badge-warning">MỘT PHẦN</span>
+                        <span th:if="${cn.trangThai.name() == 'CHUA_DONG'}" class="lux-badge lux-badge-danger">CHƯA ĐÓNG</span>
+                    </td>
+                    <td style="text-align: right;">
+                        <form th:if="${cn.conNo > 0}" th:action="@{'/Admin/Tuition/RemindDebt/' + ${cn.id}}" method="post">
+                            <button type="submit" class="btn-lux btn-lux-secondary btn-lux-sm">Gửi Nhắc Nợ</button>
+                        </form>
+                        <span th:if="${cn.conNo <= 0}" style="font-size: 12px; color: #16A34A;">✓ Xong</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

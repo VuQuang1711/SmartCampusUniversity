@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Thời Khóa Biểu Tuần</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">LỊCH HỌC TÍN CHỈ</span>
+                <span class="lux-badge">
+                    <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
+                    15 TIẾT / NGÀY
+                </span>
+            </div>
+            <h1 class="page-title">Thời Khóa Biểu Học Kỳ</h1>
+            <p class="page-desc">Lưới thời khóa biểu tuần từ Thứ 2 đến Chủ Nhật, hiển thị theo các ca học chuẩn</p>
+        </div>
+
+        <!-- Semester Filter Form -->
+        <form th:action="@{/Student/Timetable}" method="get" style="display: flex; gap: 12px; align-items: center;">
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
+                <i data-lucide="filter" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+                Học Kỳ:
+            </label>
+            <select name="hocKyId" onchange="this.form.submit()" class="lux-select" style="min-width: 200px;">
+                <option th:each="hk : ${semesters}" th:value="${hk.id}" th:text="${hk.tenHocKy + ' (' + hk.namHoc + ')'}" th:selected="${selectedSemester != null and selectedSemester.id == hk.id}">Học kỳ 2 (2025-2026)</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Weekly Grid Timetable -->
+    <div class="lux-card" style="padding: 20px;">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+                <span>Lưới Lịch Học Tuần</span>
+            </div>
+            <div style="display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary);">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="display: inline-block; width: 10px; height: 10px; background: var(--text-primary); border-radius: 2px;"></span>
+                    <span>Lớp chính khóa</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <div class="matrix-timetable">
+                <!-- Headers -->
+                <div class="matrix-header">Tiết</div>
+                <div class="matrix-header">Thứ Hai</div>
+                <div class="matrix-header">Thứ Ba</div>
+                <div class="matrix-header">Thứ Tư</div>
+                <div class="matrix-header">Thứ Năm</div>
+                <div class="matrix-header">Thứ Sáu</div>
+                <div class="matrix-header">Thứ Bảy</div>
+                <div class="matrix-header">Chủ Nhật</div>
+
+                <!-- 15 Periods Row-by-Row -->
+                <th:block th:each="period : ${#numbers.sequence(1, 15)}">
+                    <div class="matrix-cell matrix-period">
+                        <span th:text="${'Tiết ' + period}">Tiết 1</span>
+                    </div>
+
+                    <!-- Days Monday (2) to Sunday (8) -->
+                    <th:block th:each="day : ${#numbers.sequence(2, 8)}">
+                        <div class="matrix-cell">
+                            <div th:if="${grid != null and grid.containsKey(day + '_' + period)}" class="schedule-card">
+                                <div class="title" th:text="${grid.get(day + '_' + period).lopHocPhan.hocPhan.tenHP}">Lập trình Java</div>
+                                <div class="room">
+                                    <i data-lucide="map-pin" style="width: 11px; height: 11px; display: inline-block; vertical-align: middle;"></i>
+                                    P: <strong th:text="${grid.get(day + '_' + period).phongHoc}">A301</strong> • 
+                                    <span th:text="${grid.get(day + '_' + period).loaiLich.name() == 'THUC_HANH' ? 'Thực hành' : 'Lý thuyết'}">LT</span>
+                                </div>
+                                <div style="font-size: 10px; opacity: 0.85;" class="mono" th:text="${'Tuần ' + grid.get(day + '_' + period).tuTuan + '-' + grid.get(day + '_' + period).denTuan}">Tuần 1-15</div>
+                            </div>
+                        </div>
+                    </th:block>
+                </th:block>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule List Details Table (Lịch theo tiến độ & Lịch thi) -->
+    <div class="lux-card" th:if="${examSchedules != null and !examSchedules.isEmpty()}">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="file-clock" style="width: 18px; height: 18px; color: #DC2626;"></i>
+                <span>Lịch Thi Kết Thúc Học Phần</span>
+                <span class="lux-badge lux-badge-danger" style="margin-left: 6px;" th:text="${examSchedules.size() + ' Môn thi'}">1 Môn thi</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Mã LHP</th><th>Môn Thi</th><th>Thứ / Tuần Thi</th><th>Ca Thi (Tiết)</th><th>Phòng Thi</th><th>Giảng Viên</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="ex : ${examSchedules}">
+                    <td class="mono" style="font-weight: 700;" th:text="${ex.lopHocPhan.maLHP}">IT003_01</td>
+                    <td style="font-weight: 700;" th:text="${ex.lopHocPhan.hocPhan.tenHP}">CTDL</td>
+                    <td><span class="lux-badge lux-badge-danger" th:text="${'Thứ ' + ex.thu + ' • Tuần ' + ex.tuTuan}">Thứ 6 • Tuần 16</span></td>
+                    <td class="mono" th:text="${'Tiết ' + ex.tietBatDau + ' - ' + ex.tietKetThuc}">Tiết 1-2</td>
+                    <td><span class="lux-badge lux-badge-solid" th:text="${ex.phongHoc}">Hội trường A</span></td>
+                    <td th:text="${ex.lopHocPhan.giangVien != null ? ex.lopHocPhan.giangVien.tenDayDu : 'P.Khảo thí'}">GV</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                <span>Lịch Học Theo Tiến Độ Học Kỳ (Tự Động Cập Nhật Khi Admin Duyệt Đổi Lịch)</span>
+            </div>
+            <div>
+                <span class="lux-badge" th:text="${schedules != null ? schedules.size() + ' Buổi học' : '0 Buổi'}">0 Buổi</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr>
+                    <th>Mã LHP</th>
+                    <th>Tên Học Phần</th>
+                    <th>Ngày Học</th>
+                    <th>Tiết Học</th>
+                    <th>Phòng Học</th>
+                    <th>Tuần Học</th>
+                    <th>Hình Thức</th>
+                    <th>Giảng Viên Giảng Dạy</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="lh : ${schedules}">
+                    <td>
+                        <span class="mono" style="font-weight: 700;" th:text="${lh.lopHocPhan.maLHP}">INT1405_01</span>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600;" th:text="${lh.lopHocPhan.hocPhan.tenHP}">Lập trình Java Nâng Cao</div>
+                        <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${lh.lopHocPhan.hocPhan.maHP}">INT1405</div>
+                    </td>
+                    <td>
+                        <span class="lux-badge">
+                            <span th:if="${lh.thu == 2}">Thứ Hai</span>
+                            <span th:if="${lh.thu == 3}">Thứ Ba</span>
+                            <span th:if="${lh.thu == 4}">Thứ Tư</span>
+                            <span th:if="${lh.thu == 5}">Thứ Năm</span>
+                            <span th:if="${lh.thu == 6}">Thứ Sáu</span>
+                            <span th:if="${lh.thu == 7}">Thứ Bảy</span>
+                            <span th:if="${lh.thu == 8}">Chủ Nhật</span>
+                        </span>
+                    </td>
+                    <td class="mono">
+                        <strong th:text="${'Tiết ' + lh.tietBatDau + ' - ' + lh.tietKetThuc}">Tiết 1-3</strong>
+                        <span style="font-size: 11.5px; color: var(--text-muted);" th:text="${' (' + lh.soTiet + ' tiết)'}"> (3 tiết)</span>
+                    </td>
+                    <td>
+                        <span class="lux-badge lux-badge-solid" style="padding: 2px 8px;">
+                            <i data-lucide="map-pin" style="width: 12px; height: 12px;"></i>
+                            <span th:text="${lh.phongHoc}">A301</span>
+                        </span>
+                    </td>
+                    <td class="mono" style="font-size: 12px;" th:text="${'Tuần ' + lh.tuTuan + ' → ' + lh.denTuan}">Tuần 1 → 15</td>
+                    <td>
+                        <span th:if="${lh.loaiLich.name() == 'LY_THUYET'}" class="lux-badge">Lý thuyết</span>
+                        <span th:if="${lh.loaiLich.name() == 'THUC_HANH'}" class="lux-badge lux-badge-solid">Thực hành</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="user" style="width: 14px; height: 14px; color: var(--text-muted);"></i>
+                            <span th:text="${lh.lopHocPhan.giangVien != null ? lh.lopHocPhan.giangVien.tenDayDu : 'Chưa phân công'}">PGS.TS Nguyễn Văn An</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${schedules == null or schedules.isEmpty()}">
+                    <td colspan="8">
+                        <div class="lux-empty-state">
+                            <i data-lucide="calendar-x" class="lux-empty-icon"></i>
+                            <div style="font-weight: 600;">Không có lịch học nào trong học kỳ được chọn.</div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

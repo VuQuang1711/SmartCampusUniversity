@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Đề Xuất Mở Lớp Học Phần</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">MỞ LỚP HỌC PHẦN</span>
+                <span class="lux-badge">LUỒNG: GV ĐỀ XUẤT → ADMIN DUYỆT → MỞ ĐKHP</span>
+            </div>
+            <h1 class="page-title">Đề Xuất Mở Lớp Học Phần Mới</h1>
+            <p class="page-desc">Chọn học phần thuộc Chương trình khung, đề xuất sĩ số tối đa và khung giờ dự kiến gửi Admin phê duyệt</p>
+        </div>
+    </div>
+
+    <!-- Form đề xuất mở lớp -->
+    <div class="lux-card" style="padding: 24px;">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
+                <span>Phiếu Đề Xuất Mở Lớp Học Phần (Chờ Admin Duyệt)</span>
+            </div>
+        </div>
+
+        <form th:action="@{/Faculty/Proposals/Create}" method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px;">
+            <div style="grid-column: span 2;">
+                <label class="form-label">Chọn Học Phần (Trong Chương Trình Khung) *</label>
+                <select name="hocPhanId" required class="lux-select">
+                    <option th:each="hp : ${subjects}" th:value="${hp.id}" th:text="${hp.maHP + ' - ' + hp.tenHP + ' (' + hp.tongTinChi + ' TC)'}">IT001</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Học Kỳ *</label>
+                <select name="hocKyId" required class="lux-select">
+                    <option th:each="hk : ${semesters}" th:value="${hk.id}" th:text="${hk.tenHocKy}">HK2</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Sĩ Số Tối Đa *</label>
+                <input type="number" name="siSoToiDa" min="15" max="150" value="50" required class="lux-input mono">
+            </div>
+            <div>
+                <label class="form-label">Thứ Dự Kiến *</label>
+                <select name="thuDuKien" required class="lux-select">
+                    <option value="2">Thứ Hai</option>
+                    <option value="3">Thứ Ba</option>
+                    <option value="4">Thứ Tư</option>
+                    <option value="5">Thứ Năm</option>
+                    <option value="6">Thứ Sáu</option>
+                    <option value="7">Thứ Bảy</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Tiết Bắt Đầu (1-13) *</label>
+                <input type="number" name="tietBatDauDuKien" min="1" max="13" value="1" required class="lux-input mono">
+            </div>
+            <div>
+                <label class="form-label">Số Tiết *</label>
+                <input type="number" name="soTietDuKien" min="2" max="5" value="3" required class="lux-input mono">
+            </div>
+            <div>
+                <label class="form-label">Phòng Học Dự Kiến *</label>
+                <input type="text" name="phongDuKien" required placeholder="VD: A305, B201, LAB02" value="A402" class="lux-input mono">
+            </div>
+            <div>
+                <label class="form-label">Tên Nhóm / Ghi Chú Lớp</label>
+                <input type="text" name="tenLhpMoRong" placeholder="VD: 15DHKHDL03 - Nhóm 02" class="lux-input">
+            </div>
+            <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn-lux btn-lux-primary">
+                    <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                    <span>Gửi Đề Xuất Lên Admin Phê Duyệt</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lịch sử đề xuất -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="list-checks" style="width: 18px; height: 18px;"></i>
+                <span>Danh Sách Đề Xuất & Lớp Học Phần Của Bạn</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr>
+                    <th>Mã LHP</th>
+                    <th>Học Phần</th>
+                    <th>Học Kỳ</th>
+                    <th>Sĩ Số</th>
+                    <th>Khung Giờ & Phòng Dự Kiến</th>
+                    <th>Trạng Thái Duyệt</th>
+                    <th>Ghi Chú / Lý Do</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${proposals}">
+                    <td class="mono" style="font-weight: 700;" th:text="${p.maLHP}">DS102_01</td>
+                    <td>
+                        <div style="font-weight: 600;" th:text="${p.hocPhan.tenHP}">Học máy thống kê</div>
+                        <div class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${p.hocPhan.maHP + ' • ' + p.hocPhan.tongTinChi + ' TC'}">DS102</div>
+                    </td>
+                    <td class="mono" th:text="${p.hocKy.maHocKy}">2024_2</td>
+                    <td class="mono" th:text="${p.siSoHienTai + ' / ' + p.siSoToiDa}">0/50</td>
+                    <td class="mono" style="font-size: 12px;">
+                        <span th:if="${p.thuDuKien != null}" th:text="${'Thứ ' + p.thuDuKien + ', Tiết ' + p.tietBatDauDuKien + '-' + (p.tietBatDauDuKien + p.soTietDuKien - 1) + ' • P.' + p.phongMacDinh}">Thứ 4</span>
+                        <span th:if="${p.thuDuKien == null}" th:text="${p.phongMacDinh}">A302</span>
+                    </td>
+                    <td>
+                        <span th:if="${p.trangThai.name() == 'CHO_DUYET'}" class="lux-badge lux-badge-warning">CHỜ ADMIN DUYỆT</span>
+                        <span th:if="${p.trangThai.name() == 'DANG_MO'}" class="lux-badge" style="border-color:#22C55E; color:#16A34A; background:rgba(34,197,94,0.08);">ĐÃ DUYỆT (ĐANG MỞ ĐK)</span>
+                        <span th:if="${p.trangThai.name() == 'TU_CHOI'}" class="lux-badge lux-badge-danger">TỪ CHỐI</span>
+                        <span th:if="${p.trangThai.name() == 'DA_KET_THUC'}" class="lux-badge">ĐÃ KẾT THÚC</span>
+                        <span th:if="${p.trangThai.name() == 'DA_KHOA'}" class="lux-badge lux-badge-solid">ĐÃ KHÓA ĐK</span>
+                    </td>
+                    <td style="font-size: 12.5px;">
+                        <span th:if="${p.lyDoTuChoi != null}" style="color: #DC2626;" th:text="${p.lyDoTuChoi}">Lý do</span>
+                        <span th:if="${p.lyDoTuChoi == null and p.trangThai.name() == 'DANG_MO'}" style="color: #16A34A;">Đã hiển thị trên cổng ĐKHP sinh viên</span>
+                        <span th:if="${p.lyDoTuChoi == null and p.trangThai.name() == 'CHO_DUYET'}" style="color: var(--text-muted);">Đang chờ Phòng Đào Tạo xét duyệt</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

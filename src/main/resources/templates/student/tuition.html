@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Học Phí & Công Nợ</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">TÀI CHÍNH SINH VIÊN</span>
+                <span class="lux-badge">
+                    <i data-lucide="shield-check" style="width: 12px; height: 12px;"></i>
+                    CỔNG THANH TOÁN TRỰC TUYẾN
+                </span>
+            </div>
+            <h1 class="page-title">Học Phí & Cổng Thanh Toán Trực Tuyến</h1>
+            <p class="page-desc">Theo dõi nghĩa vụ học phí tín chỉ, thanh toán chuyển khoản trực tuyến và in biên lai điện tử</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a th:href="@{/Student/Receipts}" class="btn-lux btn-lux-primary">
+                <i data-lucide="receipt" style="width: 15px; height: 15px;"></i>
+                <span>Xem Tất Cả Biên Lai</span>
+            </a>
+        </div>
+    </div>
+
+
+    <!-- Active Tuition Overview & QR Card -->
+    <div th:if="${latestDebt != null}" class="lux-card" style="padding: 32px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; align-items: center;">
+            
+            <!-- Left Info Column -->
+            <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <span class="stat-box-label">HỌC KỲ HIỆN TẠI: <strong th:text="${latestDebt.hocKy.tenHocKy}" style="color: var(--text-primary);">Học kỳ 2</strong></span>
+                    <span th:if="${latestDebt.trangThai.name() == 'DA_HOAN_THANH'}" class="lux-badge" style="border-color: #22C55E; color: #16A34A; background: rgba(34, 197, 94, 0.08);">
+                        <i data-lucide="check-circle" style="width: 13px; height: 13px;"></i>
+                        ĐÃ HOÀN TẤT
+                    </span>
+                    <span th:if="${latestDebt.trangThai.name() == 'DONG_MOT_PHAN'}" class="lux-badge lux-badge-warning">
+                        <i data-lucide="clock" style="width: 13px; height: 13px;"></i>
+                        ĐÓNG MỘT PHẦN
+                    </span>
+                    <span th:if="${latestDebt.trangThai.name() == 'CHUA_DONG'}" class="lux-badge lux-badge-danger">
+                        <i data-lucide="alert-circle" style="width: 13px; height: 13px;"></i>
+                        CHƯA THANH TOÁN
+                    </span>
+                </div>
+
+                <div class="stat-box-label">Số Dư Học Phí Cần Thanh Toán</div>
+                <div class="stat-box-value" style="font-size: 38px; margin: 6px 0 16px 0;"
+                     th:text="${#numbers.formatDecimal(latestDebt.conNo, 0, 'POINT', 0, 'POINT') + ' đ'}">
+                    0 đ
+                </div>
+
+                <!-- Financial breakdown breakdown list -->
+                <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; border-top: 1px solid var(--border-color); padding-top: 16px; margin-bottom: 24px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">Tổng số tín chỉ đăng ký:</span>
+                        <strong class="mono" th:text="${latestDebt.tongSoTC + ' TC'}">6 TC</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">Tổng học phí phát sinh:</span>
+                        <strong class="mono" th:text="${#numbers.formatDecimal(latestDebt.tongHocPhi, 0, 'POINT', 0, 'POINT') + ' đ'}">3.630.000 đ</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">Chính sách miễn giảm / Học bổng:</span>
+                        <strong class="mono" th:text="${#numbers.formatDecimal(latestDebt.mienGiam, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-secondary);">Số tiền đã đóng qua hệ thống:</span>
+                        <strong class="mono" style="color: #16A34A;" th:text="${#numbers.formatDecimal(latestDebt.daDong, 0, 'POINT', 0, 'POINT') + ' đ'}">3.630.000 đ</strong>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <a th:href="@{'/Student/Tuition/PrintReceipt/' + ${latestDebt.id}}" target="_blank" class="btn-lux btn-lux-secondary">
+                        <i data-lucide="printer" style="width: 15px; height: 15px;"></i>
+                        <span>Xem & In Phiếu Xác Nhận</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Bank Transfer Info Box (No QR Code) -->
+            <div style="background-color: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px;">
+                <div th:if="${latestDebt.conNo > 0}">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                        <i data-lucide="credit-card" style="width: 20px; height: 20px; color: var(--accent);"></i>
+                        <span style="font-weight: 700; font-size: 16px;">Thông Tin Chuyển Khoản Ngân Hàng</span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; background: #FFFFFF; border-radius: 12px; border: 1px solid var(--border-color); padding: 18px;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                            <span style="color: var(--text-secondary);">Ngân hàng thụ hưởng:</span>
+                            <strong>MB Bank (Ngân hàng Quân Đội)</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                            <span style="color: var(--text-secondary);">Tên chủ tài khoản:</span>
+                            <strong>TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP.HCM</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                            <span style="color: var(--text-secondary);">Số tài khoản:</span>
+                            <strong class="mono" style="font-size: 15px; color: #0284C7;">9999012345678</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px;">
+                            <span style="color: var(--text-secondary);">Số tiền cần nộp:</span>
+                            <strong class="mono" style="color: #DC2626; font-size: 15px;" th:text="${#numbers.formatDecimal(latestDebt.conNo, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">Cú pháp nội dung CK:</span>
+                            <strong class="mono" style="background: rgba(15, 23, 42, 0.06); padding: 2px 6px; border-radius: 4px;" th:text="${'HP ' + student.mssv + ' ' + latestDebt.hocKy.maHocKy}">HP 2180601234 2025_2</strong>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                        <form th:action="@{/Student/Tuition/PayOnline}" method="post" style="display: flex; flex-direction: column; gap: 10px;">
+                            <input type="hidden" name="congNoId" th:value="${latestDebt.id}">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <label class="form-label" style="font-size: 12px;">Số tiền thanh toán (VNĐ)</label>
+                                    <input type="number" name="soTien" th:value="${latestDebt.conNo}" min="50000" th:max="${latestDebt.conNo}" step="1000" required class="lux-input mono">
+                                </div>
+                                <div>
+                                    <label class="form-label" style="font-size: 12px;">Kênh thanh toán</label>
+                                    <select name="phuongThuc" class="lux-select">
+                                        <option value="VIETQR">VietQR Napas 247</option>
+                                        <option value="CHUYEN_KHOAN">Chuyển khoản ngân hàng</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-lux btn-lux-primary" style="justify-content: center;">
+                                <i data-lucide="check-circle" style="width: 15px; height: 15px;"></i>
+                                <span>Thanh Toán Trực Tuyến & Xuất Biên Lai Ngay</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div th:unless="${latestDebt.conNo > 0}" style="padding: 24px 12px; text-align: center;">
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(34, 197, 94, 0.1); color: #16A34A; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
+                        <i data-lucide="check" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <div style="font-weight: 700; font-size: 17px; margin-bottom: 6px;">Nghĩa Vụ Học Phí Hoàn Tất</div>
+                    <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px; margin: 0 auto;">
+                        Bạn không còn khoản nợ nào trong học kỳ này. Bạn có thể in biên lai điện tử để lưu hồ sơ cá nhân.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- History of All Semesters -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="history" style="width: 18px; height: 18px;"></i>
+                <span>Lịch Sử Công Nợ Học Phí Các Học Kỳ</span>
+            </div>
+            <div>
+                <span class="lux-badge" th:text="${debts != null ? debts.size() + ' Kỳ' : '0 Kỳ'}">0 Kỳ</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr>
+                    <th>Học Kỳ</th>
+                    <th>Năm Học</th>
+                    <th style="text-align: center;">Số TC</th>
+                    <th style="text-align: right;">Tổng Học Phí</th>
+                    <th style="text-align: right;">Đã Đóng</th>
+                    <th style="text-align: right;">Còn Nợ</th>
+                    <th style="text-align: center;">Trạng Thái</th>
+                    <th style="text-align: right;">Biên Lai</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="cn : ${debts}">
+                    <td>
+                        <span class="mono" style="font-weight: 700;" th:text="${cn.hocKy.tenHocKy}">Học kỳ 2</span>
+                        <div class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${cn.hocKy.maHocKy}">2024_2</div>
+                    </td>
+                    <td th:text="${cn.hocKy.namHoc}">2024-2025</td>
+                    <td class="mono" style="text-align: center; font-weight: 600;" th:text="${cn.tongSoTC}">6</td>
+                    <td class="mono" style="text-align: right;" th:text="${#numbers.formatDecimal(cn.tongHocPhi, 0, 'POINT', 0, 'POINT') + ' đ'}">3.630.000 đ</td>
+                    <td class="mono" style="text-align: right; color: #16A34A;" th:text="${#numbers.formatDecimal(cn.daDong, 0, 'POINT', 0, 'POINT') + ' đ'}">3.630.000 đ</td>
+                    <td class="mono" style="text-align: right; font-weight: 800;" th:text="${#numbers.formatDecimal(cn.conNo, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</td>
+                    <td style="text-align: center;">
+                        <span th:if="${cn.trangThai.name() == 'DA_HOAN_THANH'}" class="lux-badge" style="border-color: #22C55E; color: #16A34A; background: rgba(34, 197, 94, 0.08);">HOÀN TẤT</span>
+                        <span th:if="${cn.trangThai.name() == 'DONG_MOT_PHAN'}" class="lux-badge lux-badge-warning">MỘT PHẦN</span>
+                        <span th:if="${cn.trangThai.name() == 'CHUA_DONG'}" class="lux-badge lux-badge-danger">CHƯA ĐÓNG</span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <a th:href="@{'/Student/Receipts?congNoId=' + ${cn.id}}" class="btn-lux btn-lux-secondary btn-lux-sm" title="Xem các biên lai đã nộp của kỳ này">
+                            <i data-lucide="receipt" style="width: 13px; height: 13px;"></i>
+                            <span>Biên Lai</span>
+                        </a>
+                        <a th:href="@{'/Student/Tuition/PrintReceipt/' + ${cn.id}}" target="_blank" class="btn-lux btn-lux-secondary btn-lux-sm" title="In phiếu xác nhận học phí">
+                            <i data-lucide="printer" style="width: 13px; height: 13px;"></i>
+                            <span>In Phiếu</span>
+                        </a>
+                    </td>
+
+                </tr>
+                <tr th:if="${debts == null or debts.isEmpty()}">
+                    <td colspan="8">
+                        <div class="lux-empty-state">
+                            <i data-lucide="receipt" class="lux-empty-icon"></i>
+                            <div style="font-weight: 600;">Không có hồ sơ công nợ nào được ghi nhận.</div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

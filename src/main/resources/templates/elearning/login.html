@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập — HUIT E-Learning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --huit-blue: #005BAB;
+            --huit-blue-dark: #003E7E;
+            --huit-sky: #0284C7;
+            --border: #E2E8F0;
+            --text-main: #0F172A;
+            --text-sub: #475569;
+            --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            background: #F4F7FB;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        /* ==================== SPLASH SCREEN: NỀN TRẮNG LOGO HUIT ==================== */
+        #huit-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            cursor: pointer;
+            transition: opacity 0.55s ease, visibility 0.55s ease;
+        }
+        #huit-splash.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .splash-logo-wrap img {
+            width: 136px;
+            height: 136px;
+            object-fit: contain;
+            animation: splashPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .splash-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--huit-blue);
+        }
+        .splash-sub {
+            font-size: 12.5px;
+            color: #64748B;
+            margin-top: -10px;
+        }
+        .splash-bar {
+            width: 160px;
+            height: 3px;
+            background: #E2E8F0;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .splash-bar-fill {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, var(--huit-blue), var(--huit-sky));
+            animation: splashProgress 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes splashPop {
+            0% { opacity: 0; transform: scale(0.82); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes splashProgress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* ==================== LOGIN CARD ==================== */
+        .login-shell {
+            width: 100%;
+            max-width: 960px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.05fr 1fr;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+        }
+        .login-left {
+            background: linear-gradient(155deg, #003E7E 0%, #005BAB 55%, #0284C7 100%);
+            color: #FFFFFF;
+            padding: 40px 36px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+        .brand-badge {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+        }
+        .brand-badge-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #FFFFFF;
+            padding: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+            flex-shrink: 0;
+        }
+        .brand-badge-logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+        .login-left h1 {
+            font-size: 25px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 12px;
+        }
+        .login-left p {
+            font-size: 13.5px;
+            color: rgba(255, 255, 255, 0.86);
+            line-height: 1.65;
+            margin-bottom: 24px;
+        }
+        .feature-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.94);
+        }
+        .feature-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .back-sis-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 28px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #BAE6FD;
+            text-decoration: none;
+        }
+        .back-sis-link:hover { color: #FFFFFF; }
+
+        .login-right {
+            padding: 40px 38px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .login-right h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+        .login-right .sub {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 22px;
+        }
+        .sso-box {
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .sso-box-head {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--huit-blue);
+            margin-bottom: 6px;
+        }
+        .sso-user-line {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
+        .btn-sso {
+            width: 100%;
+            border: none;
+            background: var(--huit-blue);
+            color: #FFFFFF;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 700;
+            padding: 11px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-sso:hover { background: var(--huit-blue-dark); }
+
+        .divider {
+            text-align: center;
+            position: relative;
+            margin: 16px 0;
+            font-size: 11.5px;
+            color: #94A3B8;
+        }
+        .divider::before, .divider::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 34%;
+            height: 1px;
+            background: var(--border);
+        }
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .alert-err {
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #B91C1C;
+            font-size: 12.8px;
+            font-weight: 600;
+            padding: 10px 13px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid #CBD5E1;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13.5px;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .form-control:focus {
+            border-color: var(--huit-blue);
+            box-shadow: 0 0 0 3px rgba(0, 91, 171, 0.12);
+        }
+        .btn-primary {
+            width: 100%;
+            border: none;
+            background: linear-gradient(135deg, var(--huit-blue), var(--huit-sky));
+            color: #FFFFFF;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 12px 18px;
+            border-radius: 11px;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: opacity 0.15s ease;
+        }
+        .btn-primary:hover { opacity: 0.94; }
+
+        .demo-box {
+            margin-top: 22px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .demo-label {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #64748B;
+            margin-bottom: 8px;
+        }
+        .demo-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .demo-pill {
+            border: 1px solid var(--border);
+            background: #F8FAFC;
+            color: #334155;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .demo-pill:hover {
+            border-color: var(--huit-blue);
+            color: var(--huit-blue);
+            background: #EFF6FF;
+        }
+
+        @media (max-width: 820px) {
+            .login-shell { grid-template-columns: 1fr; }
+            .login-left { padding: 28px 26px; }
+            .login-right { padding: 28px 26px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== MÀN HÌNH CHỜ: NỀN TRẮNG LOGO HUIT ==================== -->
+<div id="huit-splash" th:if="${showSplash}" onclick="dismissSplash()" title="Nhấp để tiếp tục">
+    <div class="splash-logo-wrap">
+        <img th:src="@{/images/huit-round-logo.png}" alt="HUIT Logo">
+    </div>
+    <div class="splash-title">HUIT E-LEARNING</div>
+    <div class="splash-sub">Trường Đại Học Công Thương TP. Hồ Chí Minh</div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+</div>
+
+<div class="login-shell">
+    <!-- Left Institutional Showcase -->
+    <div class="login-left">
+        <div>
+            <div class="brand-badge">
+                <div class="brand-badge-logo">
+                    <img th:src="@{/images/huit-round-logo.png}" alt="HUIT Logo">
+                </div>
+                <div>
+                    <div style="font-size: 15px; font-weight: 800; letter-spacing: 0.04em;">HUIT E-LEARNING</div>
+                    <div style="font-size: 11.5px; color: rgba(255,255,255,0.82);">ĐH Công Thương TP. Hồ Chí Minh</div>
+                </div>
+            </div>
+
+            <h1>Cổng Học Tập Số Hóa &amp; Lộ Trình Khoa Học Dữ Liệu</h1>
+            <p>Sử dụng chung tài khoản <strong>Cổng Sinh viên HUIT (SIS)</strong> để truy cập bài giảng, đề cương học phần, chuẩn đầu ra CLO/PLO và thư viện tài liệu tham khảo.</p>
+
+            <ul class="feature-list">
+                <li>
+                    <span class="feature-dot">✓</span>
+                    <span>Đăng nhập liên kết tự động (SSO) từ Cổng Sinh viên HUIT</span>
+                </li>
+                <li>
+                    <span class="feature-dot">✓</span>
+                    <span>10 học phần cốt lõi chuẩn CTĐT Khoa học Dữ liệu 2024</span>
+                </li>
+                <li>
+                    <span class="feature-dot">✓</span>
+                    <span>Tra cứu kỹ năng nghề nghiệp, CLO/PLO và giáo trình trực quan</span>
+                </li>
+            </ul>
+        </div>
+
+        <a th:href="@{/Account/Login}" class="back-sis-link">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            <span>Quay lại Cổng Thông Tin Sinh Viên HUIT</span>
+        </a>
+    </div>
+
+    <!-- Right Auth Form -->
+    <div class="login-right">
+        <h2>Đăng nhập E-Learning</h2>
+        <p class="sub">Dành riêng cho <strong>Sinh viên HUIT</strong> — sử dụng tài khoản Cổng Sinh viên.</p>
+
+        <!-- 1-click SSO link if already logged into SIS -->
+        <div class="sso-box" th:if="${existingSisUser != null}">
+            <div class="sso-box-head">LIÊN KẾT PHIÊN CỔNG SINH VIÊN HUIT</div>
+            <div class="sso-user-line" th:text="${existingSisUser.hoTen + ' (' + existingSisUser.maDinhDanh + ')'}">Trần Thị Hoa (2180609999)</div>
+            <form th:action="@{/ELearning/SsoLink}" method="post">
+                <button type="submit" class="btn-sso">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+                    <span>Tiếp tục bằng tài khoản đã liên kết</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="divider" th:if="${existingSisUser != null}">hoặc đăng nhập tài khoản sinh viên khác</div>
+
+        <div class="alert-err" th:if="${error != null}" th:text="${error}">Thông báo lỗi</div>
+
+        <form th:action="@{/ELearning/Login}" method="post">
+            <div class="form-group">
+                <label for="identifier">MSSV / Email sinh viên HUIT</label>
+                <input id="identifier" name="identifier" type="text" class="form-control" required placeholder="VD: 2180609999 hoặc sv@huit.edu.vn">
+            </div>
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <input id="password" name="password" type="password" class="form-control" required placeholder="Nhập mật khẩu">
+            </div>
+            <button type="submit" class="btn-primary">Đăng nhập vào E-Learning</button>
+        </form>
+
+        <div class="demo-box">
+            <div class="demo-label">Điền nhanh tài khoản sinh viên dùng thử (mật khẩu: 123456):</div>
+            <div class="demo-pills">
+                <button type="button" class="demo-pill" onclick="fillDemo('2180609999')">SV: 2180609999</button>
+                <button type="button" class="demo-pill" onclick="fillDemo('2180601234')">SV: 2180601234</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function dismissSplash() {
+        var el = document.getElementById('huit-splash');
+        if (el) el.classList.add('hide');
+    }
+    function fillDemo(id) {
+        document.getElementById('identifier').value = id;
+        document.getElementById('password').value = '123456';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        var el = document.getElementById('huit-splash');
+        if (el) {
+            setTimeout(dismissSplash, 1350);
+        }
+    });
+</script>
+</body>
+</html>

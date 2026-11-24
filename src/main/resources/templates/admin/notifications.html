@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Thông Báo Toàn Trường & Phản Hồi - Admin</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">TRUYỀN THÔNG NỘI BỘ</span>
+                <span class="lux-badge">BROADCAST TOÀN TRƯỜNG • PHẢN HỒI SV • MỘT CỬA</span>
+            </div>
+            <h1 class="page-title">Thông Báo Toàn Trường & Xử Lý Phản Hồi</h1>
+            <p class="page-desc">Gửi thông báo vào hộp thư của toàn bộ Sinh viên & Giảng viên, trả lời kiến nghị và duyệt yêu cầu Dịch vụ một cửa</p>
+        </div>
+    </div>
+
+    <div class="split-layout" style="margin-bottom: 22px;">
+        <!-- Gửi thông báo toàn trường -->
+        <div class="lux-card" style="margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title"><i data-lucide="megaphone" style="width: 18px; height: 18px;"></i><span>Phát Thông Báo Toàn Trường (Broadcast)</span></div>
+            </div>
+            <form th:action="@{/Admin/Notifications/Broadcast}" method="post" style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label class="form-label">Đối Tượng Nhận Thông Báo *</label>
+                    <select name="targetGroup" class="lux-select">
+                        <option value="ALL">Toàn trường (Tất cả Sinh viên & Giảng viên)</option>
+                        <option value="SINH_VIEN">Chỉ toàn bộ Sinh viên</option>
+                        <option value="GIANG_VIEN">Chỉ toàn bộ Giảng viên & Cố vấn</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Tiêu Đề Thông Báo *</label>
+                    <input type="text" name="tieuDe" required placeholder="VD: Thông báo lịch nghỉ lễ / lịch thi cuối kỳ..." class="lux-input">
+                </div>
+                <div>
+                    <label class="form-label">Nội Dung Thông Báo *</label>
+                    <textarea name="noiDung" rows="5" required placeholder="Nhập nội dung chính thức từ Phòng Đào Tạo..." class="lux-input"></textarea>
+                </div>
+                <button type="submit" class="btn-lux btn-lux-primary" style="justify-content: center;">
+                    <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                    <span>Bắn Thông Báo Vào Hộp Thư Ngay</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Hộp thư phản hồi từ SV & GV -->
+        <div class="lux-card" style="margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title"><i data-lucide="inbox" style="width: 18px; height: 18px;"></i><span>Hộp Thư Admin & Phản Hồi Từ Sinh Viên / Giảng Viên</span></div>
+            </div>
+            <div class="inbox-list" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
+                <div th:each="f : ${feedbacks}" class="inbox-item" th:classappend="${!f.daDoc} ? 'unread'">
+                    <div class="inbox-item-header">
+                        <div class="inbox-item-title-wrap">
+                            <span class="lux-badge lux-badge-solid" th:text="${f.loaiThongBao.label}">Phản hồi</span>
+                            <span class="inbox-item-title" th:text="${f.tieuDe}">Phản hồi</span>
+                        </div>
+                    </div>
+                    <p class="inbox-item-body" th:text="${f.noiDung}">Nội dung</p>
+                    <div class="inbox-item-footer" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                        <div class="inbox-item-meta"
+                             th:text="${(f.nguoiGui != null ? f.nguoiGui.hoTen + ' (' + f.nguoiGui.maDinhDanh + ')' : 'Hệ thống') + ' • ' + #temporals.format(f.ngayGui, 'dd/MM/yyyy HH:mm')}">SV</div>
+                        <form th:if="${f.nguoiGui != null}" th:action="@{/Admin/Notifications/Reply}" method="post" style="display: flex; gap: 8px;">
+                            <input type="hidden" name="recipientId" th:value="${f.nguoiGui.id}">
+                            <input type="hidden" name="tieuDe" th:value="${f.tieuDe}">
+                            <input type="text" name="noiDung" required placeholder="Nhập nội dung phản hồi trực tiếp..." class="lux-input" style="padding: 7px 11px; font-size: 13px;">
+                            <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm" style="white-space: nowrap;">Trả lời</button>
+                        </form>
+                    </div>
+                </div>
+                <div th:if="${feedbacks == null or feedbacks.isEmpty()}" class="lux-empty-state">Chưa có phản hồi hoặc thông báo đến.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Xử lý đơn dịch vụ một cửa -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title"><i data-lucide="file-check" style="width: 18px; height: 18px;"></i><span>Duyệt Yêu Cầu Dịch Vụ Một Cửa (Giấy Xác Nhận, Bảng Điểm...)</span></div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead><tr><th>MSSV</th><th>Sinh Viên</th><th>Loại Dịch Vụ</th><th>Lý Do</th><th>Trạng Thái</th><th style="text-align: right;">Xử Lý</th></tr></thead>
+                <tbody>
+                <tr th:each="yc : ${oneStopRequests}">
+                    <td class="mono" style="font-weight: 700;" th:text="${yc.sinhVien.mssv}">2180601234</td>
+                    <td th:text="${yc.sinhVien.nguoiDung.hoTen}">SV</td>
+                    <td><span class="lux-badge" th:text="${yc.loaiDichVu}">GIAY_XAC_NHAN</span></td>
+                    <td style="font-size: 12.5px;" th:text="${yc.lyDo}">Lý do</td>
+                    <td><span class="lux-badge lux-badge-solid" th:text="${yc.trangThai}">CHO_DUYET</span></td>
+                    <td style="text-align: right;">
+                        <form th:action="@{'/Admin/OneStop/' + ${yc.id} + '/Process'}" method="post" style="display: inline-flex; gap: 6px;">
+                            <select name="status" class="lux-select" style="padding: 5px; font-size: 12px;">
+                                <option value="DA_DUYET">Duyệt</option>
+                                <option value="DANG_XU_LY">Đang xử lý</option>
+                                <option value="TU_CHOI">Từ chối</option>
+                            </select>
+                            <input type="text" name="phanHoi" placeholder="Phản hồi..." class="lux-input" style="width: 140px; padding: 5px; font-size: 12px;">
+                            <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm">Cập nhật</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

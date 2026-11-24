@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Chương Trình Khung Đào Tạo - HUIT</title>
+    <style>
+        .curriculum-hero {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            color: #FFFFFF;
+            margin-bottom: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .curriculum-hero::after {
+            content: "";
+            position: absolute;
+            right: -20px;
+            top: -20px;
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .knowledge-block-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+        .knowledge-block-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .semester-tab-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .semester-tab-btn.active, .semester-tab-btn:hover {
+            background: var(--uit-blue-primary);
+            color: #FFFFFF;
+            border-color: var(--uit-blue-primary);
+        }
+        .course-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+        .status-passed {
+            background: rgba(34, 197, 94, 0.12);
+            color: #16A34A;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .status-taking {
+            background: rgba(14, 165, 233, 0.12);
+            color: #0284C7;
+            border: 1px solid rgba(14, 165, 233, 0.3);
+        }
+        .status-pending {
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .app-sidebar, .app-topbar, .uit-topbar-strip { display: none !important; }
+            .app-content { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+            .curriculum-hero { background: white !important; color: black !important; border: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Page Header & Actions -->
+    <div class="page-header no-print">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">HỌC CHẾ TÍN CHỈ</span>
+                <span class="lux-badge" style="border-color: var(--uit-blue-soft); color: var(--uit-blue-primary); background: var(--uit-blue-light);">
+                    <i data-lucide="graduation-cap" style="width: 12px; height: 12px;"></i>
+                    HỆ ĐẠI HỌC CHÍNH QUY - HUIT
+                </span>
+            </div>
+            <h1 class="page-title">Chương Trình Khung & Kế Hoạch Đào Tạo</h1>
+            <p class="page-desc">Chương trình đào tạo Cử nhân Khoa học Dữ liệu (HUIT) - Cấu trúc 8 học kỳ theo chuẩn Đề án mở ngành</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.print()" class="btn-lux btn-lux-secondary">
+                <i data-lucide="printer" style="width: 15px; height: 15px;"></i>
+                <span>In Bản Kế Hoạch</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Curriculum Hero Banner -->
+    <div class="curriculum-hero">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px;">
+            <div>
+                <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: #94A3B8; margin-bottom: 6px; font-weight: 700;">
+                    TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG THÀNH PHỐ HỒ CHÍ MINH (HUIT) • KHOA CNTT
+                </div>
+                <h2 style="font-size: 26px; font-weight: 800; margin: 0 0 10px 0; color: #FFFFFF;">
+                    Ngành Khoa Học Dữ Liệu (Data Science)
+                </h2>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: #CBD5E1;">
+                    <div><i data-lucide="hash" style="width: 13px; height: 13px; vertical-align: -2px; color: #38BDF8;"></i> Mã ngành: <strong style="color: #FFFFFF;">7480109</strong></div>
+                    <div><i data-lucide="clock" style="width: 13px; height: 13px; vertical-align: -2px; color: #38BDF8;"></i> Thời gian: <strong style="color: #FFFFFF;">4 năm (8 Học kỳ chính)</strong></div>
+                    <div><i data-lucide="layers" style="width: 13px; height: 13px; vertical-align: -2px; color: #38BDF8;"></i> Khối lượng: <strong style="color: #FFFFFF;" th:text="${totalRequiredCredits + ' Tín chỉ'}">123 Tín chỉ</strong></div>
+                    <div><i data-lucide="user" style="width: 13px; height: 13px; vertical-align: -2px; color: #38BDF8;"></i> Sinh viên: <strong style="color: #FFFFFF;" th:text="${student.nguoiDung.hoTen + ' (' + student.mssv + ')'}">Nguyễn Minh Khoa</strong></div>
+                    <div><i data-lucide="users" style="width: 13px; height: 13px; vertical-align: -2px; color: #38BDF8;"></i> Lớp: <strong style="color: #FFFFFF;" th:text="${student.lopDanhNghia != null ? student.lopDanhNghia.maLop : '15DHKHDL03'}">15DHKHDL03</strong></div>
+                </div>
+            </div>
+
+            <!-- Graduation Progress Dial -->
+            <div style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--radius-lg); padding: 18px 24px; min-width: 220px; text-align: center;">
+                <div style="font-size: 12px; color: #94A3B8; text-transform: uppercase; font-weight: 700; margin-bottom: 6px;">Tiến Độ Tích Lũy</div>
+                <div style="font-size: 32px; font-weight: 900; color: #38BDF8; line-height: 1.1;">
+                    <span th:text="${totalPassedCredits}">40</span><span style="font-size: 18px; color: #94A3B8;">/<span th:text="${totalRequiredCredits}">123</span> TC</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.2); border-radius: 3px; margin: 10px 0 6px 0; overflow: hidden;">
+                    <div th:style="'height: 100%; background: #38BDF8; width: ' + ${progressPercentage} + '%; transition: width 0.5s ease;'"></div>
+                </div>
+                <div style="font-size: 12px; color: #E2E8F0; font-weight: 600;" th:text="${'Hoàn thành ' + progressPercentage + '% chương trình'}">
+                    Hoàn thành 33% chương trình
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 Knowledge Structure Blocks (Theo Đề án HUIT trang 6) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 28px;">
+        <div class="knowledge-block-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Khối I • Đại Cương</span>
+                <span class="mono" style="font-weight: 700; color: var(--uit-blue-primary);">35.8%</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">44 Tín chỉ</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Toán, Tin học cơ bản, Lý luận chính trị, Ngoại ngữ & Kỹ năng</div>
+        </div>
+
+        <div class="knowledge-block-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Khối II • Cơ Sở Ngành</span>
+                <span class="mono" style="font-weight: 700; color: var(--uit-blue-primary);">35.8%</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">44 Tín chỉ</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">OOP, CTDL&GT, CSDL, Thống kê chuyên sâu, Học máy, Xử lý dữ liệu</div>
+        </div>
+
+        <div class="knowledge-block-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Khối III • Chuyên Ngành</span>
+                <span class="mono" style="font-weight: 700; color: var(--uit-blue-primary);">18.7%</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">23 Tín chỉ</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Big Data, Deep Learning, Hệ khuyến nghị, Đồ án KHDL 1 & 2</div>
+        </div>
+
+        <div class="knowledge-block-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Khối IV • Tốt Nghiệp</span>
+                <span class="mono" style="font-weight: 700; color: var(--uit-blue-primary);">9.7%</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">12 Tín chỉ</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Thực tập doanh nghiệp (2 TC) & Khóa luận tốt nghiệp (10 TC)</div>
+        </div>
+    </div>
+
+    <!-- Filter by Semester Tabs -->
+    <div class="no-print" style="margin-bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 13px; font-weight: 700; color: var(--text-secondary); margin-right: 4px;">Xem Học Kỳ:</span>
+        <a th:href="@{/Student/Curriculum}" class="semester-tab-btn" th:classappend="${selectedSemester == null} ? 'active' : ''">
+            <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+            <span>Tất Cả 8 Học Kỳ (123 TC)</span>
+        </a>
+        <th:block th:each="semNum : ${#numbers.sequence(1, 8)}">
+            <a th:href="@{'/Student/Curriculum?hocKy=' + ${semNum}}" class="semester-tab-btn"
+               th:classappend="${selectedSemester == semNum} ? 'active' : ''"
+               th:text="${'Học Kỳ ' + semNum}">
+                Học Kỳ 1
+            </a>
+        </th:block>
+    </div>
+
+    <!-- Semester Course Tables Loop -->
+    <div style="display: flex; flex-direction: column; gap: 28px;">
+        <div th:each="entry : ${curriculumBySemester}"
+             th:if="${selectedSemester == null or selectedSemester == entry.key}"
+             class="lux-card" style="padding: 0; overflow: hidden;">
+
+            <!-- Semester Card Header -->
+            <div style="background-color: var(--bg-subtle); padding: 18px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: var(--uit-blue-primary); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px;">
+                        <span th:text="${entry.key}">1</span>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 16px; color: var(--text-primary);"
+                             th:text="${'HỌC KỲ ' + entry.key + ' (NĂM THỨ ' + ((entry.key + 1) / 2) + ')'}">
+                            HỌC KỲ 1
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted);"
+                             th:text="${'Kế hoạch đào tạo chuẩn ngành Khoa Học Dữ Liệu HUIT • ' + entry.value.size() + ' Môn học'}">
+                            Kế hoạch đào tạo chuẩn
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="lux-badge mono" style="font-weight: 700; background: #FFFFFF; font-size: 13px;"
+                          th:text="${'Tổng: ' + #aggregates.sum(entry.value.![hocPhan.tongTinChi]) + ' Tín Chỉ'}">
+                        Tổng: 19 Tín Chỉ
+                    </span>
+                </div>
+            </div>
+
+            <!-- Table of Courses in this Semester -->
+            <div class="table-container" style="margin: 0; border: none; border-radius: 0;">
+                <table class="lux-table">
+                    <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;">STT</th>
+                        <th style="width: 110px;">Mã Môn</th>
+                        <th>Tên Môn Học / Học Phần</th>
+                        <th style="text-align: center; width: 100px;">Tín Chỉ</th>
+                        <th style="text-align: center; width: 120px;">Phân Bổ</th>
+                        <th style="text-align: center; width: 120px;">Loại Môn</th>
+                        <th style="width: 200px;">Môn Tiên Quyết</th>
+                        <th style="text-align: right; width: 180px;">Tình Trạng Sinh Viên</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="kct, stat : ${entry.value}">
+                        <td style="text-align: center; font-weight: 600; color: var(--text-muted);" th:text="${stat.count}">1</td>
+                        <td>
+                            <strong class="mono" style="color: var(--uit-blue-primary);" th:text="${kct.hocPhan.maHP}">IT001</strong>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: var(--text-primary);" th:text="${kct.hocPhan.tenHP}">Nhập môn Lập trình</div>
+                            <div th:if="${kct.hocPhan.soTCThucHanh > 0}" style="font-size: 11px; color: var(--text-muted);">
+                                <i data-lucide="cpu" style="width: 11px; height: 11px; vertical-align: -1px;"></i> Có thực hành Phòng Lab HUIT
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="mono" style="font-weight: 800; font-size: 14px;" th:text="${kct.hocPhan.tongTinChi + ' TC'}">4 TC</span>
+                        </td>
+                        <td style="text-align: center; font-size: 12px; color: var(--text-secondary);" class="mono">
+                            <span th:text="${kct.hocPhan.soTCLyThuyet + ' LT'}">3 LT</span> + 
+                            <span th:text="${kct.hocPhan.soTCThucHanh + ' TH'}">1 TH</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span th:if="${kct.batBuoc}" class="lux-badge" style="font-size: 10.5px;">Bắt Buộc</span>
+                            <span th:unless="${kct.batBuoc}" class="lux-badge lux-badge-warning" style="font-size: 10.5px;">Tự Chọn</span>
+                        </td>
+                        <td style="font-size: 12px;">
+                            <div th:if="${prereqMap != null and prereqMap.containsKey(kct.hocPhan.id)}">
+                                <span th:each="pr : ${prereqMap.get(kct.hocPhan.id)}" class="lux-badge mono" style="font-size: 10px; margin-bottom: 2px; display: inline-block;" th:text="${pr}">
+                                    IT001
+                                </span>
+                            </div>
+                            <span th:unless="${prereqMap != null and prereqMap.containsKey(kct.hocPhan.id)}" style="color: var(--text-muted); font-size: 11.5px;">
+                                —
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <!-- Đã học và qua môn -->
+                            <div th:if="${gradeByCourseId != null and gradeByCourseId.containsKey(kct.hocPhan.id) and gradeByCourseId.get(kct.hocPhan.id).ketQuaQuaMon != null and gradeByCourseId.get(kct.hocPhan.id).ketQuaQuaMon}">
+                                <span class="course-status-badge status-passed">
+                                    <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
+                                    <span>ĐÃ ĐẠT</span>
+                                    <span class="mono" th:text="${'(' + (gradeByCourseId.get(kct.hocPhan.id).diemTongKetHe10 != null ? gradeByCourseId.get(kct.hocPhan.id).diemTongKetHe10 : '—') + ' • ' + (gradeByCourseId.get(kct.hocPhan.id).diemChu != null ? gradeByCourseId.get(kct.hocPhan.id).diemChu : '—') + ')'}">
+                                        (9.0 • A)
+                                    </span>
+                                </span>
+                            </div>
+
+                            <!-- Đã học nhưng chưa đạt (rớt môn) -->
+                            <div th:if="${gradeByCourseId != null and gradeByCourseId.containsKey(kct.hocPhan.id) and (gradeByCourseId.get(kct.hocPhan.id).ketQuaQuaMon == null or !gradeByCourseId.get(kct.hocPhan.id).ketQuaQuaMon)}">
+                                <span class="course-status-badge status-failed" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;">
+                                    <i data-lucide="x-circle" style="width: 12px; height: 12px;"></i>
+                                    <span>CHƯA ĐẠT</span>
+                                    <span class="mono" th:text="${'(' + (gradeByCourseId.get(kct.hocPhan.id).diemTongKetHe10 != null ? gradeByCourseId.get(kct.hocPhan.id).diemTongKetHe10 : '0.0') + ' • ' + (gradeByCourseId.get(kct.hocPhan.id).diemChu != null ? gradeByCourseId.get(kct.hocPhan.id).diemChu : 'F') + ')'}">
+                                        (3.0 • F)
+                                    </span>
+                                </span>
+                            </div>
+
+                            <!-- Đang học kỳ này -->
+                            <div th:if="${(gradeByCourseId == null or !gradeByCourseId.containsKey(kct.hocPhan.id)) and takingCourseIds != null and takingCourseIds.contains(kct.hocPhan.id)}">
+                                <span class="course-status-badge status-taking">
+                                    <i data-lucide="loader" style="width: 12px; height: 12px;"></i>
+                                    <span>ĐANG HỌC KỲ NÀY</span>
+                                </span>
+                            </div>
+
+                            <!-- Chưa học -->
+                            <div th:if="${(gradeByCourseId == null or !gradeByCourseId.containsKey(kct.hocPhan.id)) and (takingCourseIds == null or !takingCourseIds.contains(kct.hocPhan.id))}">
+                                <span class="course-status-badge status-pending">
+                                    <i data-lucide="circle" style="width: 11px; height: 11px;"></i>
+                                    <span>Chưa tích lũy</span>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

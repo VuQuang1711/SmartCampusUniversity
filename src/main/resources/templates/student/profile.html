@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Thông Tin Sinh Viên</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">HỒ SƠ & CHỨNG CHỈ</span>
+                <span class="lux-badge mono" th:text="${'MSSV: ' + student.mssv}">2180601234</span>
+            </div>
+            <h1 class="page-title">Hồ Sơ Lý Lịch Sinh Viên</h1>
+            <p class="page-desc">Thông tin học vụ chính thức, lớp danh nghĩa, khoa đào tạo và thông tin Cố vấn học tập</p>
+        </div>
+        <a th:href="@{/Student/Certificates}" class="btn-lux btn-lux-primary">
+            <i data-lucide="file-badge" style="width: 15px; height: 15px;"></i>
+            <span>Quản Lý Chứng Chỉ (PDF)</span>
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px;">
+        <!-- Thông tin học vụ -->
+        <div class="lux-card" style="padding: 24px;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="graduation-cap" style="width: 18px; height: 18px;"></i>
+                    <span>Thông Tin Học Vụ</span>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Họ và tên:</span>
+                    <strong th:text="${student.nguoiDung.hoTen}">Nguyễn Minh Khoa</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Mã số sinh viên:</span>
+                    <strong class="mono" th:text="${student.mssv}">2180601234</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Email trường cấp:</span>
+                    <strong class="mono" th:text="${student.nguoiDung.email}">2180601234@sinhvien.sis.edu.vn</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Lớp danh nghĩa:</span>
+                    <strong class="mono" th:text="${student.lopDanhNghia != null ? student.lopDanhNghia.maLop : 'Chưa phân lớp'}">15DHKHDL03</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Khoa quản lý:</span>
+                    <strong th:text="${student.nganhHoc.khoa.tenKhoa}">Khoa CNTT</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Ngành đào tạo:</span>
+                    <strong th:text="${student.nganhHoc.tenNganh}">Khoa Học Dữ Liệu</strong>
+                </div>
+                <div th:if="${student.chuyenNganh != null and student.chuyenNganh.nganhHoc.id == student.nganhHoc.id}" style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Chuyên ngành:</span>
+                    <strong th:text="${student.chuyenNganh.tenChuyenNganh}">Phân Tích Dữ Liệu</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                    <span style="color: var(--text-secondary);">Khóa tuyển sinh:</span>
+                    <strong class="mono" th:text="${'Khóa ' + student.khoaTuyenSinh}">Khóa 2023</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">Cố vấn học tập:</span>
+                    <strong style="color: var(--uit-blue-primary);"
+                            th:text="${student.lopDanhNghia != null and student.lopDanhNghia.coVanHocTap != null ? (student.lopDanhNghia.coVanHocTap.tenDayDu + ' (' + student.lopDanhNghia.coVanHocTap.nguoiDung.email + ')') : 'Chưa phân công'}">PGS.TS Nguyễn Văn An</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cập nhật lý lịch liên hệ -->
+        <div class="lux-card" style="padding: 24px;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="user-pen" style="width: 18px; height: 18px;"></i>
+                    <span>Lý Lịch Cá Nhân & Liên Hệ</span>
+                </div>
+            </div>
+            <form th:action="@{/Student/Profile/Update}" method="post" style="display: flex; flex-direction: column; gap: 14px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label class="form-label">Ngày sinh</label>
+                        <input type="text" class="lux-input mono" th:value="${student.ngaySinh != null ? #temporals.format(student.ngaySinh, 'dd/MM/yyyy') : 'N/A'}" disabled>
+                    </div>
+                    <div>
+                        <label class="form-label">Giới tính</label>
+                        <input type="text" class="lux-input" th:value="${student.gioiTinh != null ? student.gioiTinh : 'N/A'}" disabled>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Số điện thoại liên hệ</label>
+                    <input type="text" name="soDienThoai" class="lux-input mono" th:value="${student.nguoiDung.soDienThoai}" placeholder="Nhập số điện thoại...">
+                </div>
+                <div>
+                    <label class="form-label">Nơi sinh</label>
+                    <input type="text" name="noiSinh" class="lux-input" th:value="${student.noiSinh}" placeholder="Tỉnh / Thành phố">
+                </div>
+                <div>
+                    <label class="form-label">Địa chỉ liên hệ hiện tại</label>
+                    <input type="text" name="diaChi" class="lux-input" th:value="${student.diaChi}" placeholder="Số nhà, đường, quận/huyện...">
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
+                    <button type="submit" class="btn-lux btn-lux-primary">
+                        <i data-lucide="save" style="width: 15px; height: 15px;"></i>
+                        <span>Cập Nhật Thông Tin</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Hộp Thư Sinh Viên</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">Hộp thư sinh viên</span>
+                <span class="lux-badge lux-badge-danger" th:if="${unreadInboxCount > 0}" th:text="${unreadInboxCount + ' thư chưa đọc'}">2 chưa đọc</span>
+            </div>
+            <h1 class="page-title">Hộp Thư Thông Báo & Phản Hồi</h1>
+            <p class="page-desc">Nhận thông báo đổi lịch học, kết quả duyệt chứng chỉ, nhắc nợ học phí, thông báo từ giảng viên và gửi đơn phản hồi</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <form th:action="@{/Student/Inbox/ReadAll}" method="post">
+                <button type="submit" class="btn-lux btn-lux-secondary">
+                    <i data-lucide="check-check" style="width: 15px; height: 15px;"></i>
+                    <span>Đánh Dấu Đã Đọc Hết</span>
+                </button>
+            </form>
+            <a th:href="@{/Student/OneStop}" class="btn-lux btn-lux-primary">
+                <i data-lucide="file-check" style="width: 15px; height: 15px;"></i>
+                <span>Đơn Dịch Vụ Một Cửa</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Bộ lọc theo loại thông báo -->
+    <div class="tab-bar">
+        <a th:href="@{/Student/Inbox(filter='ALL')}" class="tab-btn" th:classappend="${selectedFilter == 'ALL'} ? 'active'">Tất cả</a>
+        <a th:href="@{/Student/Inbox(filter='DOI_LICH')}" class="tab-btn" th:classappend="${selectedFilter == 'DOI_LICH'} ? 'active'">Đổi lịch học</a>
+        <a th:href="@{/Student/Inbox(filter='CHUNG_CHI')}" class="tab-btn" th:classappend="${selectedFilter == 'CHUNG_CHI'} ? 'active'">Chứng chỉ</a>
+        <a th:href="@{/Student/Inbox(filter='HOC_PHI')}" class="tab-btn" th:classappend="${selectedFilter == 'HOC_PHI'} ? 'active'">Học phí</a>
+        <a th:href="@{/Student/Inbox(filter='LOP_HOC_PHAN')}" class="tab-btn" th:classappend="${selectedFilter == 'LOP_HOC_PHAN'} ? 'active'">Từ Giảng viên</a>
+        <a th:href="@{/Student/Inbox(filter='TOAN_TRUONG')}" class="tab-btn" th:classappend="${selectedFilter == 'TOAN_TRUONG'} ? 'active'">Toàn trường</a>
+    </div>
+
+    <div class="split-layout">
+        <!-- Danh sách thư đến -->
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="inbox" style="width: 18px; height: 18px;"></i>
+                    <span>Hộp Thư Đến</span>
+                </div>
+                <span class="lux-badge" th:text="${messages != null ? messages.size() + ' thông báo' : '0 thông báo'}">0</span>
+            </div>
+            <div class="inbox-list">
+                <div th:each="m : ${messages}" class="inbox-item" th:classappend="${!m.daDoc} ? 'unread'">
+                    <div class="inbox-item-header">
+                        <div class="inbox-item-title-wrap">
+                            <span class="lux-badge lux-badge-solid" th:text="${m.loaiThongBao.label}">Hệ thống</span>
+                            <span class="inbox-item-title" th:text="${m.tieuDe}">Tiêu đề</span>
+                        </div>
+                        <span th:if="${!m.daDoc}" class="lux-badge lux-badge-danger">Chưa đọc</span>
+                        <span th:if="${m.daDoc}" class="lux-badge">Đã đọc</span>
+                    </div>
+                    <p class="inbox-item-body" th:text="${m.noiDung}">Nội dung</p>
+                    <div class="inbox-item-footer">
+                        <span class="inbox-item-meta"
+                              th:text="${(m.nguoiGui != null ? m.nguoiGui.hoTen : 'Hệ thống tự động') + ' • ' + #temporals.format(m.ngayGui, 'dd/MM/yyyy HH:mm')}">Admin</span>
+                        <div class="inbox-item-actions">
+                            <a th:if="${m.lienKet != null and !m.lienKet.isEmpty()}" th:href="${m.lienKet}" class="btn-lux btn-lux-secondary btn-lux-sm">Mở trang liên quan</a>
+                            <form th:if="${!m.daDoc}" th:action="@{'/Student/Inbox/Read/' + ${m.id}}" method="post">
+                                <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm">Đã đọc</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${messages == null or messages.isEmpty()}" class="lux-empty-state">
+                    <i data-lucide="mail-open" class="lux-empty-icon"></i>
+                    <div>Không có thông báo nào trong mục này.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gửi phản hồi / đơn từ tới Phòng Đào Tạo -->
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+                    <span>Gửi Phản Hồi / Đơn Từ Lên Admin</span>
+                </div>
+            </div>
+            <form th:action="@{/Student/Inbox/SendFeedback}" method="post" style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label class="form-label">Tiêu Đề Phản Hồi / Kiến Nghị *</label>
+                    <input type="text" name="tieuDe" required placeholder="VD: Đề nghị kiểm tra điểm phúc khảo / công nợ..." class="lux-input">
+                </div>
+                <div>
+                    <label class="form-label">Nội Dung Chi Tiết *</label>
+                    <textarea name="noiDung" rows="5" required placeholder="Trình bày rõ mã môn học, học kỳ hoặc vấn đề cần hỗ trợ..." class="lux-input" style="resize: vertical;"></textarea>
+                </div>
+                <button type="submit" class="btn-lux btn-lux-primary" style="justify-content: center;">
+                    <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                    <span>Gửi Tới Phòng Đào Tạo</span>
+                </button>
+            </form>
+
+            <div th:if="${sentMessages != null and !sentMessages.isEmpty()}" style="margin-top: 22px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 10px;">Thư bạn đã gửi gần đây</div>
+                <div class="inbox-list" style="gap: 10px;">
+                    <div th:each="s : ${sentMessages}" class="inbox-item" style="padding: 12px 14px;">
+                        <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);" th:text="${s.tieuDe}">Tiêu đề</div>
+                        <div class="inbox-item-meta" style="margin-top: 4px;" th:text="${#temporals.format(s.ngayGui, 'dd/MM/yyyy HH:mm')}">Time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

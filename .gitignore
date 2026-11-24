@@ -1,0 +1,45 @@
+# Maven / Build output
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE & Editor
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated
+.sts4-cache
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+hs_err_pid*
+replay_pid*
+
+# Runtime uploads & local binaries (too large for Git)
+uploads/
+*.exe
+cloudflared*
+
+# Tool-generated folders
+.github/modernize/

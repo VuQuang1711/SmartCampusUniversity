@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Điểm Danh Lớp Học Phần</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">QUẢN LÝ ĐÀO TẠO</span>
+                <span class="lux-badge lux-badge-danger">
+                    <i data-lucide="shield-alert" style="width: 12px; height: 12px;"></i>
+                    VẮNG > 20% CẤM THI
+                </span>
+            </div>
+            <h1 class="page-title">Sổ Điểm Danh & Kiểm Soát Cấm Thi</h1>
+            <p class="page-desc">Hệ thống tự động tích lũy số tiết vắng mặt. Khi vượt ngưỡng 20% tổng số tiết học, hệ thống tự động khóa điểm thi = 0.0</p>
+        </div>
+    </div>
+
+    <!-- Class & Date Selection -->
+    <div class="lux-card" style="padding: 22px;">
+        <form th:action="@{/Faculty/Attendance}" method="get" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 280px;">
+                <label class="form-label">
+                    <i data-lucide="book-open" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+                    Chọn Lớp Học Phần
+                </label>
+                <select name="lopHocPhanId" required class="lux-select">
+                    <option value="" disabled th:selected="${selectedClass == null}">-- Chọn lớp học phần --</option>
+                    <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.maLHP + ' - ' + c.hocPhan.tenHP + ' (HK ' + c.hocKy.maHocKy + ')'}" th:selected="${selectedClass != null and selectedClass.id == c.id}">INT1405_01</option>
+                </select>
+            </div>
+
+            <div style="min-width: 180px;">
+                <label class="form-label">
+                    <i data-lucide="calendar" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+                    Ngày Buổi Học
+                </label>
+                <input type="date" name="date" th:value="${currentDate}" class="lux-input">
+            </div>
+
+            <button type="submit" class="btn-lux btn-lux-primary">
+                <i data-lucide="filter" style="width: 15px; height: 15px;"></i>
+                <span>Tải Bảng Điểm Danh</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Attendance Sheet -->
+    <div class="lux-card" th:if="${selectedClass != null}">
+        <div class="card-heading">
+            <div>
+                <div class="card-heading-title">
+                    <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                    <span th:text="${'Lớp: ' + selectedClass.maLHP + ' • ' + selectedClass.hocPhan.tenHP}">INT1405_01</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                    Buổi học ngày: <strong class="mono" th:text="${currentDate}">21/10/2026</strong> • Sĩ số: <strong class="mono" th:text="${enrollments != null ? enrollments.size() : 0}">42</strong> sinh viên
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" onclick="document.querySelectorAll('select[name^=status_]').forEach(s => s.value = 'CO_MAT')" class="btn-lux btn-lux-secondary btn-lux-sm">
+                    <i data-lucide="check-check" style="width: 13px; height: 13px;"></i>
+                    <span>Tất Cả Có Mặt</span>
+                </button>
+            </div>
+        </div>
+
+        <form th:action="@{/Faculty/Attendance/Save}" method="post">
+            <input type="hidden" name="lopHocPhanId" th:value="${selectedClass.id}">
+            <input type="hidden" name="lichHocId" th:value="${schedule != null ? schedule.id : 1}">
+            <input type="hidden" name="date" th:value="${currentDate}">
+
+            <div class="table-container" style="margin-bottom: 24px;">
+                <table class="lux-table">
+                    <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;">STT</th>
+                        <th>MSSV</th>
+                        <th>Họ và Tên Sinh Viên</th>
+                        <th>Lớp Sinh Viên</th>
+                        <th style="text-align: center;">Vắng / Cấm Thi</th>
+                        <th style="width: 220px;">Trạng Thái Điểm Danh</th>
+                        <th>Ghi Chú</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="dk, stat : ${enrollments}">
+                        <td class="mono" style="text-align: center;" th:text="${stat.count}">1</td>
+                        <td>
+                            <span class="mono" style="font-weight: 700;" th:text="${dk.sinhVien.mssv}">2180601234</span>
+                        </td>
+                        <td style="font-weight: 600;" th:text="${dk.sinhVien.nguoiDung.hoTen}">Nguyễn Minh Khoa</td>
+                        <td>
+                            <span class="lux-badge" th:text="${dk.sinhVien.lopDanhNghia != null ? dk.sinhVien.lopDanhNghia.maLop : 'N/A'}">15DHKTPM01</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="mono" style="font-weight: 700;" th:text="${(absentCountMap != null and absentCountMap.containsKey(dk.sinhVien.id) ? absentCountMap.get(dk.sinhVien.id) : 0) + ' buổi'}">0 buổi</span>
+                            <span th:if="${camThiMap != null and camThiMap.get(dk.sinhVien.id) == true}" class="lux-badge lux-badge-danger" style="margin-left: 4px;">CẤM THI</span>
+                        </td>
+                        <td>
+                            <select th:name="${'status_' + dk.sinhVien.id}" class="lux-select" style="padding: 6px 10px; font-size: 13px;">
+                                <option value="CO_MAT" th:selected="${attendanceMap != null and attendanceMap.containsKey(dk.sinhVien.id) and attendanceMap.get(dk.sinhVien.id).trangThai.name() == 'CO_MAT'}">✓ Có mặt</option>
+                                <option value="VANG" th:selected="${attendanceMap != null and attendanceMap.containsKey(dk.sinhVien.id) and attendanceMap.get(dk.sinhVien.id).trangThai.name() == 'VANG'}">✗ Vắng không phép</option>
+                                <option value="VANG_CO_PHEP" th:selected="${attendanceMap != null and attendanceMap.containsKey(dk.sinhVien.id) and attendanceMap.get(dk.sinhVien.id).trangThai.name() == 'VANG_CO_PHEP'}">P Vắng có phép</option>
+                                <option value="DI_TRE" th:selected="${attendanceMap != null and attendanceMap.containsKey(dk.sinhVien.id) and attendanceMap.get(dk.sinhVien.id).trangThai.name() == 'DI_TRE'}">⏱ Đi trễ</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" th:name="${'note_' + dk.sinhVien.id}" th:value="${attendanceMap != null and attendanceMap.containsKey(dk.sinhVien.id) ? attendanceMap.get(dk.sinhVien.id).ghiChu : ''}" placeholder="Lý do / ghi chú nếu có..." class="lux-input" style="padding: 6px 12px; font-size: 12.5px;">
+                        </td>
+                    </tr>
+                    <tr th:if="${enrollments == null or enrollments.isEmpty()}">
+                        <td colspan="6">
+                            <div class="lux-empty-state">
+                                <i data-lucide="user-x" class="lux-empty-icon"></i>
+                                <div style="font-weight: 600;">Lớp này hiện chưa có sinh viên đăng ký.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="submit" class="btn-lux btn-lux-primary" th:disabled="${enrollments == null or enrollments.isEmpty()}">
+                    <i data-lucide="save" style="width: 15px; height: 15px;"></i>
+                    <span>Lưu Dữ Liệu Điểm Danh</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

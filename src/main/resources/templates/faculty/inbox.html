@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Hộp Thư Giảng Viên</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">Hộp thư giảng viên</span>
+                <span class="lux-badge">Tương tác lớp học phần</span>
+            </div>
+            <h1 class="page-title">Hộp Thư & Gửi Thông Báo Lớp Học Phần</h1>
+            <p class="page-desc">Nhận kết quả duyệt mở lớp, duyệt đổi lịch từ Phòng Đào Tạo và gửi thông báo hàng loạt tới sinh viên trong lớp</p>
+        </div>
+        <form th:action="@{/Faculty/Inbox/ReadAll}" method="post">
+            <button type="submit" class="btn-lux btn-lux-secondary">
+                <i data-lucide="check-check" style="width: 15px; height: 15px;"></i>
+                <span>Đánh Dấu Đã Đọc Hết</span>
+            </button>
+        </form>
+    </div>
+
+    <div class="split-layout">
+        <!-- Hộp thư đến -->
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="inbox" style="width: 18px; height: 18px;"></i>
+                    <span>Thông Báo Từ Phòng Đào Tạo / Admin</span>
+                </div>
+                <span class="lux-badge" th:text="${messages != null ? messages.size() + ' thông báo' : '0 thông báo'}">0</span>
+            </div>
+            <div class="inbox-list">
+                <div th:each="m : ${messages}" class="inbox-item" th:classappend="${!m.daDoc} ? 'unread'">
+                    <div class="inbox-item-header">
+                        <div class="inbox-item-title-wrap">
+                            <span class="lux-badge lux-badge-solid" th:text="${m.loaiThongBao.label}">Mở lớp</span>
+                            <span class="inbox-item-title" th:text="${m.tieuDe}">Tiêu đề</span>
+                        </div>
+                        <span th:if="${!m.daDoc}" class="lux-badge lux-badge-danger">Chưa đọc</span>
+                        <span th:if="${m.daDoc}" class="lux-badge">Đã đọc</span>
+                    </div>
+                    <p class="inbox-item-body" th:text="${m.noiDung}">Nội dung</p>
+                    <div class="inbox-item-footer">
+                        <span class="inbox-item-meta"
+                              th:text="${(m.nguoiGui != null ? m.nguoiGui.hoTen : 'Hệ thống') + ' • ' + #temporals.format(m.ngayGui, 'dd/MM/yyyy HH:mm')}">Admin</span>
+                        <div class="inbox-item-actions">
+                            <a th:if="${m.lienKet != null and !m.lienKet.isEmpty()}" th:href="${m.lienKet}" class="btn-lux btn-lux-secondary btn-lux-sm">Xem chi tiết</a>
+                            <form th:if="${!m.daDoc}" th:action="@{'/Faculty/Inbox/Read/' + ${m.id}}" method="post">
+                                <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm">Đã đọc</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${messages == null or messages.isEmpty()}" class="lux-empty-state">Chưa có thông báo nào.</div>
+            </div>
+        </div>
+
+        <!-- Gửi thông báo hàng loạt cho SV 1 lớp học phần -->
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="megaphone" style="width: 18px; height: 18px;"></i>
+                    <span>Gửi Thông Báo Hàng Loạt Cho Sinh Viên Lớp</span>
+                </div>
+            </div>
+            <form th:action="@{/Faculty/Inbox/SendClassMessage}" method="post" style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label class="form-label">Chọn Lớp Học Phần *</label>
+                    <select name="lopHocPhanId" required class="lux-select">
+                        <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.maLHP + ' - ' + c.hocPhan.tenHP + ' (' + c.siSoHienTai + ' SV)'}">IT003_01</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Tiêu Đề Thông Báo *</label>
+                    <input type="text" name="tieuDe" required placeholder="VD: Thông báo nộp bài tập lớn / ôn thi giữa kỳ..." class="lux-input">
+                </div>
+                <div>
+                    <label class="form-label">Nội Dung Gửi Toàn Bộ Sinh Viên *</label>
+                    <textarea name="noiDung" rows="5" required placeholder="Nhập nội dung dặn dò, tài liệu học tập hoặc lịch thi giữa kỳ..." class="lux-input"></textarea>
+                </div>
+                <button type="submit" class="btn-lux btn-lux-primary" style="justify-content: center;">
+                    <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                    <span>Gửi Vào Hộp Thư Toàn Bộ Sinh Viên Lớp</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

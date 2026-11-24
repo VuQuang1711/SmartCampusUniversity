@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Nhật Ký Hệ Thống (Audit Log) - Admin</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">AN TOÀN & KIỂM TOÁN HỆ THỐNG</span>
+                <span class="lux-badge">AUDIT LOG THỜI GIAN THỰC</span>
+            </div>
+            <h1 class="page-title">Nhật Ký Hệ Thống (Audit Log)</h1>
+            <p class="page-desc">Truy vết đầy đủ các thao tác trọng yếu: ai vừa sửa điểm, chốt điểm, duyệt mở lớp, duyệt đổi lịch, duyệt chứng chỉ hoặc xác nhận học phí</p>
+        </div>
+        <form th:action="@{/Admin/AuditLog}" method="get">
+            <select name="action" onchange="this.form.submit()" class="lux-select" style="min-width: 240px;">
+                <option value="ALL" th:selected="${selectedAction == 'ALL'}">-- Tất cả hành động --</option>
+                <option value="DUYET_MO_LOP" th:selected="${selectedAction == 'DUYET_MO_LOP'}">Duyệt mở lớp học phần</option>
+                <option value="DUYET_DOI_LICH" th:selected="${selectedAction == 'DUYET_DOI_LICH'}">Duyệt đổi lịch học</option>
+                <option value="DUYET_CHUNG_CHI" th:selected="${selectedAction == 'DUYET_CHUNG_CHI'}">Duyệt chứng chỉ PDF</option>
+                <option value="CHOT_DIEM" th:selected="${selectedAction == 'CHOT_DIEM'}">Giảng viên chốt điểm</option>
+                <option value="SUA_DIEM_PHUC_KHAO" th:selected="${selectedAction == 'SUA_DIEM_PHUC_KHAO'}">Admin sửa điểm phúc khảo</option>
+                <option value="XAC_NHAN_THANH_TOAN" th:selected="${selectedAction == 'XAC_NHAN_THANH_TOAN'}">Xác nhận thanh toán học phí</option>
+                <option value="CAU_HINH_HOC_PHI" th:selected="${selectedAction == 'CAU_HINH_HOC_PHI'}">Cấu hình học phí</option>
+                <option value="PHAN_QUYEN_RBAC" th:selected="${selectedAction == 'PHAN_QUYEN_RBAC'}">Thay đổi phân quyền RBAC</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="history" style="width: 18px; height: 18px;"></i>
+                <span>100 Bản Ghi Nhật Ký Mới Nhất</span>
+                <span class="lux-badge" style="margin-left: 6px;" th:text="${logs != null ? logs.size() + ' dòng' : '0'}">0</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Thời Gian</th><th>Người Thực Hiện</th><th>Vai Trò</th><th>Hành Động</th><th>Đối Tượng</th><th>Chi Tiết Thao Tác</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="log : ${logs}">
+                    <td class="mono" style="font-size: 12px; white-space: nowrap;" th:text="${#temporals.format(log.thoiGian, 'dd/MM/yyyy HH:mm:ss')}">23/11/2026</td>
+                    <td style="font-weight: 700;" th:text="${log.tenNguoiThucHien}">Admin</td>
+                    <td><span class="lux-badge" th:text="${log.vaiTro}">ADMIN</span></td>
+                    <td><span class="lux-badge lux-badge-solid mono" style="font-size: 11px;" th:text="${log.hanhDong}">DUYET_DOI_LICH</span></td>
+                    <td class="mono" style="font-size: 12px; color: var(--uit-blue-primary);" th:text="${log.doiTuong}">YeuCau#1</td>
+                    <td style="font-size: 13px;" th:text="${log.chiTiet}">Chi tiết</td>
+                </tr>
+                <tr th:if="${logs == null or logs.isEmpty()}">
+                    <td colspan="6"><div class="lux-empty-state">Chưa có bản ghi nhật ký phù hợp bộ lọc.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

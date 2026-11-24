@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - HUIT SYSTEM - Trường Đại Học Công Thương TP. Hồ Chí Minh</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/monochrome.css}">
+    <link rel="stylesheet" th:href="@{/css/uit-theme.css}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const iconEl = document.getElementById('theme-icon');
+            const textEl = document.getElementById('theme-text');
+            if (theme === 'dark') {
+                if (iconEl) iconEl.textContent = '☀️';
+                if (textEl) textEl.textContent = 'Giao diện: Tối';
+            } else {
+                if (iconEl) iconEl.textContent = '🌙';
+                if (textEl) textEl.textContent = 'Giao diện: Sáng';
+            }
+        }
+
+        function toggleTheme(e) {
+            if (e) {
+                if (e.preventDefault) e.preventDefault();
+                if (e.stopPropagation) e.stopPropagation();
+            }
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = (current === 'dark') ? 'light' : 'dark';
+            applyTheme(next);
+            try {
+                localStorage.setItem('theme', next);
+            } catch (err) {}
+            return false;
+        }
+
+        (function() {
+            try {
+                const saved = localStorage.getItem('theme') || 'light';
+                document.documentElement.setAttribute('data-theme', saved);
+            } catch (err) {}
+        })();
+    </script>
+    <style>
+        /* Times New Roman Elegant Styling */
+        * {
+            box-sizing: border-box;
+        }
+
+        body.huit-portal-body {
+            margin: 0;
+            padding: 0;
+            background-color: #F3F6FA;
+            font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+            color: #1E293B;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        [data-theme="dark"] body.huit-portal-body {
+            background-color: #0B0F19;
+            color: #F8FAFC;
+        }
+
+        /* TOP BLUE BANNER */
+        .huit-topbar {
+            background: #005BAB;
+            background: linear-gradient(90deg, #004B91 0%, #005BAB 60%, #0066BE 100%);
+            color: #FFFFFF;
+            padding: 12px 24px;
+            box-shadow: 0 3px 10px rgba(0, 43, 91, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .huit-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .huit-topbar-logo {
+            background: #FFFFFF;
+            padding: 6px 14px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .huit-topbar-logo img {
+            height: 48px;
+            object-fit: contain;
+        }
+
+        .huit-topbar-titles {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .huit-topbar-sub {
+            font-size: 12.5px;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .huit-topbar-main {
+            font-size: 21px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            line-height: 1.25;
+            margin-top: 2px;
+        }
+
+        .huit-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .huit-badge-system {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #FFFFFF;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 13.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        /* MAIN CONTENT SPLIT */
+        .huit-main-container {
+            flex: 1;
+            max-width: 1440px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        /* LEFT PHOTO COLUMN */
+        .huit-left-showcase {
+            flex: 1;
+            min-height: 600px;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #CBD5E1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        [data-theme="dark"] .huit-left-showcase {
+            border-color: #1E293B;
+        }
+
+        .huit-campus-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .huit-image-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, 
+                rgba(0, 36, 75, 0.25) 0%, 
+                rgba(0, 0, 0, 0.1) 40%, 
+                rgba(0, 43, 91, 0.85) 85%, 
+                rgba(15, 23, 42, 0.95) 100%);
+        }
+
+        .huit-image-caption {
+            position: relative;
+            z-index: 2;
+            padding: 32px 36px;
+            color: #FFFFFF;
+        }
+
+        .huit-caption-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13.5px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .huit-caption-title {
+            font-size: 27px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .huit-caption-desc {
+            font-size: 15.5px;
+            margin: 0 0 16px 0;
+            line-height: 1.5;
+            opacity: 0.95;
+            font-style: italic;
+            max-width: 700px;
+        }
+
+        .huit-caption-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.25);
+            padding-top: 14px;
+        }
+
+        .huit-caption-tags span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* RIGHT LOGIN SIDEBAR (Matching reference screenshot) */
+        .huit-right-login {
+            width: 390px;
+            flex: 0 0 390px;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 24px 22px;
+            box-shadow: 0 8px 24px rgba(0, 91, 171, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        [data-theme="dark"] .huit-right-login {
+            background: #111827;
+            border-color: #1E293B;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-head-title {
+            color: #005BAB;
+            font-size: 21px;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 4px 0 22px 0;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(0, 91, 171, 0.15);
+        }
+
+        [data-theme="dark"] .login-head-title {
+            color: #38BDF8;
+            border-bottom-color: rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.22);
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 999px;
+            padding: 7px 14px;
+            cursor: pointer;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-1px);
+        }
+
+        [data-theme="dark"] .login-head-title {
+            color: #38BDF8;
+        }
+
+        .portal-input-group {
+            margin-bottom: 14px;
+        }
+
+        .portal-input {
+            width: 100% !important;
+            padding: 11px 14px !important;
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 6px !important;
+            background-color: #FFFFFF !important;
+            color: #0F172A !important;
+            font-size: 14px !important;
+            font-family: 'Be Vietnam Pro', sans-serif !important;
+            outline: none !important;
+            transition: all 0.2s ease !important;
+        }
+
+        [data-theme="dark"] .portal-input {
+            background-color: #1E293B !important;
+            border-color: #334155 !important;
+            color: #F8FAFC !important;
+        }
+
+        .portal-input:focus {
+            border-color: #005BAB !important;
+            box-shadow: 0 0 0 3px rgba(0, 91, 171, 0.18) !important;
+        }
+
+        .portal-checkbox-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 16px;
+            font-size: 13.5px;
+            color: #475569;
+        }
+
+        [data-theme="dark"] .portal-checkbox-row {
+            color: #94A3B8;
+        }
+
+        /* Orange Login Button */
+        .btn-portal-orange {
+            width: 100%;
+            background: #F25C05;
+            background: linear-gradient(180deg, #F97316 0%, #EA580C 100%);
+            color: #FFFFFF;
+            border: none;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
+            transition: all 0.2s ease;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .btn-portal-orange:hover {
+            background: linear-gradient(180deg, #EA580C 0%, #C2410C 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(234, 88, 12, 0.45);
+        }
+
+        /* Demo Accounts Box */
+        .demo-accounts-card {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px dashed #E2E8F0;
+        }
+
+        [data-theme="dark"] .demo-accounts-card {
+            border-top-color: #334155;
+        }
+
+        .demo-acc-btn {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            padding: 7px 10px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 13px;
+            color: #1E293B;
+            transition: all 0.15s ease;
+        }
+
+        [data-theme="dark"] .demo-acc-btn {
+            background: #1E293B;
+            border-color: #334155;
+            color: #F1F5F9;
+        }
+
+        .demo-acc-btn:hover {
+            border-color: #005BAB;
+            background: #EFF6FF;
+        }
+
+        [data-theme="dark"] .demo-acc-btn:hover {
+            background: #25334D;
+        }
+
+        /* FOOTER */
+        .huit-footer {
+            text-align: center;
+            padding: 12px;
+            font-size: 13px;
+            color: #64748B;
+            border-top: 1px solid #E2E8F0;
+            background: #FFFFFF;
+        }
+
+        [data-theme="dark"] .huit-footer {
+            background: #111827;
+            border-color: #1E293B;
+            color: #94A3B8;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1080px) {
+            .huit-main-container {
+                flex-direction: column;
+            }
+            .huit-right-login {
+                width: 100%;
+                flex: none;
+            }
+            .huit-left-showcase {
+                min-height: 380px;
+            }
+            .huit-topbar {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            .huit-topbar-left {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body class="huit-portal-body">
+
+<!-- TOP BLUE BANNER (ĐẠI HỌC CÔNG THƯƠNG TP.HỒ CHÍ MINH) -->
+<header class="huit-topbar">
+    <div class="huit-topbar-left">
+        <div class="huit-topbar-logo">
+            <img th:src="@{/images/huit-logo.png}" alt="HUIT Logo">
+        </div>
+        <div class="huit-topbar-titles">
+            <span class="huit-topbar-sub">BỘ CÔNG THƯƠNG</span>
+            <span class="huit-topbar-main">TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP.HỒ CHÍ MINH</span>
+        </div>
+    </div>
+    <div class="huit-topbar-right">
+        <div class="huit-badge-system">
+            HỆ THỐNG ĐÀO TẠO TÍN CHỈ • HUIT SYSTEM
+        </div>
+        <button id="theme-toggle" class="btn-theme-toggle" title="Chuyển đổi giao diện Sáng / Tối" type="button" onclick="toggleTheme(event)">
+            <span id="theme-icon" style="font-size: 17px; line-height: 1; display: inline-flex; align-items: center; margin-right: 4px;">🌙</span>
+            <span id="theme-text">Giao diện: Sáng</span>
+        </button>
+    </div>
+</header>
+
+<!-- MAIN CONTENT SPLIT -->
+<main class="huit-main-container">
+    <!-- LEFT PHOTO: HUIT Campus / Library Image -->
+    <section class="huit-left-showcase">
+        <img th:src="@{/images/campus-login.jpg}" alt="Tòa nhà Thư viện HUIT" class="huit-campus-img">
+        <div class="huit-image-overlay"></div>
+
+        <div class="huit-image-caption">
+            <div class="huit-caption-pill">
+                <i data-lucide="landmark" style="width: 16px; height: 16px;"></i>
+                <span>Tòa Nhà Thư Viện & Trung Tâm Học Liệu HUIT</span>
+            </div>
+            <h1 class="huit-caption-title">
+                Không Gian Học Tập & Tri Thức Thông Minh
+            </h1>
+            <p class="huit-caption-desc">
+                Nhân văn – Đoàn kết – Tiên phong – Đổi mới<br>
+                Học tập chủ động – Làm việc sáng tạo<br>
+                Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT)
+            </p>
+            <div class="huit-caption-tags">
+                <span>
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #38BDF8;"></i>
+                    Chuẩn Tín Chỉ Học Thuật
+                </span>
+                <span>
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #38BDF8;"></i>
+                    Đăng Ký Học Phần Tức Thời
+                </span>
+                <span>
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #38BDF8;"></i>
+                    Thanh Toán Học Phí Trực Tuyến
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <!-- RIGHT LOGIN SIDEBAR (Theo phong cách portal trong ảnh mẫu) -->
+    <aside class="huit-right-login">
+        <h3 class="login-head-title">ĐĂNG NHẬP HỆ THỐNG</h3>
+
+        <!-- Error Notification -->
+        <div th:if="${error}" style="background-color: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; font-size: 13.5px; color: #991B1B; text-align: center; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px; color: #DC2626; flex-shrink: 0;"></i>
+            <span th:text="${error}">Mã định danh hoặc mật khẩu không chính xác!</span>
+        </div>
+
+        <!-- Login Form -->
+        <form th:action="@{/Account/Login}" method="post">
+            <div class="portal-input-group">
+                <input type="text" name="identifier" id="identifier-input" required class="portal-input" placeholder="Nhập mã sinh viên (hoặc MSGV/Email)">
+            </div>
+
+            <div class="portal-input-group">
+                <input type="password" name="password" id="password-input" required class="portal-input" placeholder="Nhập mật khẩu">
+            </div>
+
+            <div class="portal-checkbox-row">
+                <input type="checkbox" id="graduated-check" style="cursor: pointer;">
+                <label for="graduated-check" style="cursor: pointer; user-select: none;">Đã tốt nghiệp</label>
+            </div>
+
+            <!-- Vibrant Orange Button -->
+            <button type="submit" class="btn-portal-orange">
+                ĐĂNG NHẬP
+            </button>
+        </form>
+
+        <!-- Quick Demo Accounts for Testing -->
+        <div class="demo-accounts-card">
+            <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 8px; text-align: center;">
+                Tài khoản thử nghiệm nhanh (Mật khẩu: 123456):
+            </div>
+            
+            <button type="button" class="demo-acc-btn" onclick="quickFill('2180601234', '123456')">
+                <span><strong>Nguyễn Minh Khoa</strong> (Sinh Viên)</span>
+                <span style="color: #64748B;">2180601234</span>
+            </button>
+
+            <button type="button" class="demo-acc-btn" onclick="quickFill('2180609999', '123456')">
+                <span><strong>Trần Thị Hoa</strong> (Sinh Viên)</span>
+                <span style="color: #64748B;">2180609999</span>
+            </button>
+
+            <button type="button" class="demo-acc-btn" onclick="quickFill('GV001', '123456')">
+                <span><strong>PGS.TS Nguyễn Văn An</strong> (Giảng Viên)</span>
+                <span style="color: #64748B;">GV001</span>
+            </button>
+
+            <button type="button" class="demo-acc-btn" onclick="quickFill('admin@sis.edu.vn', '123456')">
+                <span><strong>Phòng Đào Tạo</strong></span>
+                <span style="color: #64748B;">ADMIN01</span>
+            </button>
+        </div>
+
+    </aside>
+</main>
+
+<!-- FOOTER -->
+<footer class="huit-footer">
+    <div><strong>TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG THÀNH PHỐ HỒ CHÍ MINH (HUIT)</strong></div>
+    <div style="margin-top: 4px; font-size: 12px; opacity: 0.85;">
+        Địa chỉ: 140 Lê Trọng Tấn, P. Tây Thạnh, Q. Tân Phú, TP. Hồ Chí Minh • Điện thoại: (028) 3816 1673 • Email: contact@huit.edu.vn
+    </div>
+    <div style="margin-top: 4px; font-size: 11.5px; opacity: 0.7;">
+        © 2026 HUIT SYSTEM - Đồ Án Quản Lý Đào Tạo & Sinh Viên Đại Học Theo Học Chế Tín Chỉ
+    </div>
+</footer>
+
+<script>
+    function quickFill(user, pass) {
+        document.getElementById('identifier-input').value = user;
+        document.getElementById('password-input').value = pass;
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        try {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(currentTheme);
+        } catch (err) {
+            applyTheme('light');
+        }
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+</script>
+</body>
+</html>

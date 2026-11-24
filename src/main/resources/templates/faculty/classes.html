@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Danh Sách Lớp & Sinh Viên</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">QUẢN LÝ LỚP HỌC PHẦN</span>
+                <span class="lux-badge">XUẤT EXCEL ĐIỂM DANH & BẢNG ĐIỂM</span>
+            </div>
+            <h1 class="page-title">Danh Sách Lớp Đang Dạy, Đã Dạy & Sinh Viên</h1>
+            <p class="page-desc">Xem chi tiết sĩ số, thông tin liên hệ sinh viên từng lớp và xuất file Excel danh sách điểm danh / bảng điểm</p>
+        </div>
+    </div>
+
+    <!-- Lớp đang dạy -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="play-circle" style="width: 18px; height: 18px; color: #16A34A;"></i>
+                <span>Lớp Học Phần Đang Giảng Dạy</span>
+                <span class="lux-badge" style="margin-left: 6px;" th:text="${activeClasses.size() + ' Lớp'}">2 Lớp</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Mã LHP</th><th>Tên Học Phần</th><th>Học Kỳ</th><th>Sĩ Số</th><th>Lịch Học</th><th style="text-align: right;">Thao Tác & Xuất Excel</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${activeClasses}">
+                    <td class="mono" style="font-weight: 700;" th:text="${c.maLHP}">IT003_01</td>
+                    <td style="font-weight: 600;" th:text="${c.hocPhan.tenHP}">CTDL</td>
+                    <td class="mono" th:text="${c.hocKy.maHocKy}">2024_2</td>
+                    <td class="mono" th:text="${c.siSoHienTai + ' / ' + c.siSoToiDa}">42/60</td>
+                    <td class="mono" style="font-size: 12px;">
+                        <div th:each="lh : ${c.danhSachLichHoc}" th:text="${'T' + lh.thu + ' Tiết ' + lh.tietBatDau + '-' + lh.tietKetThuc + ' (' + lh.phongHoc + ')'}">T2</div>
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 6px; flex-wrap: wrap;">
+                            <a th:href="@{'/Faculty/Classes?lopHocPhanId=' + ${c.id}}" class="btn-lux btn-lux-primary btn-lux-sm">Xem DS SV</a>
+                            <a th:href="@{'/api/export/class-attendance/' + ${c.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">Excel Điểm Danh</a>
+                            <a th:href="@{'/api/export/class-grades/' + ${c.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">Excel Bảng Điểm</a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Chi tiết danh sách sinh viên của lớp đang chọn -->
+    <div class="lux-card" th:if="${selectedClass != null}">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                <span th:text="${'Danh Sách Sinh Viên Lớp: ' + selectedClass.maLHP + ' - ' + selectedClass.hocPhan.tenHP}">DS SV</span>
+                <span class="lux-badge" style="margin-left: 6px;" th:text="${roster != null ? roster.size() + ' SV' : '0 SV'}">0 SV</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <a th:href="@{'/api/export/class-attendance/' + ${selectedClass.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">
+                    <i data-lucide="download" style="width: 13px; height: 13px;"></i> Xuất Excel Điểm Danh
+                </a>
+                <a th:href="@{'/Faculty/Attendance?lopHocPhanId=' + ${selectedClass.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">Điểm Danh</a>
+                <a th:href="@{'/Faculty/Grading?lopHocPhanId=' + ${selectedClass.id}}" class="btn-lux btn-lux-primary btn-lux-sm">Sổ Điểm</a>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>STT</th><th>MSSV</th><th>Họ và Tên</th><th>Lớp Danh Nghĩa</th><th>Email Liên Hệ</th><th>Số Điện Thoại</th><th>Loại Đăng Ký</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="dk, stat : ${roster}">
+                    <td class="mono" th:text="${stat.count}">1</td>
+                    <td class="mono" style="font-weight: 700;" th:text="${dk.sinhVien.mssv}">2180601234</td>
+                    <td style="font-weight: 600;" th:text="${dk.sinhVien.nguoiDung.hoTen}">Nguyễn Minh Khoa</td>
+                    <td><span class="lux-badge" th:text="${dk.sinhVien.lopDanhNghia != null ? dk.sinhVien.lopDanhNghia.maLop : 'N/A'}">15DHKHDL03</span></td>
+                    <td class="mono" style="font-size: 12.5px;" th:text="${dk.sinhVien.nguoiDung.email}">email</td>
+                    <td class="mono" th:text="${dk.sinhVien.nguoiDung.soDienThoai}">090...</td>
+                    <td><span class="lux-badge" th:text="${dk.loaiDangKy}">HOC_MOI</span></td>
+                </tr>
+                <tr th:if="${roster == null or roster.isEmpty()}">
+                    <td colspan="7"><div class="lux-empty-state">Chưa có sinh viên đăng ký vào lớp này.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lớp đã dạy -->
+    <div class="lux-card" th:if="${finishedClasses != null and !finishedClasses.isEmpty()}">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="archive" style="width: 18px; height: 18px;"></i>
+                <span>Lớp Học Phần Đã Giảng Dạy (Lưu Trữ)</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead><tr><th>Mã LHP</th><th>Tên Học Phần</th><th>Học Kỳ</th><th>Sĩ Số</th><th style="text-align: right;">Xem / Xuất</th></tr></thead>
+                <tbody>
+                <tr th:each="c : ${finishedClasses}">
+                    <td class="mono" style="font-weight: 700;" th:text="${c.maLHP}">IT001_01</td>
+                    <td th:text="${c.hocPhan.tenHP}">Nhập môn Lập trình</td>
+                    <td class="mono" th:text="${c.hocKy.maHocKy}">2024_1</td>
+                    <td class="mono" th:text="${c.siSoHienTai}">45</td>
+                    <td style="text-align: right;">
+                        <a th:href="@{'/Faculty/Classes?lopHocPhanId=' + ${c.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">DS SV</a>
+                        <a th:href="@{'/api/export/class-grades/' + ${c.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">Xuất Điểm</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

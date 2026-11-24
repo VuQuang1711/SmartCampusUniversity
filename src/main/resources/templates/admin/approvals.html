@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Trung Tâm Phê Duyệt - Admin</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">TRUNG TÂM PHÊ DUYỆT (APPROVAL CENTER)</span>
+                <span class="lux-badge" th:text="${(pendingClasses.size() + pendingSchedules.size() + pendingCerts.size()) + ' yêu cầu đang chờ'}">3 chờ</span>
+            </div>
+            <h1 class="page-title">Trung Tâm Phê Duyệt Tập Trung</h1>
+            <p class="page-desc">Phê duyệt đề xuất mở lớp học phần, đổi lịch giảng dạy (đã kiểm tra 0 SV trùng) và chứng chỉ chuẩn đầu ra dạng PDF</p>
+        </div>
+    </div>
+
+    <!-- 3 Tabs Phê Duyệt -->
+    <div class="tab-bar">
+        <a th:href="@{/Admin/Approvals(tab='classes')}" class="tab-btn" th:classappend="${activeTab == 'classes'} ? 'active'">
+            <i data-lucide="book-plus" style="width: 16px; height: 16px;"></i>
+            <span>1. Duyệt Mở Lớp Học Phần</span>
+            <span class="lux-badge lux-badge-danger" th:if="${!pendingClasses.isEmpty()}" th:text="${pendingClasses.size()}">1</span>
+        </a>
+        <a th:href="@{/Admin/Approvals(tab='schedules')}" class="tab-btn" th:classappend="${activeTab == 'schedules'} ? 'active'">
+            <i data-lucide="calendar-sync" style="width: 16px; height: 16px;"></i>
+            <span>2. Duyệt Đổi Lịch Giảng</span>
+            <span class="lux-badge lux-badge-danger" th:if="${!pendingSchedules.isEmpty()}" th:text="${pendingSchedules.size()}">1</span>
+        </a>
+        <a th:href="@{/Admin/Approvals(tab='certificates')}" class="tab-btn" th:classappend="${activeTab == 'certificates'} ? 'active'">
+            <i data-lucide="file-badge" style="width: 16px; height: 16px;"></i>
+            <span>3. Duyệt Chứng Chỉ (PDF)</span>
+            <span class="lux-badge lux-badge-danger" th:if="${!pendingCerts.isEmpty()}" th:text="${pendingCerts.size()}">1</span>
+        </a>
+    </div>
+
+    <!-- TAB 1: DUYỆT ĐỀ XUẤT MỞ LỚP -->
+    <div class="lux-card" th:if="${activeTab == 'classes'}">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+                <span>Đề Xuất Mở Lớp Học Phần Từ Giảng Viên (Chờ Duyệt)</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Mã LHP</th><th>Học Phần</th><th>Giảng Viên Đề Xuất</th><th>Học Kỳ / Sĩ Số</th><th>Khung Giờ Dự Kiến</th><th style="text-align: right;">Phê Duyệt</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${pendingClasses}">
+                    <td class="mono" style="font-weight: 700;" th:text="${c.maLHP}">DS102_01</td>
+                    <td>
+                        <div style="font-weight: 700;" th:text="${c.hocPhan.tenHP}">Học máy thống kê</div>
+                        <div class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${c.hocPhan.maHP + ' • ' + c.hocPhan.tongTinChi + ' TC'}">DS102</div>
+                    </td>
+                    <td th:text="${c.giangVien != null ? c.giangVien.tenDayDu : 'N/A'}">PGS.TS Nguyễn Văn An</td>
+                    <td class="mono" th:text="${c.hocKy.maHocKy + ' • Max ' + c.siSoToiDa + ' SV'}">2024_2</td>
+                    <td class="mono" style="font-size: 12px;"
+                        th:text="${c.thuDuKien != null ? ('Thứ ' + c.thuDuKien + ', Tiết ' + c.tietBatDauDuKien + '-' + (c.tietBatDauDuKien + c.soTietDuKien - 1) + ' • P.' + c.phongMacDinh) : c.phongMacDinh}">T4</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 6px; align-items: center;">
+                            <form th:action="@{'/Admin/Approvals/Class/' + ${c.id} + '/Approve'}" method="post">
+                                <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm" style="background: #16A34A;">
+                                    <i data-lucide="check" style="width: 13px; height: 13px;"></i> Duyệt Mở ĐK
+                                </button>
+                            </form>
+                            <form th:action="@{'/Admin/Approvals/Class/' + ${c.id} + '/Reject'}" method="post" style="display: inline-flex; gap: 4px;">
+                                <input type="text" name="lyDo" required placeholder="Lý do từ chối..." class="lux-input" style="padding: 5px 8px; width: 150px; font-size: 12px;">
+                                <button type="submit" class="btn-lux btn-lux-secondary btn-lux-sm" style="color: #DC2626; border-color: #FCA5A5;">Từ chối</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${pendingClasses == null or pendingClasses.isEmpty()}">
+                    <td colspan="6"><div class="lux-empty-state">Không có đề xuất mở lớp học phần nào đang chờ duyệt.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 2: DUYỆT ĐỔI LỊCH GIẢNG -->
+    <div class="lux-card" th:if="${activeTab == 'schedules'}">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="calendar-clock" style="width: 18px; height: 18px;"></i>
+                <span>Yêu Cầu Đổi Lịch / Dạy Bù Từ Giảng Viên</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Lớp HP & GV</th><th>Loại & Lịch Đề Xuất</th><th>Kết Quả Conflict Check</th><th>Lý Do</th><th style="text-align: right;">Phê Duyệt</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${pendingSchedules}">
+                    <td>
+                        <div class="mono" style="font-weight: 700;" th:text="${r.lopHocPhan.maLHP}">IT003_01</div>
+                        <div style="font-size: 12px;" th:text="${r.lopHocPhan.hocPhan.tenHP}">CTDL</div>
+                        <div style="font-size: 11.5px; color: var(--text-muted);" th:text="${'GV: ' + r.giangVien.tenDayDu}">GV</div>
+                    </td>
+                    <td>
+                        <span class="lux-badge" th:text="${r.loaiYeuCau.label}">Đổi ca</span>
+                        <div class="mono" style="font-size: 12px; font-weight: 700; margin-top: 4px;"
+                             th:text="${'Thứ ' + r.thuMoi + ', Tiết ' + r.tietBatDauMoi + '-' + r.tietKetThucMoi + ' • P.' + r.phongHocMoi + ' (T' + r.tuTuanMoi + '-' + r.denTuanMoi + ')'}">T6</div>
+                    </td>
+                    <td>
+                        <span class="lux-badge" style="border-color:#22C55E; color:#15803D; background:rgba(34,197,94,0.08);">PASS: 0 SV TRÙNG</span>
+                        <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;" th:text="${r.ketQuaKiemTra}">OK</div>
+                    </td>
+                    <td style="font-size: 12.5px; max-width: 200px;" th:text="${r.lyDo}">Lý do</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 6px; align-items: center;">
+                            <form th:action="@{'/Admin/Approvals/Schedule/' + ${r.id} + '/Approve'}" method="post">
+                                <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm" style="background: #16A34A;">
+                                    <i data-lucide="check" style="width: 13px; height: 13px;"></i> Duyệt & Báo SV
+                                </button>
+                            </form>
+                            <form th:action="@{'/Admin/Approvals/Schedule/' + ${r.id} + '/Reject'}" method="post" style="display: inline-flex; gap: 4px;">
+                                <input type="text" name="lyDo" required placeholder="Lý do..." class="lux-input" style="padding: 5px 8px; width: 130px; font-size: 12px;">
+                                <button type="submit" class="btn-lux btn-lux-secondary btn-lux-sm" style="color: #DC2626; border-color: #FCA5A5;">Từ chối</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${pendingSchedules == null or pendingSchedules.isEmpty()}">
+                    <td colspan="5"><div class="lux-empty-state">Không có yêu cầu đổi lịch nào đang chờ duyệt.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: DUYỆT CHỨNG CHỈ PDF -->
+    <div class="lux-card" th:if="${activeTab == 'certificates'}">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="file-badge" style="width: 18px; height: 18px;"></i>
+                <span>Hồ Sơ Chứng Chỉ Chuẩn Đầu Ra (PDF) Từ Sinh Viên</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Sinh Viên</th><th>Chứng Chỉ & Số Hiệu</th><th>Đơn Vị / Ngày Cấp</th><th>File Minh Chứng PDF</th><th>Trạng Thái</th><th style="text-align: right;">Thao Tác</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${allCerts}">
+                    <td>
+                        <div style="font-weight: 700;" th:text="${c.sinhVien.nguoiDung.hoTen}">Nguyễn Minh Khoa</div>
+                        <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${c.sinhVien.mssv}">2180601234</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600;" th:text="${c.loaiChungChi.label}">MOS</div>
+                        <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${c.soHieu + (c.diemSo != null and !c.diemSo.isEmpty() ? ' • ' + c.diemSo : '')}">MOS-9981</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 12.5px;" th:text="${c.donViCap}">IIG</div>
+                        <div class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${c.ngayCap != null ? #temporals.format(c.ngayCap, 'dd/MM/yyyy') : '-'}">2025</div>
+                    </td>
+                    <td>
+                        <button th:if="${c.filePdfUrl != null}" type="button"
+                                th:attr="onclick='openAdminPdf(\'/api/certificates/' + ${c.id} + '/pdf\', \'' + ${c.sinhVien.mssv} + ' - ' + ${c.loaiChungChi.label} + '\')'"
+                                class="btn-lux btn-lux-secondary btn-lux-sm">
+                            <i data-lucide="eye" style="width: 13px; height: 13px;"></i> Mở Xem PDF
+                        </button>
+                        <span th:if="${c.filePdfUrl == null}" style="font-size: 12px; color: var(--text-muted);">Không có PDF</span>
+                    </td>
+                    <td>
+                        <span th:if="${c.trangThai.name() == 'CHO_DUYET'}" class="lux-badge lux-badge-warning">CHỜ DUYỆT</span>
+                        <span th:if="${c.trangThai.name() == 'DA_DAT'}" class="lux-badge" style="border-color:#22C55E; color:#16A34A;">ĐÃ DUYỆT</span>
+                        <span th:if="${c.trangThai.name() == 'KHONG_DAT'}" class="lux-badge lux-badge-danger">TỪ CHỐI</span>
+                    </td>
+                    <td style="text-align: right;">
+                        <div th:if="${c.trangThai.name() == 'CHO_DUYET'}" style="display: inline-flex; gap: 6px; align-items: center;">
+                            <form th:action="@{'/Admin/Approvals/Certificate/' + ${c.id} + '/Approve'}" method="post">
+                                <button type="submit" class="btn-lux btn-lux-primary btn-lux-sm" style="background: #16A34A;">Duyệt Đạt</button>
+                            </form>
+                            <form th:action="@{'/Admin/Approvals/Certificate/' + ${c.id} + '/Reject'}" method="post" style="display: inline-flex; gap: 4px;">
+                                <input type="text" name="lyDo" required placeholder="Lý do trả về..." class="lux-input" style="padding: 5px 8px; width: 140px; font-size: 12px;">
+                                <button type="submit" class="btn-lux btn-lux-secondary btn-lux-sm" style="color: #DC2626; border-color: #FCA5A5;">Từ chối</button>
+                            </form>
+                        </div>
+                        <span th:if="${c.trangThai.name() != 'CHO_DUYET'}" style="font-size: 12px; color: var(--text-muted);"
+                              th:text="${c.lyDoTuChoi != null ? 'Lý do: ' + c.lyDoTuChoi : 'Hoàn tất'}">Hoàn tất</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Xem Trực Tiếp PDF Chứng Chỉ -->
+    <div id="adminPdfModal" class="modal-backdrop-custom" onclick="if(event.target===this) closeAdminPdf()">
+        <div class="modal-dialog-custom" style="height: 88vh; max-width: 980px;">
+            <div class="modal-header-custom">
+                <h3 id="adminPdfTitle" style="font-size: 15px; font-weight: 700;">Kiểm Tra File PDF Chứng Chỉ</h3>
+                <button type="button" onclick="closeAdminPdf()" class="action-btn"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
+            </div>
+            <div class="modal-body-custom" style="padding: 0;">
+                <iframe id="adminPdfFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+    <script>
+        function openAdminPdf(url, title) {
+            document.getElementById('adminPdfTitle').textContent = 'Xem trực tiếp PDF: ' + title;
+            document.getElementById('adminPdfFrame').src = url;
+            document.getElementById('adminPdfModal').classList.add('show');
+        }
+        function closeAdminPdf() {
+            document.getElementById('adminPdfModal').classList.remove('show');
+            document.getElementById('adminPdfFrame').src = '';
+        }
+    </script>
+
+</div>
+</body>
+</html>

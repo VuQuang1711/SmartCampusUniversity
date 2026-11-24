@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Cổng Giảng Viên - Tổng Quan</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">CỔNG GIẢNG VIÊN</span>
+                <span class="lux-badge">
+                    <i data-lucide="building" style="width: 12px; height: 12px;"></i>
+                    <span th:text="${faculty.khoa.tenKhoa}">Khoa CNTT</span>
+                </span>
+            </div>
+            <h1 class="page-title">Tổng Quan Giảng Dạy & Vận Hành Lớp</h1>
+            <p class="page-desc">
+                Giảng viên: <strong th:text="${faculty.tenDayDu}">PGS.TS Nguyễn Văn An</strong> •
+                Mã GV: <span class="mono" style="font-weight: 700;" th:text="${faculty.maGV}">GV001</span>
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a th:href="@{/Faculty/Proposals}" class="btn-lux btn-lux-secondary">
+                <i data-lucide="plus-circle" style="width: 15px; height: 15px;"></i>
+                <span>Đề Xuất Mở Lớp</span>
+            </a>
+            <a th:href="@{/Faculty/Schedule}" class="btn-lux btn-lux-secondary">
+                <i data-lucide="calendar-clock" style="width: 15px; height: 15px;"></i>
+                <span>Đổi Lịch (Conflict Check)</span>
+            </a>
+            <a th:href="@{/Faculty/Grading}" class="btn-lux btn-lux-primary">
+                <i data-lucide="clipboard-edit" style="width: 15px; height: 15px;"></i>
+                <span>Nhập & Chốt Điểm</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-container">
+        <div class="stat-box">
+            <div class="stat-box-label">Lớp Đang Phụ Trách</div>
+            <div class="stat-box-value" style="color: var(--uit-blue-primary);" th:text="${classes != null ? classes.size() : 0}">2</div>
+            <div class="stat-box-sub" th:text="${'Tổng ' + allClassesCount + ' lớp (kể cả đã dạy)'}">Tổng lớp</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-label">Buổi Dạy Trong Tuần</div>
+            <div class="stat-box-value" th:text="${weekSchedules != null ? weekSchedules.size() : 0}">3</div>
+            <div class="stat-box-sub" th:text="${'Hôm nay (Thứ ' + todayThu + '): ' + (todaySchedules != null ? todaySchedules.size() : 0) + ' buổi'}">Hôm nay</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-label">Đề Xuất Chờ Admin Duyệt</div>
+            <div class="stat-box-value" style="color: #D97706;" th:text="${pendingProposalsCount + pendingScheduleChanges}">2</div>
+            <div class="stat-box-sub" th:text="${pendingProposalsCount + ' mở lớp • ' + pendingScheduleChanges + ' đổi lịch'}">Chờ duyệt</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-label">Lớp Cố Vấn Học Tập</div>
+            <div class="stat-box-value" th:text="${adviseeClasses != null ? adviseeClasses.size() : 0}">1</div>
+            <div class="stat-box-sub">Theo dõi học vụ & điểm RL</div>
+        </div>
+    </div>
+
+    <!-- Lịch giảng tuần & Hộp thư mới -->
+    <div class="split-layout" style="margin-bottom: 20px;">
+        <div class="lux-card" style="margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+                    <span>Lịch Giảng Dạy Trong Tuần</span>
+                </div>
+                <a th:href="@{/Faculty/Schedule}" class="btn-lux btn-lux-secondary btn-lux-sm">Quản Lý / Đổi Lịch</a>
+            </div>
+            <div class="table-container">
+                <table class="lux-table">
+                    <thead><tr><th>Thứ</th><th>Tiết</th><th>Phòng</th><th>Lớp Học Phần</th><th>Tuần</th></tr></thead>
+                    <tbody>
+                    <tr th:each="lh : ${weekSchedules}">
+                        <td><span class="lux-badge lux-badge-solid" th:text="${lh.thu == 8 ? 'Chủ Nhật' : 'Thứ ' + lh.thu}">Thứ 2</span></td>
+                        <td class="mono" th:text="${'Tiết ' + lh.tietBatDau + '-' + lh.tietKetThuc}">Tiết 1-3</td>
+                        <td><span class="lux-badge" th:text="${lh.phongHoc}">A302</span></td>
+                        <td>
+                            <div style="font-weight: 600;" th:text="${lh.lopHocPhan.hocPhan.tenHP}">CTDL</div>
+                            <div style="font-size: 11.5px; color: var(--text-muted);" th:text="${lh.lopHocPhan.maLHP}">IT003_01</div>
+                        </td>
+                        <td class="mono" style="font-size: 12px;" th:text="${lh.tuTuan + '-' + lh.denTuan}">1-15</td>
+                    </tr>
+                    <tr th:if="${weekSchedules == null or weekSchedules.isEmpty()}">
+                        <td colspan="5"><div class="lux-empty-state">Chưa có lịch giảng trong học kỳ hiện tại.</div></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="lux-card" style="margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+                    <span>Hộp Thư Từ Phòng Đào Tạo</span>
+                </div>
+                <a th:href="@{/Faculty/Inbox}" class="btn-lux btn-lux-secondary btn-lux-sm">Mở Hộp Thư</a>
+            </div>
+            <div class="inbox-list" style="gap: 10px;">
+                <div th:each="tb : ${recentInbox}" class="inbox-item" th:classappend="${!tb.daDoc} ? 'unread'" style="padding: 13px 16px;">
+                    <div class="inbox-item-header" style="margin-bottom: 6px;">
+                        <span style="font-weight: 600; font-size: 13.5px;" th:text="${tb.tieuDe}">Tiêu đề</span>
+                        <span th:if="${!tb.daDoc}" class="lux-badge lux-badge-danger" style="font-size: 10.5px;">Mới</span>
+                    </div>
+                    <div style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;" th:text="${#strings.abbreviate(tb.noiDung, 110)}">Nội dung</div>
+                </div>
+                <div th:if="${recentInbox == null or recentInbox.isEmpty()}" style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 13px;">Chưa có thông báo mới.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danh sách lớp phụ trách nhanh -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="book-open" style="width: 18px; height: 18px;"></i>
+                <span>Lớp Học Phần Đang Giảng Dạy</span>
+            </div>
+            <a th:href="@{/Faculty/Classes}" class="btn-lux btn-lux-secondary btn-lux-sm">Xem Tất Cả Lớp & SV</a>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr>
+                    <th>Mã LHP</th>
+                    <th>Môn Học</th>
+                    <th>Học Kỳ</th>
+                    <th>Sĩ Số</th>
+                    <th style="text-align: right;">Nghiệp Vụ</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${classes}">
+                    <td class="mono" style="font-weight: 700;" th:text="${c.maLHP}">IT003_01</td>
+                    <td>
+                        <div style="font-weight: 600;" th:text="${c.hocPhan.tenHP}">CTDL</div>
+                        <div class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${c.hocPhan.maHP + ' • ' + c.hocPhan.tongTinChi + ' TC'}">IT003</div>
+                    </td>
+                    <td class="mono" th:text="${c.hocKy.maHocKy}">2024_2</td>
+                    <td class="mono" style="font-weight: 700;" th:text="${c.siSoHienTai + ' / ' + c.siSoToiDa}">42/60</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 6px;">
+                            <a th:href="@{'/Faculty/Classes?lopHocPhanId=' + ${c.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">DS Sinh Viên</a>
+                            <a th:href="@{'/Faculty/Attendance?lopHocPhanId=' + ${c.id}}" class="btn-lux btn-lux-secondary btn-lux-sm">Điểm Danh</a>
+                            <a th:href="@{'/Faculty/Grading?lopHocPhanId=' + ${c.id}}" class="btn-lux btn-lux-primary btn-lux-sm">Nhập Điểm</a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

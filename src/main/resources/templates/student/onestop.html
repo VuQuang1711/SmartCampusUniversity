@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Dịch Vụ Một Cửa</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">DỊCH VỤ SINH VIÊN</span>
+                <span class="lux-badge">
+                    <i data-lucide="file-check" style="width: 12px; height: 12px;"></i>
+                    XÁC THỰC SỐ CHỐNG GIẢ MẠO
+                </span>
+            </div>
+            <h1 class="page-title">Cổng Dịch Vụ Sinh Viên Một Cửa</h1>
+            <p class="page-desc">Gửi yêu cầu cấp giấy tờ, bảng điểm và thủ tục học vụ trực tuyến tích hợp mã QR xác thực</p>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(320px, 380px) 1fr; gap: 28px; align-items: flex-start;">
+        <!-- Submission Card -->
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
+                    <span>Tạo Hồ Sơ Yêu Cầu Mới</span>
+                </div>
+            </div>
+
+            <form th:action="@{/Student/OneStop/Submit}" method="post">
+                <div class="form-group">
+                    <label class="form-label">Loại Dịch Vụ Cần Cấp</label>
+                    <select name="loaiDichVu" required class="lux-select">
+                        <option value="GIAY_XAC_NHAN_SV">Giấy Xác Nhận Sinh Viên (Nghĩa vụ / Tạm hoãn)</option>
+                        <option value="BANG_DIEM_TAM_THOI">Bảng Điểm Tạm Thời (Xin thực tập / Việc làm)</option>
+                        <option value="XAC_NHAN_VAY_VON">Giấy Xác Nhận Vay Vốn Ngân Hàng Chính Sách</option>
+                        <option value="DON_PHUC_KHAO">Đơn Phúc Khảo Bài Thi Cuối Kỳ</option>
+                        <option value="DON_XIN_BAO_LUU">Đơn Xin Tạm Dừng / Bảo Lưu Kết Quả Học Tập</option>
+                    </select>
+                    <div class="form-hint">Thời gian xử lý: 1-2 ngày làm việc</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Lý Do / Mục Đích Cụ Thể</label>
+                    <textarea name="lyDo" rows="4" required class="lux-textarea" placeholder="Ghi rõ lý do hoặc cơ quan tiếp nhận hồ sơ..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-lux btn-lux-primary" style="width: 100%;">
+                    <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                    <span>Nộp Yêu Cầu Học Vụ</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- History Card -->
+        <div class="lux-card">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="folder-clock" style="width: 18px; height: 18px;"></i>
+                    <span>Lịch Sử Yêu Cầu Đã Gửi</span>
+                </div>
+                <div>
+                    <span class="lux-badge" th:text="${requests != null ? requests.size() + ' Đơn' : '0 Đơn'}">0 Đơn</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="lux-table">
+                    <thead>
+                    <tr>
+                        <th>Loại Dịch Vụ</th>
+                        <th>Lý Do / Mục Đích</th>
+                        <th>Ngày Nộp</th>
+                        <th>Mã QR Xác Thực</th>
+                        <th style="text-align: right;">Trạng Thái</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="yc : ${requests}">
+                        <td style="font-weight: 600;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="file-text" style="width: 15px; height: 15px; color: var(--text-muted);"></i>
+                                <div>
+                                    <span th:if="${yc.loaiDichVu.name() == 'GIAY_XAC_NHAN_SV'}">Giấy Xác Nhận Sinh Viên</span>
+                                    <span th:if="${yc.loaiDichVu.name() == 'BANG_DIEM_TAM_THOI'}">Bảng Điểm Tạm Thời</span>
+                                    <span th:if="${yc.loaiDichVu.name() == 'XAC_NHAN_VAY_VON'}">Xác Nhận Vay Vốn</span>
+                                    <span th:if="${yc.loaiDichVu.name() == 'DON_PHUC_KHAO'}">Đơn Phúc Khảo</span>
+                                    <span th:if="${yc.loaiDichVu.name() == 'DON_XIN_BAO_LUU'}">Đơn Xin Bảo Lưu</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-size: 13px; max-width: 240px;" th:text="${yc.lyDo}">Nộp hồ sơ xin thực tập doanh nghiệp</td>
+                        <td class="mono" style="font-size: 12px; color: var(--text-secondary);" th:text="${#temporals.format(yc.ngayTao, 'dd/MM/yyyy HH:mm')}">21/10/2026</td>
+                        <td>
+                            <span class="lux-badge" style="font-family: var(--font-mono); font-size: 11px;">
+                                <i data-lucide="qr-code" style="width: 11px; height: 11px;"></i>
+                                <span th:text="${yc.maXacThucQr}">VERIFY-QR-123</span>
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <span th:if="${yc.trangThai.name() == 'DA_DUYET'}" class="lux-badge" style="border-color: #22C55E; color: #16A34A; background: rgba(34, 197, 94, 0.08);">
+                                <i data-lucide="check" style="width: 12px; height: 12px;"></i>
+                                ĐÃ DUYỆT
+                            </span>
+                            <span th:if="${yc.trangThai.name() == 'CHO_DUYET'}" class="lux-badge lux-badge-warning">
+                                <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
+                                CHỜ DUYỆT
+                            </span>
+                            <span th:if="${yc.trangThai.name() == 'TU_CHOI'}" class="lux-badge lux-badge-danger">
+                                <i data-lucide="x" style="width: 12px; height: 12px;"></i>
+                                TỪ CHỐI
+                            </span>
+                        </td>
+                    </tr>
+                    <tr th:if="${requests == null or requests.isEmpty()}">
+                        <td colspan="5">
+                            <div class="lux-empty-state">
+                                <i data-lucide="inbox" class="lux-empty-icon"></i>
+                                <div style="font-weight: 600; margin-bottom: 4px;">Bạn chưa nộp yêu cầu nào</div>
+                                <div style="font-size: 13px;">Hãy sử dụng biểu mẫu bên trái khi cần cấp giấy tờ chứng nhận sinh viên hoặc bảng điểm.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

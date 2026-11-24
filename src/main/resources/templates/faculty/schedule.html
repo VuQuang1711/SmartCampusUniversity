@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Quản Lý Lịch Giảng & Conflict Check</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">QUẢN LÝ LỊCH GIẢNG</span>
+                <span class="lux-badge">CONFLICT CHECK: 0 SV TRÙNG + TRỐNG PHÒNG + TRỐNG LỊCH GV</span>
+            </div>
+            <h1 class="page-title">Lịch Giảng Tuần & Đề Xuất Đổi Lịch (Có Kiểm Tra Xung Đột)</h1>
+            <p class="page-desc">Hệ thống tự động kiểm tra lịch của 100% sinh viên trong lớp, lịch phòng học và lịch giảng viên trước khi cho phép gửi Admin duyệt</p>
+        </div>
+        <form th:action="@{/Faculty/Schedule}" method="get">
+            <select name="hocKyId" onchange="this.form.submit()" class="lux-select" style="min-width: 220px;">
+                <option th:each="hk : ${semesters}" th:value="${hk.id}" th:text="${hk.tenHocKy}" th:selected="${selectedSemester != null and selectedSemester.id == hk.id}">HK2</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Form Đề Xuất Đổi Lịch + Conflict Check -->
+    <div class="lux-card" style="padding: 24px;">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="calendar-sync" style="width: 18px; height: 18px;"></i>
+                <span>Đề Xuất Đổi Ca / Đổi Phòng / Dạy Bù (Kiểm Tra Xung Đột Tự Động)</span>
+            </div>
+        </div>
+
+        <form id="scheduleChangeForm" th:action="@{/Faculty/Schedule/RequestChange}" method="post"
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div style="grid-column: span 2;">
+                <label class="form-label">Chọn Lớp Học Phần *</label>
+                <select id="ccLhpId" name="lopHocPhanId" required class="lux-select" onchange="resetConflictCheck()">
+                    <option th:each="c : ${teachingClasses}" th:value="${c.id}" th:text="${c.maLHP + ' - ' + c.hocPhan.tenHP + ' (' + c.siSoHienTai + ' SV)'}">IT003_01</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Buổi Học Hiện Tại (Nếu đổi ca/phòng)</label>
+                <select id="ccLichHocId" name="lichHocId" class="lux-select" onchange="resetConflictCheck()">
+                    <option value="">-- Thêm buổi mới (Dạy bù) --</option>
+                    <option th:each="lh : ${schedules}" th:value="${lh.id}"
+                            th:text="${lh.lopHocPhan.maLHP + ': Thứ ' + lh.thu + ' Tiết ' + lh.tietBatDau + '-' + lh.tietKetThuc + ' (' + lh.phongHoc + ')'}">T2</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Loại Yêu Cầu *</label>
+                <select name="loaiYeuCau" required class="lux-select">
+                    <option value="DOI_CA">Đổi ca / Đổi ngày học</option>
+                    <option value="DOI_PHONG">Đổi phòng học</option>
+                    <option value="DAY_BU">Xếp lịch dạy bù</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Thứ Mới *</label>
+                <select id="ccThuMoi" name="thuMoi" required class="lux-select" onchange="resetConflictCheck()">
+                    <option value="2">Thứ Hai</option>
+                    <option value="3">Thứ Ba</option>
+                    <option value="4">Thứ Tư</option>
+                    <option value="5">Thứ Năm</option>
+                    <option value="6">Thứ Sáu</option>
+                    <option value="7">Thứ Bảy</option>
+                    <option value="8">Chủ Nhật</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Tiết Bắt Đầu Mới (1-15) *</label>
+                <input id="ccTietBd" type="number" name="tietBatDauMoi" min="1" max="15" value="4" required class="lux-input mono" oninput="resetConflictCheck()">
+            </div>
+            <div>
+                <label class="form-label">Số Tiết *</label>
+                <input id="ccSoTiet" type="number" name="soTietMoi" min="1" max="6" value="3" required class="lux-input mono" oninput="resetConflictCheck()">
+            </div>
+            <div>
+                <label class="form-label">Phòng Học Mới *</label>
+                <input id="ccPhongMoi" type="text" name="phongHocMoi" value="A305" required placeholder="VD: A305, B202" class="lux-input mono" oninput="resetConflictCheck()">
+            </div>
+            <div>
+                <label class="form-label">Từ Tuần</label>
+                <input id="ccTuTuan" type="number" name="tuTuanMoi" min="1" max="20" value="1" required class="lux-input mono" oninput="resetConflictCheck()">
+            </div>
+            <div>
+                <label class="form-label">Đến Tuần</label>
+                <input id="ccDenTuan" type="number" name="denTuanMoi" min="1" max="20" value="15" required class="lux-input mono" oninput="resetConflictCheck()">
+            </div>
+            <div style="grid-column: span 2;">
+                <label class="form-label">Lý Do Đổi Lịch *</label>
+                <input type="text" name="lyDo" required placeholder="VD: Công tác khoa học, điều chỉnh phòng thực hành..." class="lux-input">
+            </div>
+
+            <!-- Khung hiển thị kết quả Conflict Check -->
+            <div id="conflictResultBox" style="grid-column: 1 / -1; display: none; padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);"></div>
+
+            <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+                <button type="button" onclick="runConflictCheck()" class="btn-lux btn-lux-secondary">
+                    <i data-lucide="shield-check" style="width: 15px; height: 15px;"></i>
+                    <span>1. Kiểm Tra Xung Đột (Conflict Check)</span>
+                </button>
+                <button id="submitChangeBtn" type="submit" disabled class="btn-lux btn-lux-primary" style="opacity: 0.5; cursor: not-allowed;">
+                    <i data-lucide="send" style="width: 15px; height: 15px;"></i>
+                    <span>2. Gửi Yêu Cầu Lên Admin Duyệt</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lịch sử đề xuất đổi lịch -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="history" style="width: 18px; height: 18px;"></i>
+                <span>Lịch Sử Yêu Cầu Đổi Lịch Đã Gửi</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr><th>Lớp HP</th><th>Loại</th><th>Lịch Mới Đề Xuất</th><th>Kết Quả Conflict Check</th><th>Trạng Thái</th><th>Phản Hồi Admin</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${changeRequests}">
+                    <td>
+                        <div class="mono" style="font-weight: 700;" th:text="${r.lopHocPhan.maLHP}">IT003_01</div>
+                        <div style="font-size: 12px; color: var(--text-muted);" th:text="${r.lopHocPhan.hocPhan.tenHP}">CTDL</div>
+                    </td>
+                    <td><span class="lux-badge" th:text="${r.loaiYeuCau.label}">Đổi ca</span></td>
+                    <td class="mono" style="font-size: 12.5px;" th:text="${'Thứ ' + r.thuMoi + ', Tiết ' + r.tietBatDauMoi + '-' + r.tietKetThucMoi + ' • P.' + r.phongHocMoi + ' (T' + r.tuTuanMoi + '-' + r.denTuanMoi + ')'}">T6</td>
+                    <td style="font-size: 12.5px; color: #16A34A; font-weight: 600;" th:text="${r.ketQuaKiemTra}">0 SV trùng</td>
+                    <td>
+                        <span th:if="${r.trangThai.name() == 'CHO_DUYET'}" class="lux-badge lux-badge-warning">CHỜ ADMIN DUYỆT</span>
+                        <span th:if="${r.trangThai.name() == 'DA_DUYET'}" class="lux-badge" style="border-color:#22C55E; color:#16A34A; background:rgba(34,197,94,0.08);">ĐÃ DUYỆT</span>
+                        <span th:if="${r.trangThai.name() == 'TU_CHOI'}" class="lux-badge lux-badge-danger">TỪ CHỐI</span>
+                    </td>
+                    <td style="font-size: 12.5px;" th:text="${r.phanHoiAdmin != null ? r.phanHoiAdmin : 'Đang chờ xử lý'}">-</td>
+                </tr>
+                <tr th:if="${changeRequests == null or changeRequests.isEmpty()}">
+                    <td colspan="6"><div class="lux-empty-state">Bạn chưa gửi yêu cầu đổi lịch nào.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lưới Lịch Giảng Tuần -->
+    <div class="lux-card" style="padding: 20px;">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+                <span>Lưới Thời Khóa Biểu Giảng Dạy Tuần (15 Tiết)</span>
+            </div>
+        </div>
+        <div style="overflow-x: auto;">
+            <div class="matrix-timetable">
+                <div class="matrix-header">Tiết</div>
+                <div class="matrix-header">Thứ Hai</div>
+                <div class="matrix-header">Thứ Ba</div>
+                <div class="matrix-header">Thứ Tư</div>
+                <div class="matrix-header">Thứ Năm</div>
+                <div class="matrix-header">Thứ Sáu</div>
+                <div class="matrix-header">Thứ Bảy</div>
+                <div class="matrix-header">Chủ Nhật</div>
+
+                <th:block th:each="period : ${#numbers.sequence(1, 15)}">
+                    <div class="matrix-cell matrix-period"><span th:text="${'Tiết ' + period}">Tiết 1</span></div>
+                    <th:block th:each="day : ${#numbers.sequence(2, 8)}">
+                        <div class="matrix-cell">
+                            <div th:if="${grid != null and grid.containsKey(day + '_' + period)}" class="schedule-card">
+                                <div class="title" th:text="${grid.get(day + '_' + period).lopHocPhan.hocPhan.tenHP}">Môn học</div>
+                                <div class="room">
+                                    P: <strong th:text="${grid.get(day + '_' + period).phongHoc}">A302</strong> •
+                                    <span th:text="${grid.get(day + '_' + period).lopHocPhan.maLHP}">IT003_01</span>
+                                </div>
+                            </div>
+                        </div>
+                    </th:block>
+                </th:block>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function resetConflictCheck() {
+            const btn = document.getElementById('submitChangeBtn');
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            const box = document.getElementById('conflictResultBox');
+            box.style.display = 'none';
+        }
+
+        async function runConflictCheck() {
+            const params = new URLSearchParams({
+                lopHocPhanId: document.getElementById('ccLhpId').value,
+                thuMoi: document.getElementById('ccThuMoi').value,
+                tietBatDauMoi: document.getElementById('ccTietBd').value,
+                soTietMoi: document.getElementById('ccSoTiet').value,
+                phongHocMoi: document.getElementById('ccPhongMoi').value,
+                tuTuanMoi: document.getElementById('ccTuTuan').value,
+                denTuanMoi: document.getElementById('ccDenTuan').value
+            });
+            const lhId = document.getElementById('ccLichHocId').value;
+            if (lhId) params.append('lichHocId', lhId);
+
+            const box = document.getElementById('conflictResultBox');
+            const btn = document.getElementById('submitChangeBtn');
+            box.style.display = 'block';
+            box.style.background = 'var(--bg-subtle)';
+            box.innerHTML = 'Đang chạy thuật toán kiểm tra trùng lịch trên toàn bộ sinh viên và phòng học...';
+
+            try {
+                const res = await fetch('/api/faculty/check-schedule-conflict?' + params.toString());
+                const data = await res.json();
+
+                if (data.canSubmit) {
+                    box.style.background = 'rgba(34, 197, 94, 0.08)';
+                    box.style.borderColor = '#22C55E';
+                    box.innerHTML = `<div style="color:#15803D; font-weight:700; font-size:14px;">✓ PASS KIỂM TRA XUNG ĐỘT: ${data.summary}</div>
+                                     <div style="font-size:12.5px; color:#166534; margin-top:4px;">Đủ điều kiện (0 sinh viên trùng lịch, trống phòng, trống lịch giảng viên). Bạn có thể bấm gửi yêu cầu lên Admin phê duyệt!</div>`;
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                } else {
+                    box.style.background = 'rgba(239, 68, 68, 0.08)';
+                    box.style.borderColor = '#EF4444';
+                    let html = `<div style="color:#B91C1C; font-weight:700; font-size:14px;">✕ ${data.summary}</div>`;
+                    if (data.studentConflicts && data.studentConflicts.length > 0) {
+                        html += `<div style="margin-top:8px; font-weight:600; font-size:12.5px; color:#991B1B;">Chi tiết sinh viên bị trùng lịch (${data.studentConflictCount}/${data.totalStudentsChecked} SV):</div><ul style="margin:4px 0 0 18px; font-size:12.5px; color:#991B1B;">` +
+                            data.studentConflicts.map(x => `<li>${x}</li>`).join('') + `</ul>`;
+                    }
+                    if (data.roomConflicts && data.roomConflicts.length > 0) {
+                        html += `<div style="margin-top:8px; font-weight:600; font-size:12.5px; color:#991B1B;">Xung đột phòng học:</div><ul style="margin:4px 0 0 18px; font-size:12.5px; color:#991B1B;">` +
+                            data.roomConflicts.map(x => `<li>${x}</li>`).join('') + `</ul>`;
+                    }
+                    if (data.lecturerConflicts && data.lecturerConflicts.length > 0) {
+                        html += `<div style="margin-top:8px; font-weight:600; font-size:12.5px; color:#991B1B;">Xung đột lịch giảng viên:</div><ul style="margin:4px 0 0 18px; font-size:12.5px; color:#991B1B;">` +
+                            data.lecturerConflicts.map(x => `<li>${x}</li>`).join('') + `</ul>`;
+                    }
+                    box.innerHTML = html;
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                }
+            } catch (e) {
+                box.innerHTML = `<div style="color:#B91C1C;">Lỗi kết nối kiểm tra xung đột: ${e.message}</div>`;
+            }
+        }
+    </script>
+
+</div>
+</body>
+</html>

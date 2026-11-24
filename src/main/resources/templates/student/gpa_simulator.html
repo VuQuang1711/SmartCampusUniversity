@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Mô Phỏng GPA Mục Tiêu</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">SMART ADVISOR</span>
+                <span class="lux-badge">
+                    <i data-lucide="compass" style="width: 12px; height: 12px;"></i>
+                    THUẬT TOÁN TỐI ƯU GPA
+                </span>
+            </div>
+            <h1 class="page-title">Mô Phỏng GPA Mục Tiêu & Cố Vấn Tốt Nghiệp</h1>
+            <p class="page-desc">Dự phóng điểm số các kỳ tới và nhận gợi ý môn học cải thiện hiệu quả nhất để nâng bằng tốt nghiệp</p>
+        </div>
+    </div>
+
+    <!-- Simulator Input & Prediction Card -->
+    <div class="lux-card" style="padding: 28px;">
+        <form th:action="@{/Student/GpaSimulator}" method="get" style="display: flex; gap: 18px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 28px;">
+            <div style="flex: 1; min-width: 260px;">
+                <label class="form-label" style="font-size: 13px;">
+                    <i data-lucide="target" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+                    Mục Tiêu GPA Khi Tốt Nghiệp (Thang 4.0):
+                </label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="number" step="0.05" min="2.0" max="4.0" name="targetCpa" th:value="${targetCpa}" class="lux-input mono" style="font-size: 16px; font-weight: 700; max-width: 180px;">
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" onclick="document.querySelector('input[name=targetCpa]').value='3.20'; this.form.submit();" class="btn-lux btn-lux-secondary btn-lux-sm">Bằng Giỏi (3.20)</button>
+                        <button type="button" onclick="document.querySelector('input[name=targetCpa]').value='3.60'; this.form.submit();" class="btn-lux btn-lux-secondary btn-lux-sm">Xuất Sắc (3.60)</button>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn-lux btn-lux-primary">
+                <i data-lucide="sparkles" style="width: 15px; height: 15px;"></i>
+                <span>Chạy Mô Phỏng & Dự Báo</span>
+            </button>
+        </form>
+
+        <!-- Prediction Stats Summary -->
+        <div style="background-color: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 20px;">
+                <div>
+                    <div class="stat-box-label">GPA Hiện Tại</div>
+                    <div class="stat-box-value" style="font-size: 30px; margin: 4px 0 0 0;" th:text="${simResult.currentCpa}">3.45</div>
+                    <div class="stat-box-sub">Tích lũy từ đầu khóa</div>
+                </div>
+                <div>
+                    <div class="stat-box-label">Tín Chỉ Còn Lại</div>
+                    <div class="stat-box-value" style="font-size: 30px; margin: 4px 0 0 0;">
+                        <span th:text="${simResult.remainingCredits}">77</span>
+                        <span style="font-size: 15px; font-weight: 500; color: var(--text-muted);">TC</span>
+                    </div>
+                    <div class="stat-box-sub">Chương trình 150 tín chỉ</div>
+                </div>
+                <div>
+                    <div class="stat-box-label">GPA Tối Thiểu Cần Đạt</div>
+                    <div class="stat-box-value" style="font-size: 30px; margin: 4px 0 0 0;" th:text="${simResult.requiredFutureGpa}">3.05</div>
+                    <div class="stat-box-sub">Bình quân các môn còn lại</div>
+                </div>
+                <div>
+                    <div class="stat-box-label">Độ Khả Thi</div>
+                    <div style="margin-top: 10px;">
+                        <span th:if="${simResult.achievable}" class="lux-badge" style="border-color: #22C55E; color: #16A34A; background: rgba(34, 197, 94, 0.08); font-size: 12.5px; padding: 4px 12px;">
+                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                            HOÀN TOÀN KHẢ THI
+                        </span>
+                        <span th:unless="${simResult.achievable}" class="lux-badge lux-badge-danger" style="font-size: 12.5px; padding: 4px 12px;">
+                            <i data-lucide="alert-octagon" style="width: 14px; height: 14px;"></i>
+                            CẦN HỌC CẢI THIỆN
+                        </span>
+                    </div>
+                    <div class="stat-box-sub" style="margin-top: 6px;">Theo phân tích dữ liệu</div>
+                </div>
+            </div>
+
+            <div style="padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 13.5px; display: flex; align-items: flex-start; gap: 10px;">
+                <i data-lucide="message-square" style="width: 16px; height: 16px; flex-shrink: 0; margin-top: 3px; color: var(--text-secondary);"></i>
+                <div>
+                    <strong style="color: var(--text-primary);">Lời khuyên từ Cố vấn: </strong>
+                    <span style="color: var(--text-secondary);" th:text="${simResult.adviceMessage}">Bạn cần duy trì điểm số trung bình...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suggested Improvement Subjects -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div>
+                <div class="card-heading-title">
+                    <i data-lucide="trending-up" style="width: 18px; height: 18px;"></i>
+                    <span>Học Phần Đề Xuất Học Cải Thiện Tối Ưu</span>
+                </div>
+                <div style="font-size: 12.5px; color: var(--text-muted); margin-top: 4px;">
+                    Theo quy chế tín chỉ, điểm mới sẽ thay thế điểm cũ nếu cao hơn. Học lại các môn điểm D, C sẽ kéo GPA toàn khóa nhanh nhất với chi phí tín chỉ thấp nhất.
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr>
+                    <th>Mã HP</th>
+                    <th>Tên Môn Học</th>
+                    <th style="text-align: center;">Số TC</th>
+                    <th style="text-align: center;">Điểm Hiện Tại</th>
+                    <th style="text-align: center;">Hệ 4 Hiện Tại</th>
+                    <th style="text-align: center;">GPA Tăng Thêm (Nếu đạt A)</th>
+                    <th style="text-align: right;">Đăng Ký</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="sug : ${simResult.suggestedImprovements}">
+                    <td>
+                        <span class="mono" style="font-weight: 700;" th:text="${sug.maHp}">INT1306</span>
+                    </td>
+                    <td style="font-weight: 600;" th:text="${sug.tenHp}">Nhập môn lập trình</td>
+                    <td class="mono" style="text-align: center;" th:text="${sug.credits}">3</td>
+                    <td style="text-align: center;">
+                        <span class="lux-badge lux-badge-warning" style="font-size: 12px;" th:text="${sug.currentGrade}">C</span>
+                    </td>
+                    <td class="mono" style="text-align: center;" th:text="${sug.currentScale4}">2.0</td>
+                    <td class="mono" style="text-align: center; font-weight: 800; color: #16A34A;" th:text="${'+' + sug.expectedCpaIncreaseIfA}">+0.04</td>
+                    <td style="text-align: right;">
+                        <a th:href="@{/Student/Registration}" class="btn-lux btn-lux-primary btn-lux-sm">
+                            <i data-lucide="repeat" style="width: 13px; height: 13px;"></i>
+                            <span>Đăng Ký Học Cải Thiện</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${simResult.suggestedImprovements == null or simResult.suggestedImprovements.isEmpty()}">
+                    <td colspan="7">
+                        <div class="lux-empty-state">
+                            <i data-lucide="sparkles" class="lux-empty-icon"></i>
+                            <div style="font-weight: 600; margin-bottom: 4px;">Kết quả học tập rất xuất sắc!</div>
+                            <div style="font-size: 13px;">Bạn không có môn nào bị điểm D hoặc C cần phải học cải thiện.</div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

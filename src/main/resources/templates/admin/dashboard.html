@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Tổng Quan Điều Hành - Admin</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">CỔNG QUẢN TRỊ & GIÁO VỤ</span>
+                <span class="lux-badge" th:text="${activeHocKy != null ? activeHocKy.tenHocKy : 'HK2'}">HK2</span>
+            </div>
+            <h1 class="page-title">Trung Tâm Điều Hành Hệ Thống Đào Tạo</h1>
+            <p class="page-desc">Giám sát yêu cầu phê duyệt, tình hình học vụ, doanh thu học phí và nhật ký hệ thống toàn trường</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a th:href="@{/Admin/Approvals}" class="btn-lux btn-lux-primary">
+                <i data-lucide="check-square" style="width: 15px; height: 15px;"></i>
+                <span>Trung Tâm Phê Duyệt (<span th:text="${pendingClasses + pendingSchedules + pendingCerts}">0</span>)</span>
+            </a>
+            <form th:action="@{/Admin/Warnings/Audit}" method="post">
+                <button type="submit" class="btn-lux btn-lux-secondary" onclick="return confirm('Quét lại toàn bộ GPA sinh viên để cập nhật cảnh báo học vụ?')">
+                    <i data-lucide="scan" style="width: 15px; height: 15px;"></i>
+                    <span>Rà Soát Học Vụ</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3 Quick Approval Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 22px;">
+        <a th:href="@{/Admin/Approvals(tab='classes')}" class="lux-card" style="padding: 18px; margin-bottom: 0; text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">ĐỀ XUẤT MỞ LỚP CHỜ DUYỆT</div>
+                <div class="mono" style="font-size: 28px; font-weight: 800; color: #D97706;" th:text="${pendingClasses}">1</div>
+            </div>
+            <i data-lucide="book-plus" style="width: 28px; height: 28px; color: #D97706;"></i>
+        </a>
+        <a th:href="@{/Admin/Approvals(tab='schedules')}" class="lux-card" style="padding: 18px; margin-bottom: 0; text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">ĐỔI LỊCH GIẢNG CHỜ DUYỆT</div>
+                <div class="mono" style="font-size: 28px; font-weight: 800; color: #2563EB;" th:text="${pendingSchedules}">1</div>
+            </div>
+            <i data-lucide="calendar-sync" style="width: 28px; height: 28px; color: #2563EB;"></i>
+        </a>
+        <a th:href="@{/Admin/Approvals(tab='certificates')}" class="lux-card" style="padding: 18px; margin-bottom: 0; text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600;">CHỨNG CHỈ PDF CHỜ DUYỆT</div>
+                <div class="mono" style="font-size: 28px; font-weight: 800; color: #7C3AED;" th:text="${pendingCerts}">1</div>
+            </div>
+            <i data-lucide="file-badge" style="width: 28px; height: 28px; color: #7C3AED;"></i>
+        </a>
+    </div>
+
+    <!-- Stat Widgets -->
+    <div class="stat-container">
+        <div class="stat-box">
+            <div class="stat-box-label">Sinh Viên / Giảng Viên</div>
+            <div class="stat-box-value"><span th:text="${totalStudents}">3</span> <span style="font-size:16px; color:var(--text-muted);">/ <span th:text="${totalFaculty}">3</span> GV</span></div>
+            <div class="stat-box-sub" th:text="${totalSubjects + ' học phần • ' + totalClasses + ' lớp HP'}">Stats</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-label">Học Phí Đã Thu Kỳ Này</div>
+            <div class="stat-box-value" style="font-size: 24px; color: #16A34A;" th:text="${#numbers.formatDecimal(totalCollected != null ? totalCollected : 0, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</div>
+            <div class="stat-box-sub">Đối soát VietQR & Kế toán</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-label">Công Nợ Còn Phải Thu</div>
+            <div class="stat-box-value" style="font-size: 24px; color: #DC2626;" th:text="${#numbers.formatDecimal(totalDebt != null ? totalDebt : 0, 0, 'POINT', 0, 'POINT') + ' đ'}">0 đ</div>
+            <div class="stat-box-sub">Dư nợ tín chỉ hiện tại</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-box-label">SV Cảnh Báo Học Vụ</div>
+            <div class="stat-box-value" style="color: #DC2626;" th:text="${warnedStudents != null ? warnedStudents.size() : 0}">1</div>
+            <div class="stat-box-sub">GPA &lt; 1.8 cần theo dõi</div>
+        </div>
+    </div>
+
+    <!-- Cảnh báo học vụ + Audit log gần nhất -->
+    <div class="split-layout">
+        <div class="lux-card" style="margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="alert-octagon" style="width: 18px; height: 18px; color: #DC2626;"></i>
+                    <span>Sinh Viên Diện Cảnh Báo Học Vụ</span>
+                </div>
+                <a th:href="@{/Admin/Students}" class="btn-lux btn-lux-secondary btn-lux-sm">Hồ Sơ SV</a>
+            </div>
+            <div class="table-container">
+                <table class="lux-table">
+                    <thead><tr><th>MSSV</th><th>Họ Tên</th><th>GPA</th><th>Trạng Thái</th></tr></thead>
+                    <tbody>
+                    <tr th:each="sv : ${warnedStudents}">
+                        <td class="mono" style="font-weight: 600;" th:text="${sv.mssv}">2180609999</td>
+                        <td style="font-weight: 600;" th:text="${sv.nguoiDung.hoTen}">Trần Thị Hoa</td>
+                        <td class="mono" style="color: #DC2626; font-weight: 700;" th:text="${#numbers.formatDecimal(sv.cpaTichLuy, 1, 2)}">1.75</td>
+                        <td><span class="lux-badge lux-badge-danger" th:text="${sv.trangThaiHocVu}">CANH_BAO_1</span></td>
+                    </tr>
+                    <tr th:if="${warnedStudents == null or warnedStudents.isEmpty()}">
+                        <td colspan="4"><div class="lux-empty-state">Không có sinh viên bị cảnh báo học vụ.</div></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="lux-card" style="margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="history" style="width: 18px; height: 18px;"></i>
+                    <span>Nhật Ký Hệ Thống Gần Đây</span>
+                </div>
+                <a th:href="@{/Admin/AuditLog}" class="btn-lux btn-lux-secondary btn-lux-sm">Xem Toàn Bộ</a>
+            </div>
+            <div class="inbox-list" style="gap: 10px;">
+                <div th:each="log : ${recentLogs}" class="inbox-item" style="padding: 13px 16px;">
+                    <div class="inbox-item-header" style="margin-bottom: 5px;">
+                        <span class="lux-badge lux-badge-solid" th:text="${log.hanhDong}">ACTION</span>
+                        <span class="inbox-item-meta" th:text="${#temporals.format(log.thoiGian, 'dd/MM HH:mm')}">Time</span>
+                    </div>
+                    <div style="font-weight: 600; font-size: 13px;" th:text="${log.tenNguoiThucHien + ' • ' + log.doiTuong}">Admin</div>
+                    <div style="color: var(--text-secondary); font-size: 12.5px; margin-top: 3px; line-height: 1.5;" th:text="${log.chiTiet}">Chi tiết</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

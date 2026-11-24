@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUIT E-Learning — Hệ Thống Học Tập Trực Tuyến</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --huit-blue: #005BAB;
+            --huit-blue-dark: #003E7E;
+            --huit-sky: #0284C7;
+            --huit-sky-soft: #E0F2FE;
+            --bg-page: #F4F7FB;
+            --bg-card: #FFFFFF;
+            --text-main: #0F172A;
+            --text-sub: #475569;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+            --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ==================== SPLASH SCREEN: NỀN TRẮNG LOGO HUIT ==================== */
+        #huit-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            cursor: pointer;
+            transition: opacity 0.55s ease, visibility 0.55s ease;
+        }
+        #huit-splash.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .splash-logo-wrap {
+            width: 146px;
+            height: 146px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: splashPop 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .splash-logo-wrap img {
+            width: 136px;
+            height: 136px;
+            object-fit: contain;
+        }
+        .splash-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--huit-blue);
+            animation: splashFadeUp 0.7s ease 0.15s both;
+        }
+        .splash-sub {
+            font-size: 12.5px;
+            font-weight: 500;
+            color: #64748B;
+            margin-top: -10px;
+            animation: splashFadeUp 0.7s ease 0.25s both;
+        }
+        .splash-bar {
+            width: 160px;
+            height: 3px;
+            background: #E2E8F0;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .splash-bar-fill {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, var(--huit-blue), var(--huit-sky));
+            border-radius: 999px;
+            animation: splashProgress 1.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes splashPop {
+            0% { opacity: 0; transform: scale(0.82); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes splashFadeUp {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes splashProgress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* ==================== TOP NAVBAR ==================== */
+        .el-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        .el-nav-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .el-brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            text-decoration: none;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+        .el-brand img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+        .el-brand-name {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+        .el-brand-name strong {
+            font-size: 15.5px;
+            font-weight: 800;
+            color: var(--huit-blue);
+            letter-spacing: 0.02em;
+        }
+        .el-brand-name span {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .el-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .el-nav-link {
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 13.5px;
+            font-weight: 600;
+            padding: 8px 13px;
+            border-radius: 10px;
+            transition: all 0.15s ease;
+        }
+        .el-nav-link:hover, .el-nav-link.active {
+            color: var(--huit-blue);
+            background: #EFF6FF;
+        }
+        .el-nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .el-portal-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 13px;
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--huit-blue);
+            background: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            transition: all 0.15s ease;
+        }
+        .el-portal-btn:hover {
+            background: var(--huit-blue);
+            color: #FFFFFF;
+            border-color: var(--huit-blue);
+        }
+        .el-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 5px 12px 5px 6px;
+            border-radius: 999px;
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+        }
+        .el-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--huit-blue), var(--huit-sky));
+            color: #FFFFFF;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .el-user-info {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+        .el-user-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .el-sso-tag {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: #059669;
+        }
+        .el-logout-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+            color: #EF4444;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .el-logout-btn:hover {
+            background: #FEF2F2;
+            border-color: #FECACA;
+        }
+
+        /* ==================== MAIN CONTAINER ==================== */
+        .el-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 28px 24px 64px;
+        }
+
+        /* ==================== ACADEMIC WELCOME + ROADMAP STUDIO ==================== */
+        .el-hero-grid {
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        .el-welcome-card {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 26px 28px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+        }
+        .el-welcome-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--huit-blue), var(--huit-sky));
+        }
+        .el-welcome-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--huit-blue);
+            background: #EFF6FF;
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+        }
+        .el-welcome-card h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        .el-welcome-card p {
+            font-size: 13.5px;
+            color: var(--text-sub);
+            max-width: 600px;
+            margin-bottom: 18px;
+        }
+        .el-hero-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .el-stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 13px;
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            font-size: 12.5px;
+            color: var(--text-sub);
+        }
+        .el-stat-pill strong {
+            color: var(--huit-blue);
+            font-family: var(--font-mono);
+            font-size: 13.5px;
+        }
+
+        /* Roadmap / Learning Goal Card */
+        .el-roadmap-card {
+            background: linear-gradient(145deg, #004A8F 0%, #0066BE 55%, #0284C7 100%);
+            color: #FFFFFF;
+            border-radius: 18px;
+            padding: 24px 26px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 24px rgba(0, 91, 171, 0.18);
+        }
+        .el-roadmap-card h2 {
+            font-size: 16.5px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .el-roadmap-card p {
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.86);
+            margin-bottom: 14px;
+        }
+        .el-track-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .el-track-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            border-radius: 10px;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-decoration: none;
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            transition: all 0.15s ease;
+        }
+        .el-track-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .el-track-btn.active {
+            background: #FFFFFF;
+            color: var(--huit-blue-dark);
+            border-color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+        }
+
+        /* ==================== FILTER & SEARCH BAR ==================== */
+        .el-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .el-cat-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .el-cat-tab {
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-sub);
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            transition: all 0.15s ease;
+        }
+        .el-cat-tab:hover {
+            border-color: #93C5FD;
+            color: var(--huit-blue);
+        }
+        .el-cat-tab.active {
+            background: var(--huit-blue);
+            color: #FFFFFF;
+            border-color: var(--huit-blue);
+            box-shadow: 0 4px 12px rgba(0, 91, 171, 0.2);
+        }
+        .el-search-form {
+            display: flex;
+            align-items: center;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 4px 6px 4px 12px;
+            width: 310px;
+            max-width: 100%;
+            transition: border-color 0.15s ease;
+        }
+        .el-search-form:focus-within {
+            border-color: var(--huit-blue);
+            box-shadow: 0 0 0 3px rgba(0, 91, 171, 0.1);
+        }
+        .el-search-form input {
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-main);
+            flex: 1;
+            min-width: 0;
+            background: transparent;
+        }
+        .el-search-form button {
+            border: none;
+            background: var(--huit-blue);
+            color: #FFFFFF;
+            font-family: inherit;
+            font-size: 12.5px;
+            font-weight: 600;
+            padding: 7px 13px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* ==================== COURSE GRID ==================== */
+        .el-section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            gap: 12px;
+        }
+        .el-section-head h2 {
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        .el-section-head span {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .el-course-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 22px;
+        }
+        .el-course-card {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+        .el-course-card:hover {
+            transform: translateY(-4px);
+            border-color: #93C5FD;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+        }
+        .el-course-cover {
+            display: block;
+            position: relative;
+            height: 164px;
+            padding: 16px 18px;
+            text-decoration: none;
+            color: #FFFFFF;
+            overflow: hidden;
+        }
+        .el-cover-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.18) 1px, transparent 1px);
+            background-size: 18px 18px;
+            opacity: 0.55;
+        }
+        .el-cover-top {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .el-code-pill {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 9px;
+            border-radius: 8px;
+            background: rgba(15, 23, 42, 0.26);
+            backdrop-filter: blur(4px);
+            color: #FFFFFF;
+        }
+        .el-credit-pill {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.22);
+            color: #FFFFFF;
+        }
+        .el-cover-art {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 94px;
+            transition: transform 0.25s ease;
+        }
+        .el-course-card:hover .el-cover-art {
+            transform: scale(1.06);
+        }
+        .el-cover-caption {
+            position: absolute;
+            bottom: 10px;
+            left: 18px;
+            right: 18px;
+            z-index: 2;
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.85);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .el-course-body {
+            padding: 18px 20px 16px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .el-course-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .el-cat-badge {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--huit-blue);
+            background: #EFF6FF;
+            padding: 3px 9px;
+            border-radius: 6px;
+        }
+        .el-level-text {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .el-course-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-decoration: none;
+            line-height: 1.35;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .el-course-title:hover {
+            color: var(--huit-blue);
+        }
+        .el-course-desc {
+            font-size: 12.8px;
+            color: var(--text-sub);
+            margin-bottom: 13px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex: 1;
+        }
+        .el-skills-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+        .el-skill-chip {
+            font-size: 11px;
+            font-weight: 600;
+            color: #334155;
+            background: #F1F5F9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        .el-course-footer {
+            padding-top: 13px;
+            border-top: 1px solid #F1F5F9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .el-lecturer {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .el-detail-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--huit-blue);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .el-detail-cta:hover {
+            color: var(--huit-blue-dark);
+        }
+
+        /* ==================== RESOURCES / TEXTBOOK SECTION ==================== */
+        .el-resources-section {
+            margin-top: 48px;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 26px 28px;
+        }
+        .el-res-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 16px;
+        }
+        .el-res-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .el-res-item:hover {
+            border-color: #93C5FD;
+            background: #F0F9FF;
+        }
+        .el-res-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #DBEAFE;
+            color: var(--huit-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .el-res-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 3px;
+        }
+        .el-res-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .el-empty-box {
+            text-align: center;
+            padding: 48px 20px;
+            background: #FFFFFF;
+            border: 1px dashed #CBD5E1;
+            border-radius: 16px;
+            color: var(--text-muted);
+        }
+
+        .el-footer {
+            margin-top: 48px;
+            padding-top: 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 12.5px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 1024px) {
+            .el-hero-grid { grid-template-columns: 1fr; }
+            .el-course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 680px) {
+            .el-nav-links { display: none; }
+            .el-course-grid { grid-template-columns: 1fr; }
+            .el-res-grid { grid-template-columns: 1fr; }
+            .el-portal-btn span { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== MÀN HÌNH CHỜ: NỀN TRẮNG LOGO HUIT ==================== -->
+<div id="huit-splash" th:if="${showSplash}" onclick="dismissSplash()" title="Nhấp để vào ngay">
+    <div class="splash-logo-wrap">
+        <img th:src="@{/images/huit-round-logo.png}" alt="HUIT Logo">
+    </div>
+    <div class="splash-title">HUIT E-LEARNING</div>
+    <div class="splash-sub">Trường Đại Học Công Thương TP. Hồ Chí Minh</div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+</div>
+
+<!-- ==================== TOP NAVIGATION ==================== -->
+<header class="el-nav">
+    <div class="el-nav-inner">
+        <a th:href="@{/ELearning(splash=false)}" class="el-brand">
+            <img th:src="@{/images/huit-round-logo.png}" alt="HUIT Logo">
+            <div class="el-brand-name">
+                <strong>HUIT E-LEARNING</strong>
+                <span>Khoa Công Nghệ Thông Tin • KHDL</span>
+            </div>
+        </a>
+
+        <nav class="el-nav-links">
+            <a href="#khoa-hoc" class="el-nav-link active">Khóa học (<span th:text="${totalCoursesCount}">10</span>)</a>
+            <a href="#lo-trinh" class="el-nav-link">Lộ trình mục tiêu</a>
+            <a href="#tai-lieu" class="el-nav-link">Thư viện giáo trình</a>
+        </nav>
+
+        <div class="el-nav-right">
+            <a th:href="@{${portalReturnUrl}}" class="el-portal-btn" title="Quay về Cổng thông tin HUIT">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                <span>Cổng Sinh viên</span>
+            </a>
+
+            <div class="el-user-chip" th:if="${currentUser != null}">
+                <div class="el-avatar" th:text="${currentUser.hoTen != null ? currentUser.hoTen.substring(0, 1) : 'U'}">N</div>
+                <div class="el-user-info">
+                    <span class="el-user-name" th:text="${currentUser.hoTen}">Nguyễn Minh Khoa</span>
+                    <span class="el-sso-tag" th:text="${ssoLinked ? '● Đã liên kết SIS' : currentUser.maDinhDanh}">● Đã liên kết SIS</span>
+                </div>
+            </div>
+
+            <a th:href="@{/ELearning/Logout}" class="el-logout-btn" title="Đăng xuất E-Learning">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="el-container">
+    <!-- ==================== WELCOME + LEARNING ROADMAP ==================== -->
+    <section class="el-hero-grid" id="lo-trinh">
+        <div class="el-welcome-card">
+            <div class="el-welcome-kicker">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                <span>Không gian học tập trực tuyến HUIT</span>
+            </div>
+            <h1>Xin chào, <span th:text="${currentUser != null ? currentUser.hoTen : 'Sinh viên HUIT'}">Nguyễn Minh Khoa</span>!</h1>
+            <p>Khám phá hệ thống học phần số hóa chuẩn chương trình đào tạo <strong>Khoa học Dữ liệu (HUIT 2024)</strong>. Chọn môn học để xem đề cương chi tiết, kỹ năng nghề nghiệp và chuẩn đầu ra CLO/PLO.</p>
+            <div class="el-hero-stats">
+                <div class="el-stat-pill">
+                    <strong th:text="${totalCoursesCount}">10</strong>
+                    <span>Học phần chuẩn CTĐT</span>
+                </div>
+                <div class="el-stat-pill">
+                    <strong>100%</strong>
+                    <span>Ánh xạ CLO / PLO</span>
+                </div>
+                <div class="el-stat-pill">
+                    <strong>SSO</strong>
+                    <span>Đồng bộ Cổng Sinh viên</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="el-roadmap-card">
+            <div>
+                <h2>Định hướng mục tiêu nghề nghiệp</h2>
+                <p>Chọn hướng phát triển bạn quan tâm để hệ thống gợi ý các học phần trọng tâm phù hợp nhất.</p>
+            </div>
+            <div class="el-track-grid">
+                <a th:href="@{/ELearning(category=${selectedCategory}, q=${searchQuery}, track='ALL', splash=false)}"
+                   class="el-track-btn" th:classappend="${selectedTrack == 'ALL' ? ' active' : ''}">
+                    Tất cả lộ trình
+                </a>
+                <a th:href="@{/ELearning(category=${selectedCategory}, q=${searchQuery}, track='analyst', splash=false)}"
+                   class="el-track-btn" th:classappend="${selectedTrack == 'analyst' ? ' active' : ''}">
+                    Data Analyst
+                </a>
+                <a th:href="@{/ELearning(category=${selectedCategory}, q=${searchQuery}, track='ml', splash=false)}"
+                   class="el-track-btn" th:classappend="${selectedTrack == 'ml' ? ' active' : ''}">
+                    ML / AI Engineer
+                </a>
+                <a th:href="@{/ELearning(category=${selectedCategory}, q=${searchQuery}, track='bigdata', splash=false)}"
+                   class="el-track-btn" th:classappend="${selectedTrack == 'bigdata' ? ' active' : ''}">
+                    Big Data Engineer
+                </a>
+                <a th:href="@{/ELearning(category=${selectedCategory}, q=${searchQuery}, track='dev', splash=false)}"
+                   class="el-track-btn" th:classappend="${selectedTrack == 'dev' ? ' active' : ''}">
+                    Data Developer
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== FILTER & SEARCH ==================== -->
+    <section id="khoa-hoc">
+        <div class="el-toolbar">
+            <div class="el-cat-tabs">
+                <a th:href="@{/ELearning(category='ALL', q=${searchQuery}, track=${selectedTrack}, splash=false)}"
+                   class="el-cat-tab" th:classappend="${selectedCategory == 'ALL' ? ' active' : ''}">Tất cả học phần</a>
+                <a th:href="@{/ELearning(category='DAI_CUONG', q=${searchQuery}, track=${selectedTrack}, splash=false)}"
+                   class="el-cat-tab" th:classappend="${selectedCategory == 'DAI_CUONG' ? ' active' : ''}">Đại cương &amp; Toán</a>
+                <a th:href="@{/ELearning(category='CO_SO_NGANH', q=${searchQuery}, track=${selectedTrack}, splash=false)}"
+                   class="el-cat-tab" th:classappend="${selectedCategory == 'CO_SO_NGANH' ? ' active' : ''}">Cơ sở ngành</a>
+                <a th:href="@{/ELearning(category='CHUYEN_NGANH', q=${searchQuery}, track=${selectedTrack}, splash=false)}"
+                   class="el-cat-tab" th:classappend="${selectedCategory == 'CHUYEN_NGANH' ? ' active' : ''}">Chuyên ngành KHDL</a>
+                <a th:href="@{/ELearning(category='CONG_NGHE', q=${searchQuery}, track=${selectedTrack}, splash=false)}"
+                   class="el-cat-tab" th:classappend="${selectedCategory == 'CONG_NGHE' ? ' active' : ''}">Tự chọn công nghệ</a>
+            </div>
+
+            <form th:action="@{/ELearning}" method="get" class="el-search-form">
+                <input type="hidden" name="category" th:value="${selectedCategory}">
+                <input type="hidden" name="track" th:value="${selectedTrack}">
+                <input type="hidden" name="splash" value="false">
+                <input type="text" name="q" th:value="${searchQuery}" placeholder="Tìm môn học, mã HP, kỹ năng...">
+                <button type="submit">Tìm</button>
+            </form>
+        </div>
+
+        <div class="el-section-head">
+            <h2>Danh mục học phần E-Learning</h2>
+            <span>Hiển thị <strong th:text="${#lists.size(courses)}">10</strong> / <span th:text="${totalCoursesCount}">10</span> học phần — nhấp vào ảnh môn học để xem giới thiệu, kỹ năng &amp; CLO</span>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div class="el-empty-box" th:if="${#lists.isEmpty(courses)}">
+            <p style="font-weight: 700; color: var(--text-main); margin-bottom: 6px;">Không tìm thấy học phần phù hợp với bộ lọc hiện tại</p>
+            <p style="font-size: 13px; margin-bottom: 14px;">Hãy thử xóa từ khóa hoặc chuyển về chế độ hiển thị tất cả lộ trình.</p>
+            <a th:href="@{/ELearning(splash=false)}" class="el-portal-btn">Xem tất cả 10 học phần</a>
+        </div>
+
+        <!-- 10 COURSE CARDS GRID -->
+        <div class="el-course-grid" th:unless="${#lists.isEmpty(courses)}">
+            <article class="el-course-card" th:each="c : ${courses}">
+                <!-- Clickable Course Artwork Cover -->
+                <a th:href="@{'/ELearning/Course/' + ${c.slug}}" class="el-course-cover"
+                   th:style="'background: linear-gradient(135deg, ' + ${c.accentFrom} + ', ' + ${c.accentTo} + ');'">
+                    <div class="el-cover-pattern"></div>
+                    <div class="el-cover-top">
+                        <span class="el-code-pill" th:text="${c.code}">0101102572</span>
+                        <span class="el-credit-pill" th:text="${c.credits + ' TC'}">3 TC</span>
+                    </div>
+
+                    <!-- Custom Inline SVG Artwork per Course IconKey -->
+                    <div class="el-cover-art" th:switch="${c.iconKey}">
+                        <svg th:case="'chart'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <rect x="10" y="34" width="9" height="20" rx="2.5" fill="rgba(255,255,255,0.85)"/>
+                            <rect x="24" y="24" width="9" height="30" rx="2.5" fill="#FFFFFF"/>
+                            <rect x="38" y="16" width="9" height="38" rx="2.5" fill="rgba(255,255,255,0.9)"/>
+                            <path d="M12 24L27 14L40 20L53 9" stroke="#FDE047" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="53" cy="9" r="3.5" fill="#FDE047"/>
+                        </svg>
+                        <svg th:case="'stats'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <path d="M8 50C18 50 22 14 32 14C42 14 46 50 56 50" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M8 50C18 50 22 14 32 14C42 14 46 50 56 50Z" fill="rgba(255,255,255,0.22)"/>
+                            <line x1="32" y1="14" x2="32" y2="50" stroke="#FDE047" stroke-width="2.4" stroke-dasharray="4 4"/>
+                            <line x1="8" y1="50" x2="56" y2="50" stroke="rgba(255,255,255,0.85)" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                        <svg th:case="'python'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <rect x="10" y="12" width="44" height="40" rx="8" fill="rgba(255,255,255,0.16)" stroke="#FFFFFF" stroke-width="2.6"/>
+                            <circle cx="18" cy="20" r="2.2" fill="#FDE047"/>
+                            <circle cx="25" cy="20" r="2.2" fill="#86EFAC"/>
+                            <path d="M22 31L17 36L22 41" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M42 31L47 36L42 41" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M35 28L29 44" stroke="#FDE047" stroke-width="2.8" stroke-linecap="round"/>
+                        </svg>
+                        <svg th:case="'algo'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <line x1="32" y1="16" x2="18" y2="34" stroke="rgba(255,255,255,0.85)" stroke-width="2.8"/>
+                            <line x1="32" y1="16" x2="46" y2="34" stroke="rgba(255,255,255,0.85)" stroke-width="2.8"/>
+                            <line x1="18" y1="34" x2="12" y2="49" stroke="rgba(255,255,255,0.75)" stroke-width="2.5"/>
+                            <line x1="18" y1="34" x2="25" y2="49" stroke="rgba(255,255,255,0.75)" stroke-width="2.5"/>
+                            <line x1="46" y1="34" x2="52" y2="49" stroke="rgba(255,255,255,0.75)" stroke-width="2.5"/>
+                            <circle cx="32" cy="14" r="6" fill="#FDE047"/>
+                            <circle cx="18" cy="34" r="5.5" fill="#FFFFFF"/>
+                            <circle cx="46" cy="34" r="5.5" fill="#FFFFFF"/>
+                            <circle cx="12" cy="49" r="4.5" fill="rgba(255,255,255,0.85)"/>
+                            <circle cx="25" cy="49" r="4.5" fill="rgba(255,255,255,0.85)"/>
+                            <circle cx="52" cy="49" r="4.5" fill="rgba(255,255,255,0.85)"/>
+                        </svg>
+                        <svg th:case="'db'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <ellipse cx="32" cy="16" rx="18" ry="6.5" fill="rgba(255,255,255,0.28)" stroke="#FFFFFF" stroke-width="2.6"/>
+                            <path d="M14 16V48C14 51.6 22 54.5 32 54.5C42 54.5 50 51.6 50 48V16" stroke="#FFFFFF" stroke-width="2.6"/>
+                            <path d="M14 27C14 30.6 22 33.5 32 33.5C42 33.5 50 30.6 50 27" stroke="#FFFFFF" stroke-width="2.4"/>
+                            <path d="M14 38C14 41.6 22 44.5 32 44.5C42 44.5 50 41.6 50 38" stroke="#FDE047" stroke-width="2.4"/>
+                        </svg>
+                        <svg th:case="'ml'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <line x1="12" y1="50" x2="52" y2="14" stroke="#FDE047" stroke-width="3" stroke-dasharray="5 4" stroke-linecap="round"/>
+                            <circle cx="18" cy="24" r="4.5" fill="#FFFFFF"/>
+                            <circle cx="28" cy="18" r="4.5" fill="#FFFFFF"/>
+                            <circle cx="22" cy="34" r="4.5" fill="#FFFFFF"/>
+                            <rect x="38" y="34" width="8.5" height="8.5" rx="2" fill="rgba(255,255,255,0.88)"/>
+                            <rect x="46" y="26" width="8.5" height="8.5" rx="2" fill="rgba(255,255,255,0.88)"/>
+                            <rect x="34" y="45" width="8.5" height="8.5" rx="2" fill="rgba(255,255,255,0.88)"/>
+                        </svg>
+                        <svg th:case="'dl'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <line x1="15" y1="20" x2="32" y2="15" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                            <line x1="15" y1="20" x2="32" y2="32" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                            <line x1="15" y1="44" x2="32" y2="32" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                            <line x1="15" y1="44" x2="32" y2="49" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>
+                            <line x1="32" y1="15" x2="49" y2="26" stroke="rgba(255,255,255,0.75)" stroke-width="2"/>
+                            <line x1="32" y1="32" x2="49" y2="26" stroke="#FDE047" stroke-width="2.4"/>
+                            <line x1="32" y1="32" x2="49" y2="40" stroke="rgba(255,255,255,0.75)" stroke-width="2"/>
+                            <line x1="32" y1="49" x2="49" y2="40" stroke="rgba(255,255,255,0.75)" stroke-width="2"/>
+                            <circle cx="15" cy="20" r="5" fill="#FFFFFF"/>
+                            <circle cx="15" cy="44" r="5" fill="#FFFFFF"/>
+                            <circle cx="32" cy="15" r="5" fill="#FFFFFF"/>
+                            <circle cx="32" cy="32" r="5.5" fill="#FDE047"/>
+                            <circle cx="32" cy="49" r="5" fill="#FFFFFF"/>
+                            <circle cx="49" cy="26" r="5" fill="#FFFFFF"/>
+                            <circle cx="49" cy="40" r="5" fill="#FFFFFF"/>
+                        </svg>
+                        <svg th:case="'bigdata'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <rect x="10" y="13" width="18" height="14" rx="4" fill="rgba(255,255,255,0.22)" stroke="#FFFFFF" stroke-width="2.4"/>
+                            <rect x="36" y="13" width="18" height="14" rx="4" fill="rgba(255,255,255,0.22)" stroke="#FFFFFF" stroke-width="2.4"/>
+                            <rect x="23" y="38" width="18" height="14" rx="4" fill="rgba(253,224,71,0.28)" stroke="#FDE047" stroke-width="2.6"/>
+                            <path d="M19 27V33H32V38" stroke="#FFFFFF" stroke-width="2.4"/>
+                            <path d="M45 27V33H32" stroke="#FFFFFF" stroke-width="2.4"/>
+                        </svg>
+                        <svg th:case="'mining'" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <circle cx="28" cy="28" r="15" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" stroke-width="3"/>
+                            <line x1="39" y1="39" x2="52" y2="52" stroke="#FDE047" stroke-width="4" stroke-linecap="round"/>
+                            <circle cx="24" cy="26" r="2.8" fill="#FFFFFF"/>
+                            <circle cx="33" cy="23" r="2.8" fill="#FDE047"/>
+                            <circle cx="29" cy="33" r="2.8" fill="#FFFFFF"/>
+                        </svg>
+                        <svg th:case="*" width="76" height="76" viewBox="0 0 64 64" fill="none">
+                            <path d="M12 16C12 12.7 14.7 10 18 10H46C49.3 10 52 12.7 52 16V36C52 39.3 49.3 42 46 42H26L14 52V42H18C14.7 42 12 39.3 12 36V16Z" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round"/>
+                            <line x1="21" y1="22" x2="43" y2="22" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round"/>
+                            <line x1="21" y1="30" x2="36" y2="30" stroke="#FDE047" stroke-width="2.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="el-cover-caption" th:text="${c.englishTitle}">Data Analytics &amp; Visualization</div>
+                </a>
+
+                <div class="el-course-body">
+                    <div class="el-course-meta-row">
+                        <span class="el-cat-badge" th:text="${c.categoryLabel}">Chuyên ngành KHDL</span>
+                        <span class="el-level-text" th:text="${c.level + ' • ' + c.enrolledCount + ' SV'}">Trung cấp • 248 SV</span>
+                    </div>
+
+                    <a th:href="@{'/ELearning/Course/' + ${c.slug}}" class="el-course-title" th:text="${c.title}">Trực quan hóa dữ liệu</a>
+                    <p class="el-course-desc" th:text="${c.shortDesc}">Mô tả ngắn về môn học...</p>
+
+                    <div class="el-skills-preview">
+                        <span class="el-skill-chip" th:each="sk, st : ${c.skills}" th:if="${st.index < 3}" th:text="${sk}">Python</span>
+                    </div>
+
+                    <div class="el-course-footer">
+                        <span class="el-lecturer" th:text="${c.lecturer}">ThS. Lê Văn Cường</span>
+                        <a th:href="@{'/ELearning/Course/' + ${c.slug}}" class="el-detail-cta">
+                            <span>Xem chi tiết</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- ==================== THƯ VIỆN GIÁO TRÌNH & TÀI LIỆU ==================== -->
+    <section class="el-resources-section" id="tai-lieu">
+        <div class="el-section-head" style="margin-bottom: 6px;">
+            <h2>Thư viện Giáo trình &amp; Đề cương KHDL</h2>
+            <span>Tài liệu học tập chính thức theo CTĐT Khoa học Dữ liệu HUIT</span>
+        </div>
+        <div class="el-res-grid">
+            <a th:each="c, st : ${courses}" th:if="${st.index < 6}" th:href="@{'/ELearning/Course/' + ${c.slug}}" class="el-res-item">
+                <div class="el-res-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                </div>
+                <div>
+                    <div class="el-res-title" th:text="${c.title + ' (' + c.code + ')'}">Trực quan hóa dữ liệu</div>
+                    <div class="el-res-sub" th:text="${#lists.isEmpty(c.textbooks) ? 'Giáo trình chuẩn HUIT' : c.textbooks[0]}">Giáo trình chuẩn HUIT</div>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <footer class="el-footer">
+        <span>© 2025–2026 HUIT E-Learning — Trường Đại Học Công Thương Thành Phố Hồ Chí Minh (140 Lê Trọng Tấn, Tây Thạnh, TP.HCM)</span>
+        <span>Chuẩn chương trình đào tạo Ngành Khoa học Dữ liệu (7460108)</span>
+    </footer>
+</main>
+
+<script>
+    function dismissSplash() {
+        var el = document.getElementById('huit-splash');
+        if (el) el.classList.add('hide');
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        var el = document.getElementById('huit-splash');
+        if (el) {
+            setTimeout(dismissSplash, 1350);
+        }
+    });
+</script>
+</body>
+</html>

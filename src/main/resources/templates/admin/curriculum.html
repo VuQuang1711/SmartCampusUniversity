@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Quản Lý Chương Trình Khung - Admin</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">Quản lý đào tạo</span>
+                <span class="lux-badge">Ngành học • Học phần • Tiên quyết</span>
+            </div>
+            <h1 class="page-title">Quản Lý Chương Trình Khung Đào Tạo</h1>
+            <p class="page-desc">Chọn nhanh ngành học và học phần từ danh sách sổ xuống (tự động điền mã chuẩn), phân bổ học kỳ và thiết lập môn tiên quyết</p>
+        </div>
+    </div>
+
+    <!-- 3 Forms Quản Lý -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 22px;">
+        <!-- Form 1: Ngành Học (Có dropdown chọn ngành -> tự động hiện Mã Ngành) -->
+        <div class="lux-card" style="padding: 20px; margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="graduation-cap" style="width:17px;height:17px;"></i>
+                    <span>Tạo / Sửa Ngành Học</span>
+                </div>
+            </div>
+            <form th:action="@{/Admin/Curriculum/Major/Save}" method="post" style="display: flex; flex-direction: column; gap: 11px;">
+                <input type="hidden" id="majorIdInput" name="id" value="">
+
+                <div>
+                    <label class="form-label">Chọn Ngành (Tự động điền Mã ngành)</label>
+                    <select id="majorPresetSelect" class="lux-select" onchange="onMajorSelectChange(this)">
+                        <option value="NEW">-- Nhập ngành mới thủ công --</option>
+                        <optgroup label="Ngành hiện có trong hệ thống (Chọn để sửa)">
+                            <option th:each="m : ${majors}"
+                                    th:value="${'EXIST_' + m.id}"
+                                    th:attr="data-id=${m.id}, data-ma=${m.maNganh}, data-ten=${m.tenNganh}, data-khoa=${m.khoa.id}, data-tc=${m.tongTinChiYeuCau}, data-gia=${m.donGiaTinChiRieng != null ? m.donGiaTinChiRieng : ''}"
+                                    th:text="${m.tenNganh + ' (' + m.maNganh + ')'}">Khoa Học Dữ Liệu (7480109)</option>
+                        </optgroup>
+                        <optgroup label="Thêm nhanh từ Danh mục chuẩn Bộ GD&ĐT">
+                            <option value="PRESET" data-ma="7480201" data-ten="Công nghệ Thông tin" data-tc="135">Công nghệ Thông tin (7480201)</option>
+                            <option value="PRESET" data-ma="7480103" data-ten="Kỹ thuật Phần mềm" data-tc="145">Kỹ thuật Phần mềm (7480103)</option>
+                            <option value="PRESET" data-ma="7480109" data-ten="Khoa học Dữ liệu" data-tc="123">Khoa học Dữ liệu (7480109)</option>
+                            <option value="PRESET" data-ma="7480101" data-ten="Khoa học Máy tính" data-tc="145">Khoa học Máy tính (7480101)</option>
+                            <option value="PRESET" data-ma="7480202" data-ten="An toàn Thông tin" data-tc="135">An toàn Thông tin (7480202)</option>
+                            <option value="PRESET" data-ma="7480107" data-ten="Trí tuệ Nhân tạo" data-tc="130">Trí tuệ Nhân tạo (7480107)</option>
+                            <option value="PRESET" data-ma="7340101" data-ten="Quản trị Kinh doanh" data-tc="130">Quản trị Kinh doanh (7340101)</option>
+                            <option value="PRESET" data-ma="7340115" data-ten="Marketing" data-tc="130">Marketing (7340115)</option>
+                            <option value="PRESET" data-ma="7340201" data-ten="Tài chính - Ngân hàng" data-tc="130">Tài chính - Ngân hàng (7340201)</option>
+                            <option value="PRESET" data-ma="7340301" data-ten="Kế toán" data-tc="130">Kế toán (7340301)</option>
+                            <option value="PRESET" data-ma="7220201" data-ten="Ngôn ngữ Anh" data-tc="125">Ngôn ngữ Anh (7220201)</option>
+                            <option value="PRESET" data-ma="7540101" data-ten="Công nghệ Thực phẩm" data-tc="140">Công nghệ Thực phẩm (7540101)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px;">
+                    <div>
+                        <label class="form-label">Mã ngành *</label>
+                        <input id="majorCodeInput" type="text" name="maNganh" required placeholder="Tự động điền..." class="lux-input mono" style="font-weight: 600; background: var(--bg-subtle);">
+                    </div>
+                    <div>
+                        <label class="form-label">Tên ngành đào tạo *</label>
+                        <input id="majorNameInput" type="text" name="tenNganh" required placeholder="Tên ngành đào tạo" class="lux-input">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Khoa quản lý *</label>
+                    <select id="majorKhoaSelect" name="khoaId" required class="lux-select">
+                        <option th:each="k : ${khoas}" th:value="${k.id}" th:text="${k.tenKhoa}">Khoa CNTT</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label class="form-label">Tổng TC yêu cầu *</label>
+                        <input id="majorCreditsInput" type="number" name="tongTinChiYeuCau" required value="123" placeholder="Tổng TC" class="lux-input mono">
+                    </div>
+                    <div>
+                        <label class="form-label">Đơn giá riêng / TC</label>
+                        <input id="majorPriceInput" type="number" name="donGiaTinChiRieng" step="10000" placeholder="Mặc định HK" class="lux-input mono">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-lux btn-lux-primary" style="justify-content: center;">
+                    <i data-lucide="save" style="width: 15px; height: 15px;"></i>
+                    <span id="majorSubmitLabel">Lưu Ngành Đào Tạo</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Form 2: Học Phần (Có dropdown chọn Môn -> tự động hiện Mã Học Phần & tín chỉ) -->
+        <div class="lux-card" style="padding: 20px; margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="book-open" style="width:17px;height:17px;"></i>
+                    <span>Tạo / Sửa Học Phần (Môn Học)</span>
+                </div>
+            </div>
+            <form th:action="@{/Admin/Curriculum/Subject/Save}" method="post" style="display: flex; flex-direction: column; gap: 11px;">
+                <input type="hidden" id="subjectIdInput" name="id" value="">
+
+                <div>
+                    <label class="form-label">Chọn Môn Học (Tự động điền Mã HP & số TC)</label>
+                    <select id="subjectPresetSelect" class="lux-select" onchange="onSubjectSelectChange(this)">
+                        <option value="NEW">-- Tạo học phần mới --</option>
+                        <optgroup label="Danh sách học phần hiện có (Chọn để chỉnh sửa)">
+                            <option th:each="s : ${subjects}"
+                                    th:value="${s.id}"
+                                    th:attr="data-id=${s.id}, data-ma=${s.maHP}, data-ten=${s.tenHP}, data-lt=${s.soTCLyThuyet}, data-th=${s.soTCThucHanh}, data-heso=${s.heSoHocPhi}, data-khoa=${s.khoa != null ? s.khoa.id : ''}"
+                                    th:text="${s.tenHP + ' (' + s.maHP + ' • ' + s.tongTinChi + ' TC)'}">Nhập môn Lập trình (IT001)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px;">
+                    <div>
+                        <label class="form-label">Mã học phần *</label>
+                        <input id="subjectCodeInput" type="text" name="maHP" required placeholder="VD: DS401" class="lux-input mono" style="font-weight: 600;">
+                    </div>
+                    <div>
+                        <label class="form-label">Tên học phần *</label>
+                        <input id="subjectNameInput" type="text" name="tenHP" required placeholder="Tên môn học" class="lux-input">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label class="form-label">TC Lý thuyết</label>
+                        <input id="subjectLtInput" type="number" name="soTCLyThuyet" required value="2" min="0" class="lux-input mono">
+                    </div>
+                    <div>
+                        <label class="form-label">TC Thực hành</label>
+                        <input id="subjectThInput" type="number" name="soTCThucHanh" required value="1" min="0" class="lux-input mono">
+                    </div>
+                    <div>
+                        <label class="form-label">Hệ số HP</label>
+                        <input id="subjectCoeffInput" type="number" name="heSoHocPhi" step="0.1" value="1.1" class="lux-input mono">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Khoa phụ trách *</label>
+                    <select id="subjectKhoaSelect" name="khoaId" required class="lux-select">
+                        <option th:each="k : ${khoas}" th:value="${k.id}" th:text="${k.tenKhoa}">Khoa CNTT</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-lux btn-lux-primary" style="justify-content: center;">
+                    <i data-lucide="save" style="width: 15px; height: 15px;"></i>
+                    <span id="subjectSubmitLabel">Lưu Học Phần</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Form 3: Môn Tiên Quyết -->
+        <div class="lux-card" style="padding: 20px; margin-bottom: 0;">
+            <div class="card-heading">
+                <div class="card-heading-title">
+                    <i data-lucide="git-branch" style="width:17px;height:17px;"></i>
+                    <span>Thiết Lập Môn Tiên Quyết</span>
+                </div>
+            </div>
+            <form th:action="@{/Admin/Curriculum/Prerequisite/Add}" method="post" style="display: flex; flex-direction: column; gap: 11px;">
+                <div>
+                    <label class="form-label">Môn học cần điều kiện *</label>
+                    <select name="hocPhanId" required class="lux-select">
+                        <option value="" disabled selected>-- Chọn môn học --</option>
+                        <option th:each="s : ${subjects}" th:value="${s.id}" th:text="${s.maHP + ' - ' + s.tenHP}">DS102</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Phải hoàn thành môn trước đó *</label>
+                    <select name="hocPhanDieuKienId" required class="lux-select">
+                        <option value="" disabled selected>-- Chọn môn tiên quyết --</option>
+                        <option th:each="s : ${subjects}" th:value="${s.id}" th:text="${s.maHP + ' - ' + s.tenHP}">DS101</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Loại điều kiện</label>
+                    <select name="loaiDieuKien" class="lux-select">
+                        <option value="TIEN_QUYET">Tiên quyết (Bắt buộc qua môn trước)</option>
+                        <option value="HOC_TRUOC">Học trước</option>
+                        <option value="SONG_HANH">Song hành</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-lux btn-lux-secondary" style="justify-content: center; margin-top: auto;">
+                    <i data-lucide="link" style="width: 15px; height: 15px;"></i>
+                    <span>Thêm Ràng Buộc Tiên Quyết</span>
+                </button>
+            </form>
+
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); max-height: 120px; overflow-y: auto; font-size: 12px; color: var(--text-secondary);">
+                <div style="font-weight: 600; margin-bottom: 6px; color: var(--text-muted);">Ràng buộc hiện có (<span th:text="${prereqs != null ? prereqs.size() : 0}">0</span>):</div>
+                <div th:each="dk : ${prereqs}" style="margin-bottom: 4px;">
+                    <strong class="mono" th:text="${dk.hocPhan.maHP}">DS102</strong> ← <span class="mono" style="color: var(--uit-blue);" th:text="${dk.hocPhanDieuKien.maHP + ' (' + dk.hocPhanDieuKien.tenHP + ')'}">DS101</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gán học phần vào Khung chương trình theo Ngành -->
+    <div class="lux-card" style="padding: 22px;">
+        <div class="card-heading">
+            <div class="card-heading-title">
+                <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
+                <span>Chương Trình Khung Theo Ngành</span>
+                <span th:if="${selectedMajor != null}" class="lux-badge lux-badge-solid" th:text="${'Mã ngành: ' + selectedMajor.maNganh}">7480109</span>
+            </div>
+            <form th:action="@{/Admin/Curriculum}" method="get" style="display: flex; align-items: center; gap: 10px;">
+                <label class="form-label" style="margin: 0; white-space: nowrap;">Đang xem ngành:</label>
+                <select name="nganhId" onchange="this.form.submit()" class="lux-select" style="min-width: 280px;">
+                    <option th:each="m : ${majors}" th:value="${m.id}"
+                            th:text="${m.tenNganh + ' — Mã: ' + m.maNganh + ' (' + m.tongTinChiYeuCau + ' TC)'}"
+                            th:selected="${selectedMajor != null and selectedMajor.id == m.id}">KHDL</option>
+                </select>
+            </form>
+        </div>
+
+        <form th:if="${selectedMajor != null}" th:action="@{/Admin/Curriculum/Assign}" method="post"
+              style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; padding: 14px; background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+            <input type="hidden" name="nganhHocId" th:value="${selectedMajor.id}">
+            <select name="hocPhanId" required class="lux-select" style="flex: 2; min-width: 260px;">
+                <option value="" disabled selected>-- Chọn môn học để thêm vào chương trình khung --</option>
+                <option th:each="s : ${subjects}" th:value="${s.id}" th:text="${s.maHP + ' - ' + s.tenHP + ' (' + s.tongTinChi + ' TC)'}">Môn</option>
+            </select>
+            <select name="hocKyDuKien" required class="lux-select" style="width: 140px;">
+                <option th:each="hkNum : ${#numbers.sequence(1, 8)}" th:value="${hkNum}" th:text="${'Học kỳ ' + hkNum}">Học kỳ 1</option>
+            </select>
+            <select name="batBuoc" class="lux-select" style="width: 140px;">
+                <option value="true">Bắt buộc</option>
+                <option value="false">Tự chọn</option>
+            </select>
+            <button type="submit" class="btn-lux btn-lux-primary">+ Gán Vào Khung</button>
+        </form>
+
+        <div class="table-container">
+            <table class="lux-table">
+                <thead>
+                <tr>
+                    <th>HK Dự Kiến</th>
+                    <th>Mã HP</th>
+                    <th>Tên Học Phần</th>
+                    <th>Tín Chỉ (LT/TH)</th>
+                    <th>Hệ Số HP</th>
+                    <th>Phân Loại</th>
+                    <th style="text-align: right;">Thao Tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="k : ${kctList}">
+                    <td class="mono" style="font-weight: 600;" th:text="${'Học kỳ ' + k.hocKyDuKien}">HK1</td>
+                    <td class="mono" style="font-weight: 700; color: var(--uit-blue);" th:text="${k.hocPhan.maHP}">IT001</td>
+                    <td style="font-weight: 600;" th:text="${k.hocPhan.tenHP}">Nhập môn Lập trình</td>
+                    <td class="mono" th:text="${k.hocPhan.tongTinChi + ' TC (' + k.hocPhan.soTCLyThuyet + ' LT / ' + k.hocPhan.soTCThucHanh + ' TH)'}">4 TC</td>
+                    <td class="mono" th:text="${k.hocPhan.heSoHocPhi}">1.0</td>
+                    <td>
+                        <span th:if="${k.batBuoc}" class="lux-badge lux-badge-solid">Bắt buộc</span>
+                        <span th:unless="${k.batBuoc}" class="lux-badge">Tự chọn</span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <button type="button" class="btn-lux btn-lux-secondary btn-lux-sm"
+                                th:attr="onclick='editSubjectById(' + ${k.hocPhan.id} + ')'">Sửa môn</button>
+                        <form th:action="@{'/Admin/Curriculum/Remove/' + ${k.id}}" method="post" style="display: inline;" onsubmit="return confirm('Gỡ học phần này khỏi chương trình khung?')">
+                            <input type="hidden" name="nganhHocId" th:value="${selectedMajor.id}">
+                            <button type="submit" class="btn-lux btn-lux-danger btn-lux-sm">Gỡ</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${kctList == null or kctList.isEmpty()}">
+                    <td colspan="7"><div class="lux-empty-state">Ngành này chưa có học phần trong chương trình khung. Hãy chọn môn học ở thanh phía trên để thêm vào.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function onMajorSelectChange(selectEl) {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const idEl = document.getElementById('majorIdInput');
+            const codeEl = document.getElementById('majorCodeInput');
+            const nameEl = document.getElementById('majorNameInput');
+            const khoaEl = document.getElementById('majorKhoaSelect');
+            const tcEl = document.getElementById('majorCreditsInput');
+            const priceEl = document.getElementById('majorPriceInput');
+            const btnLabel = document.getElementById('majorSubmitLabel');
+
+            if (selectEl.value === 'NEW') {
+                idEl.value = '';
+                codeEl.value = '';
+                nameEl.value = '';
+                tcEl.value = '130';
+                priceEl.value = '';
+                btnLabel.textContent = 'Tạo Ngành Đào Tạo Mới';
+            } else if (selectEl.value === 'PRESET') {
+                idEl.value = '';
+                codeEl.value = opt.dataset.ma || '';
+                nameEl.value = opt.dataset.ten || '';
+                tcEl.value = opt.dataset.tc || '130';
+                priceEl.value = '';
+                btnLabel.textContent = 'Thêm Ngành Chuẩn Này';
+            } else {
+                idEl.value = opt.dataset.id || '';
+                codeEl.value = opt.dataset.ma || '';
+                nameEl.value = opt.dataset.ten || '';
+                if (opt.dataset.khoa) khoaEl.value = opt.dataset.khoa;
+                tcEl.value = opt.dataset.tc || '123';
+                priceEl.value = opt.dataset.gia || '';
+                btnLabel.textContent = 'Cập Nhật Ngành Đã Chọn';
+            }
+        }
+
+        function onSubjectSelectChange(selectEl) {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const idEl = document.getElementById('subjectIdInput');
+            const codeEl = document.getElementById('subjectCodeInput');
+            const nameEl = document.getElementById('subjectNameInput');
+            const ltEl = document.getElementById('subjectLtInput');
+            const thEl = document.getElementById('subjectThInput');
+            const coeffEl = document.getElementById('subjectCoeffInput');
+            const khoaEl = document.getElementById('subjectKhoaSelect');
+            const btnLabel = document.getElementById('subjectSubmitLabel');
+
+            if (selectEl.value === 'NEW') {
+                idEl.value = '';
+                codeEl.value = '';
+                nameEl.value = '';
+                ltEl.value = '2';
+                thEl.value = '1';
+                coeffEl.value = '1.0';
+                btnLabel.textContent = 'Tạo Học Phần Mới';
+            } else {
+                idEl.value = opt.dataset.id || '';
+                codeEl.value = opt.dataset.ma || '';
+                nameEl.value = opt.dataset.ten || '';
+                ltEl.value = opt.dataset.lt || '0';
+                thEl.value = opt.dataset.th || '0';
+                coeffEl.value = opt.dataset.heso || '1.0';
+                if (opt.dataset.khoa) khoaEl.value = opt.dataset.khoa;
+                btnLabel.textContent = 'Cập Nhật Học Phần Đã Chọn';
+            }
+        }
+
+        function editSubjectById(hpId) {
+            const sel = document.getElementById('subjectPresetSelect');
+            sel.value = String(hpId);
+            onSubjectSelectChange(sel);
+            sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Tự động đồng bộ ngành đang xem vào dropdown chọn ngành lúc mở trang
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentNganh = urlParams.get('nganhId');
+            const sel = document.getElementById('majorPresetSelect');
+            if (sel && currentNganh && sel.querySelector(`option[value="EXIST_${currentNganh}"]`)) {
+                sel.value = 'EXIST_' + currentNganh;
+                onMajorSelectChange(sel);
+            }
+        });
+    </script>
+
+</div>
+</body>
+</html>

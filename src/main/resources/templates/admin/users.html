@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{fragments/layout}">
+<head>
+    <title>Quản Lý Người Dùng & RBAC - Admin</title>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <div class="page-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="lux-badge lux-badge-solid">NGƯỜI DÙNG & PHÂN QUYỀN RBAC</span>
+                <span class="lux-badge">ADMIN • GIẢNG VIÊN • SINH VIÊN</span>
+            </div>
+            <h1 class="page-title">Quản Lý Tài Khoản & Phân Quyền Hệ Thống</h1>
+            <p class="page-desc">Tạo tài khoản mới, khóa/mở khóa tài khoản, đặt lại mật khẩu và gán vai trò phân quyền (RBAC)</p>
+        </div>
+    </div>
+
+    <!-- Form tạo tài khoản mới -->
+    <div class="lux-card" style="padding: 24px;">
+        <div class="card-heading">
+            <div class="card-heading-title"><i data-lucide="user-plus" style="width: 18px; height: 18px;"></i><span>Tạo Tài Khoản Người Dùng Mới</span></div>
+        </div>
+        <form th:action="@{/Admin/Users/Create}" method="post" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px;">
+            <div><label class="form-label">Mã Định Danh (MSSV/MSGV) *</label><input type="text" name="maDinhDanh" required placeholder="VD: 2180608888 / GV004" class="lux-input mono"></div>
+            <div><label class="form-label">Họ và Tên *</label><input type="text" name="hoTen" required placeholder="Nguyễn Văn B" class="lux-input"></div>
+            <div><label class="form-label">Email *</label><input type="email" name="email" required placeholder="user@sis.edu.vn" class="lux-input"></div>
+            <div><label class="form-label">Mật Khẩu Khởi Tạo *</label><input type="text" name="matKhau" required value="123456" class="lux-input mono"></div>
+            <div><label class="form-label">Số Điện Thoại</label><input type="text" name="soDienThoai" placeholder="090..." class="lux-input mono"></div>
+            <div>
+                <label class="form-label">Vai Trò (RBAC) *</label>
+                <select name="vaiTro" required class="lux-select">
+                    <option th:each="r : ${roles}" th:value="${r}" th:text="${r.tenHienThi + ' (' + r.name() + ')'}">SINH_VIEN</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Ngành Học (Nếu là SV)</label>
+                <select name="nganhHocId" class="lux-select">
+                    <option th:each="m : ${majors}" th:value="${m.id}" th:text="${m.tenNganh}">KHDL</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Lớp Danh Nghĩa (Nếu là SV)</label>
+                <select name="lopDanhNghiaId" class="lux-select">
+                    <option th:each="c : ${classes}" th:value="${c.id}" th:text="${c.maLop}">15DHKHDL03</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Khoa (Nếu là GV)</label>
+                <select name="khoaId" class="lux-select">
+                    <option th:each="k : ${khoas}" th:value="${k.id}" th:text="${k.tenKhoa}">Khoa CNTT</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn-lux btn-lux-primary" style="width: 100%; justify-content: center;">Tạo Tài Khoản</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Danh sách tài khoản -->
+    <div class="lux-card">
+        <div class="card-heading">
+            <div class="card-heading-title"><i data-lucide="shield" style="width: 18px; height: 18px;"></i><span>Danh Sách Tài Khoản Toàn Hệ Thống</span></div>
+        </div>
+        <div class="table-container">
+            <table class="lux-table">
+                <thead><tr><th>Mã Định Danh</th><th>Họ Tên & Email</th><th>Trạng Thái</th><th>Phân Quyền RBAC</th><th style="text-align: right;">Quản Trị Tài Khoản</th></tr></thead>
+                <tbody>
+                <tr th:each="u : ${users}">
+                    <td class="mono" style="font-weight: 700;" th:text="${u.maDinhDanh}">ADMIN01</td>
+                    <td>
+                        <div style="font-weight: 700;" th:text="${u.hoTen}">Phòng Đào Tạo</div>
+                        <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${u.email}">admin@sis.edu.vn</div>
+                    </td>
+                    <td>
+                        <span th:if="${u.trangThai == null or u.trangThai.name() == 'HOAT_DONG'}" class="lux-badge" style="border-color:#22C55E; color:#16A34A;">HOẠT ĐỘNG</span>
+                        <span th:if="${u.trangThai != null and u.trangThai.name() == 'BI_KHOA'}" class="lux-badge lux-badge-danger">ĐÃ KHÓA</span>
+                    </td>
+                    <td>
+                        <form th:action="@{'/Admin/Users/' + ${u.id} + '/ChangeRole'}" method="post" style="display: inline-flex; gap: 6px;">
+                            <select name="vaiTro" class="lux-select" style="padding: 5px 8px; font-size: 12px;">
+                                <option th:each="r : ${roles}" th:value="${r}" th:text="${r.tenHienThi}" th:selected="${u.vaiTro == r}">Role</option>
+                            </select>
+                            <button type="submit" class="btn-lux btn-lux-secondary btn-lux-sm">Đổi Quyền</button>
+                        </form>
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 6px;">
+                            <form th:action="@{'/Admin/Users/' + ${u.id} + '/ResetPassword'}" method="post" onsubmit="return confirm('Reset mật khẩu về 123456?')">
+                                <button type="submit" class="btn-lux btn-lux-secondary btn-lux-sm">Reset MK</button>
+                            </form>
+                            <form th:action="@{'/Admin/Users/' + ${u.id} + '/ToggleLock'}" method="post">
+                                <button type="submit" class="btn-lux btn-lux-sm"
+                                        th:classappend="${u.trangThai != null and u.trangThai.name() == 'BI_KHOA'} ? 'btn-lux-primary' : 'btn-lux-secondary'"
+                                        th:text="${u.trangThai != null and u.trangThai.name() == 'BI_KHOA' ? 'Mở Khóa' : 'Khóa TK'}">Khóa TK</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
