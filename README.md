@@ -1,354 +1,192 @@
-# Hệ thống Quản lý Đào tạo & Sinh viên Đại học theo Học chế Tín chỉ (University SIS & HUIT E-Learning)
-
-Tài liệu này mô tả lại toàn bộ hệ thống quản lý đào tạo đại học theo học chế tín chỉ (SIS) tích hợp cổng học trực tuyến HUIT E-Learning theo đúng code hiện tại của nhóm, xây dựng theo **mô hình MVC (Model – View – Controller)** kết hợp phân tầng **Service – Repository**, có công thức nghiệp vụ và ví dụ thế số.
-
-## 0. Mục tiêu bài toán
-
-- Input: yêu cầu thao tác HTTP từ người dùng theo 5 vai trò (Sinh viên, Giảng viên / Cố vấn học tập, Phòng Đào tạo, Phòng Kế toán, Quản trị viên) cùng dữ liệu CSDL MySQL (`university_sis`).
-- Output: trang giao diện web Thymeleaf, bảng điểm đa hệ, thời khóa biểu, biên lai học phí, báo cáo học vụ, file Excel và cổng học tập HUIT E-Learning.
-- Nền tảng công nghệ: Java 17+, Spring Boot 3.5.14, Spring Data JPA (Hibernate 6), Thymeleaf, MySQL 9.7 / 8.0, Apache POI 5.2.5, Cloudflare Tunnel tích hợp.
-- Kết quả kiểm thử E2E gần nhất: 175 / 175 kịch bản PASS (0 FAIL, 0 ERROR, 0 WARN) bao phủ toàn bộ phân luồng từ Guest/RBAC, Sinh viên, Giảng viên đến Admin và E-Learning.
-
-## 1. Ý tưởng cốt lõi: từ dữ liệu học vụ đến hệ thống tín chỉ tự động
-
-### 1.1. Vì sao cần kiểm soát chặt quy trình tín chỉ
-
-Trong đào tạo tín chỉ, một thao tác của sinh viên hoặc giảng viên kéo theo nhiều ràng buộc liên thông:
-
-- Đăng ký học phần phải kiểm tra sĩ số, môn tiên quyết, giới hạn tín chỉ và trùng lịch học.
-- Điểm danh vắng vượt ngưỡng tự động kích hoạt cấm thi.
-- Điểm học phần quyết định GPA tích lũy, mức cảnh báo học vụ và điều kiện xét tốt nghiệp.
-- Tín chỉ đăng ký quyết định trực tiếp công nợ học phí của học kỳ.
-
-Nếu xử lý rời rạc ở giao diện hoặc bằng câu lệnh thủ công sẽ dễ phát sinh lỗi tranh chấp sĩ số (race condition) hoặc sai lệch dữ liệu giữa học vụ và tài chính.
-
-### 1.2. Cơ chế khóa và công thức chuẩn hóa
-
-Hệ thống tách toàn bộ luật nghiệp vụ vào tầng Service:
-
-- Dùng `LockModeType.PESSIMISTIC_WRITE` trên `LopHocPhan` để tránh vượt sĩ số khi nhiều sinh viên đăng ký cùng lúc.
-- Quy đổi điểm tự động từ thang 10 sang điểm chữ và thang 4 theo chuẩn Bộ GD&ĐT.
-- Tính GPA tích lũy theo quy tắc môn học lại / cải thiện chỉ giữ điểm cao nhất.
-- Tính học phí động theo số tín chỉ lý thuyết, tín chỉ thực hành và hệ số thực hành.
-
-### 1.3. Chuẩn hóa vận hành
-
-- Tự động giải phóng cổng `8081` nếu có tiến trình cũ chiếm dụng trước khi khởi chạy Tomcat (`SisApplication.java`).
-- Tự động khởi tạo và đóng đường hầm HTTPS công khai qua `CloudflareTunnelService.java` khi chạy/dừng ứng dụng.
-
-## 2. Mô hình MVC trong dự án
-
-### 2.1. Tổng quan mô hình MVC (kết hợp phân tầng Service – Repository)
-
-Hệ thống áp dụng **Spring Web MVC** tách biệt rõ 3 thành phần:
-
-1. **View (Giao diện hiển thị):** thư mục `src/main/resources/templates/` (Thymeleaf HTML) và `src/main/resources/static/` (CSS, JS, hình ảnh).
-2. **Controller (Điều hướng yêu cầu):** gói `com.example.sis.controller` tiếp nhận HTTP request, kiểm tra phiên đăng nhập/phân quyền và trả về View hoặc JSON.
-3. **Model (Dữ liệu & Nghiệp vụ):** được phân tầng rõ thành:
-   - **Service Layer** (`com.example.sis.service`): xử lý toàn bộ luật nghiệp vụ tín chỉ.
-   - **Repository & Entity Layer** (`com.example.sis.repository`, `com.example.sis.entity`): ánh xạ CSDL MySQL chuẩn 3NF qua Spring Data JPA / Hibernate.
-
-Luồng xử lý tổng quát trong Spring MVC:
-
-1. Người dùng gửi request HTTP từ trình duyệt (View) đến `Controller`.
-2. `Controller` kiểm tra phiên đăng nhập (`HttpSession`) và quyền truy cập (RBAC).
-3. `Controller` gọi `Service` (Model) để kiểm tra ràng buộc và tính toán nghiệp vụ.
-4. `Service` đọc/ghi dữ liệu MySQL thông qua `Repository` và trả kết quả về `Controller`.
-5. `Controller` đưa dữ liệu vào `Model` để Thymeleaf render trang HTML (View) trả về trình duyệt, hoặc trả JSON qua `ApiController`.
-
-### 2.2. Vai trò từng thành phần
-
-#### View (`templates/`, `static/`)
-
-- Hiển thị giao diện theo từng phân hệ: Đăng nhập, Sinh viên, Giảng viên, Quản trị viên và HUIT E-Learning.
-- Sử dụng Thymeleaf Layout Dialect, biểu đồ Chart.js và hệ thống giao diện Monochrome Luxury.
-
-#### Controller (`controller/`)
-
-- Tiếp nhận request từ trình duyệt và kiểm tra phân quyền theo vai trò (`VaiTro`).
-- Ràng buộc dữ liệu đầu vào (kiểm tra trùng mã/email, số tiền thanh toán hợp lệ, điểm rèn luyện trong `[0, 100]`).
-- Điều phối dữ liệu giữa `Model` và `View`.
-
-#### Model (`service/`, `entity/`, `repository/`)
-
-- **Service (`service/`):** gồm 13 service chuyên biệt cho từng mảng nghiệp vụ (đăng ký học phần, trùng lịch, điểm danh, tính điểm, mô phỏng GPA, cảnh báo học vụ, học phí, E-Learning, Excel, lưu file, thông báo, nhật ký hệ thống, Cloudflare Tunnel), đảm bảo toàn vẹn giao dịch bằng `@Transactional`.
-- **Entity & Repository (`entity/`, `repository/`):** gồm 25 Entity và 24 Repository ánh xạ trực tiếp hệ thống bảng chuẩn 3NF trong MySQL (`university_sis`), tích hợp các getter null-safe và chuẩn hóa danh xưng giảng viên (`GiangVien.getTenDayDu()`).
-
-## 3. Quy trình chi tiết: Đăng nhập -> ĐKHP -> Điểm danh -> Nhập điểm -> GPA -> Học phí -> E-Learning
-
-### 3.1. Giai đoạn A: Xác thực và phân quyền (RBAC)
-
-- Người dùng đăng nhập tại `/Account/Login` bằng `maDinhDanh` hoặc `email`.
-- Sau khi xác thực, hệ thống lưu thông tin vào `HttpSession` và điều hướng theo `VaiTro`:
-  - `SINH_VIEN` -> `/Student/Dashboard` (và được phép truy cập `/ELearning`).
-  - `GIANG_VIEN` -> `/Faculty/Dashboard`.
-  - `ADMIN`, `DAO_TAO`, `KE_TOAN` -> `/Admin/Dashboard`.
-- Các vai trò khác `SINH_VIEN` bị chặn truy cập vào `/ELearning`.
-
-### 3.2. Giai đoạn B: Đăng ký học phần (`CourseRegistrationService`)
-
-Khi sinh viên bấm đăng ký một `LopHocPhan`, hệ thống khóa ghi bản ghi lớp học phần và kiểm tra tuần tự 5 điều kiện:
-
-1. Học kỳ hiện tại phải đang mở đăng ký (`DANG_MO`).
-2. Sĩ số hiện tại nhỏ hơn sĩ số tối đa: $n_{\text{hiện tại}} < n_{\text{tối đa}}$.
-3. Đã đạt tất cả học phần tiên quyết (không có môn tiên quyết nào điểm `F` hoặc chưa học).
-4. Tổng tín chỉ đăng ký trong kỳ không vượt ngưỡng cho phép:
-   - Sinh viên bình thường: tối đa $25$ tín chỉ.
-   - Sinh viên đang bị cảnh báo học vụ: tối đa $18$ tín chỉ.
-5. Không trùng thời khóa biểu (so sánh thứ, tiết bắt đầu, tiết kết thúc và tuần học qua `ScheduleConflictService`).
-
-Nếu hợp lệ, hệ thống tự phân loại đăng ký (`HOC_MOI`, `HOC_LAI`, `CAI_THIEN`), tăng sĩ số lớp và cập nhật công nợ học phí.
-
-### 3.3. Giai đoạn C: Điểm danh và tự động khóa cấm thi (`AttendanceService`)
-
-Tỷ lệ vắng mặt của sinh viên ở một học phần được tính theo công thức:
-
-$$
-r_{\text{vắng}} = \frac{\text{Tổng số tiết vắng}}{\text{Tổng số tiết học phần}} \times 100\%
-$$
-
-Quy tắc cấm thi:
-
-- Nếu $r_{\text{vắng}} > 20\%$ thì hệ thống tự động bật cờ `camThi = true` và khóa điểm thi cuối kỳ bằng $0.0$.
-
-Ví dụ thế số:
-
-- Học phần có 3 tín chỉ lý thuyết, tổng số tiết là $45$ tiết.
-- Sinh viên vắng $10$ tiết:
-
-$$
-r_{\text{vắng}} = \frac{10}{45} \times 100\% \approx 22.22\% > 20\%
-$$
-
-Kết quả: sinh viên bị đánh dấu cấm thi (`camThi = true`).
-
-### 3.4. Giai đoạn D: Tính điểm tổng kết và GPA tích lũy (`GradingService`)
-
-#### D1. Điểm tổng kết hệ 10
-
-Mỗi học phần có bộ trọng số thành phần $(w_{cc}, w_{qt}, w_{th}, w_{ck})$ với tổng bằng $1$:
-
-$$
-D_{10} = w_{cc}\cdot d_{cc} + w_{qt}\cdot d_{qt} + w_{th}\cdot d_{th} + w_{ck}\cdot d_{ck}
-$$
-
-Ví dụ thế số:
-
-- Trọng số học phần: chuyên cần $10\%$, quá trình $20\%$, thực hành $20\%$, cuối kỳ $50\%$.
-- Điểm sinh viên: $d_{cc}=9.0,\ d_{qt}=8.0,\ d_{th}=8.5,\ d_{ck}=7.5$.
-
-$$
-D_{10} = 0.1\cdot 9.0 + 0.2\cdot 8.0 + 0.2\cdot 8.5 + 0.5\cdot 7.5 = 0.9 + 1.6 + 1.7 + 3.75 = 7.95
-$$
-
-#### D2. Bảng quy đổi sang điểm chữ và thang 4
-
-| Điểm hệ 10 ($D_{10}$) | Điểm chữ | Điểm hệ 4 ($D_4$) | Xếp loại |
-| :--- | :---: | :---: | :--- |
-| 8.5 - 10.0 | A | 4.0 | Giỏi / Xuất sắc |
-| 8.0 - 8.4 | B+ | 3.5 | Khá giỏi |
-| 7.0 - 7.9 | B | 3.0 | Khá |
-| 6.5 - 6.9 | C+ | 2.5 | Trung bình khá |
-| 5.5 - 6.4 | C | 2.0 | Trung bình |
-| 5.0 - 5.4 | D+ | 1.5 | Trung bình yếu |
-| 4.0 - 4.9 | D | 1.0 | Yếu (Đạt) |
-| < 4.0 | F | 0.0 | Kém (Không đạt) |
-
-#### D3. Công thức tính GPA tích lũy
-
-Với tập các học phần đã học (nếu học lại hoặc cải thiện thì chỉ lấy điểm $D_4$ cao nhất của học phần đó):
-
-$$
-\text{GPA} = \frac{\sum_{i=1}^{M} c_i \cdot D_{4,i}}{\sum_{i=1}^{M} c_i}
-$$
-
-Trong đó $c_i$ là số tín chỉ của học phần $i$, $D_{4,i}$ là điểm hệ 4 cao nhất của học phần $i$.
-
-Ví dụ thế số (3 học phần):
-
-- Môn 1: $3$ TC, điểm A ($4.0$)
-- Môn 2: $3$ TC, điểm B ($3.0$)
-- Môn 3: $4$ TC, điểm B+ ($3.5$)
-
-$$
-\text{GPA} = \frac{3\cdot 4.0 + 3\cdot 3.0 + 4\cdot 3.5}{3 + 3 + 4} = \frac{12.0 + 9.0 + 14.0}{10} = \frac{35.0}{10} = 3.50
-$$
-
-### 3.5. Giai đoạn E: Tính học phí tín chỉ và công nợ (`TuitionService`)
-
-Công thức tính học phí cho một học phần:
-
-$$
-\text{HP} = (c_{lt} \cdot P) + (c_{th} \cdot P \cdot k_{th})
-$$
-
-- $c_{lt}$: số tín chỉ lý thuyết.
-- $c_{th}$: số tín chỉ thực hành.
-- $P$: đơn giá một tín chỉ.
-- $k_{th}$: hệ số thực hành.
-
-Ví dụ thế số:
-
-- Học phần có $c_{lt} = 2$, $c_{th} = 1$, đơn giá $P = 800{,}000$ VNĐ/TC, hệ số thực hành $k_{th} = 1.2$:
-
-$$
-\text{HP} = (2 \cdot 800{,}000) + (1 \cdot 800{,}000 \cdot 1.2) = 1{,}600{,}000 + 960{,}000 = 2{,}560{,}000\text{ VNĐ}
-$$
-
-Khi sinh viên thanh toán trực tuyến, hệ thống kiểm tra $0 < \text{số tiền nộp} \le \text{còn nợ}$, ghi nhận `PhieuThuHocPhi` và cập nhật lại dư nợ `CongNoHocKy`.
-
-### 3.6. Giai đoạn F: Cảnh báo học vụ, xét tốt nghiệp và HUIT E-Learning
-
-- Cảnh báo học vụ (`AcademicStandingService`):
-  - `GPA < 1.8`: Cảnh báo mức 1 (giới hạn 18 TC/kỳ).
-  - `GPA < 1.5`: Cảnh báo mức 2.
-  - `GPA < 1.0`: Buộc thôi học.
-- Xét tốt nghiệp (Degree Audit): kiểm tra đủ tín chỉ khung CTĐT, `GPA >= 2.00`, không nợ môn bắt buộc, đủ chuẩn đầu ra (Ngoại ngữ, Tin học, GDTC, GDQP) và không còn nợ học phí.
-- Cổng HUIT E-Learning (`ELearningService`, `ELearningController`): đăng nhập SSO từ cổng sinh viên, cung cấp 10 khóa học chuyên ngành Khoa học Dữ liệu kèm đề cương chi tiết, CLO/PLO, kỹ năng và giáo trình.
-
-## 4. Phân tích các file code trong dự án
-
-### 4.1. Nhóm file khởi chạy và cấu hình
-
-1. `src/main/java/com/example/sis/SisApplication.java`
-   - Entry point của ứng dụng Spring Boot.
-   - Tích hợp `freePortIfOccupied(port)` tự động giải phóng cổng `8081` trước khi khởi chạy Tomcat.
-2. `src/main/java/com/example/sis/config/ThymeleafConfig.java`
-   - Cấu hình Thymeleaf Layout Dialect.
-3. `src/main/resources/application.properties`
-   - Cấu hình kết nối MySQL, cổng `8081`, JPA/Hibernate và upload file.
-
-### 4.2. Nhóm Controller (C - Điều hướng MVC)
-
-1. `AccountController.java`: đăng nhập, đăng xuất, đổi mật khẩu, quản lý session.
-2. `HomeController.java`: điều hướng trang chủ theo vai trò.
-3. `StudentController.java`: dashboard sinh viên, ĐKHP, thời khóa biểu, bảng điểm, chương trình đào tạo, học phí, rèn luyện, dịch vụ một cửa, mô phỏng GPA.
-4. `FacultyController.java`: dashboard giảng viên, lịch dạy, điểm danh, nhập điểm, đề xuất đổi lịch.
-5. `AdminController.java`: quản trị người dùng, học kỳ, lớp học phần, lịch học, duyệt đổi lịch, duyệt dịch vụ một cửa, thu học phí, xét tốt nghiệp.
-6. `ELearningController.java`: cổng HUIT E-Learning dành riêng cho sinh viên (`/ELearning`).
-7. `ApiController.java`: cung cấp REST API cho biểu đồ và mô phỏng GPA.
-8. `GlobalControllerAdvice.java`: nạp dữ liệu dùng chung (thông tin user, số thông báo chưa đọc) cho mọi view.
-
-### 4.3. Nhóm Service (M - Logic nghiệp vụ)
-
-1. `CourseRegistrationService.java`: đăng ký/hủy học phần có Pessimistic Locking.
-2. `ScheduleConflictService.java`: kiểm tra xung đột thời khóa biểu và phòng học.
-3. `AttendanceService.java`: điểm danh hàng loạt và tự động khóa cấm thi.
-4. `GradingService.java`: tính điểm tổng kết, quy đổi thang 4 và cập nhật GPA tích lũy.
-5. `GpaSimulatorService.java`: mô phỏng GPA mục tiêu và gợi ý môn cải thiện.
-6. `AcademicStandingService.java`: phân loại cảnh báo học vụ và xét tốt nghiệp tự động.
-7. `TuitionService.java`: tính học phí, gạch nợ và xuất phiếu thu.
-8. `ELearningService.java`: cung cấp dữ liệu 10 học phần Khoa học Dữ liệu cho cổng E-Learning.
-9. `ExcelService.java`: xuất/nhập bảng điểm và danh sách sinh viên bằng Apache POI.
-10. `FileStorageService.java`: quản lý lưu trữ tệp đính kèm.
-11. `NotificationService.java`: gửi và đánh dấu thông báo người dùng.
-12. `AuditLogService.java`: ghi nhật ký thao tác hệ thống.
-13. `CloudflareTunnelService.java`: tự động khởi tạo và đóng đường hầm HTTPS công khai khi chạy/dừng app.
-
-### 4.4. Nhóm Entity & Repository (M - Dữ liệu & Truy vấn JPA)
-
-- Gồm 25 lớp Entity trong `com.example.sis.entity` và 24 interface Repository trong `com.example.sis.repository`, tương ứng với các nhóm bảng:
-  - Tổ chức & Người dùng: `NguoiDung`, `VaiTro`, `Khoa`, `NganhHoc`, `ChuyenNganh`, `SinhVien`, `GiangVien`, `LopDanhNghia`.
-  - Chương trình & Lớp học phần: `HocKy`, `HocPhan`, `DieuKienHocPhan`, `KhungChuongTrinh`, `LopHocPhan`, `LichHoc`, `DangKyHocPhan`.
-  - Đánh giá & Học vụ: `DiemDanh`, `DiemHocPhan`, `DiemRenLuyen`, `ChungChiChuanDauRa`, `YeuCauDichVuMotCua`, `YeuCauDoiLich`.
-  - Tài chính & Hệ thống: `CongNoHocKy`, `PhieuThuHocPhi`, `ThongBao`, `NhatKyHeThong`.
-
-### 4.5. Nhóm View (V - Thymeleaf Templates) và CSDL
-
-- `src/main/resources/templates/`: chia theo phân hệ `account/`, `student/`, `faculty/`, `admin/`, `elearning/`, `fragments/`.
-- `src/main/resources/static/`: CSS hệ thống (`monochrome.css`, `huit-theme.css`, `uit-theme.css`), JS và hình ảnh.
-- `database/`: gồm `init_schema_and_data.sql`, `seed_huit_khdl_and_receipts.sql` và `upgrade_v2_workflows.sql` để khởi tạo và nâng cấp schema MySQL.
-
-## 5. Ví dụ luồng thực tế end-to-end
-
-Giả sử sinh viên `2180601234` thực hiện một chu trình học kỳ:
-
-1. Đăng nhập tại `/Account/Login` -> hệ thống tạo session `SINH_VIEN` và chuyển tới `/Student/Dashboard`.
-2. Vào `/Student/Registration`, chọn lớp học phần mới -> `CourseRegistrationService` khóa lớp, kiểm tra 5 điều kiện và lưu `DangKyHocPhan`.
-3. `TuitionService` tự động cộng học phí môn mới vào `CongNoHocKy`.
-4. Sinh viên vào `/Student/Tuition`, thanh toán trực tuyến -> hệ thống sinh `PhieuThuHocPhi` và trừ dư nợ.
-5. Giảng viên `GV001` đăng nhập `/Faculty/Dashboard`, thực hiện điểm danh và nhập điểm thành phần -> `GradingService` tính $D_{10}$, quy đổi $D_4$, cập nhật GPA tích lũy của sinh viên.
-6. Sinh viên vào `/Student/Curriculum` xem tiến độ tích lũy và nhấn sang `/ELearning` (SSO) để xem đề cương chi tiết học phần.
-
-## 6. Hướng dẫn chạy dự án và tài khoản thử nghiệm
-
-### 6.1. Nạp CSDL MySQL
-
+# SmartCampus University — Hệ thống Quản lý Đào tạo & Sinh viên Tín chỉ (HUIT SIS)
+
+> Cổng thông tin quản lý đào tạo đại học theo học chế tín chỉ tích hợp **HUIT E-Learning**, **Đăng ký học phần thông minh theo tuần (T1–T30)** và **Trợ lý AI cá nhân Gấu HUIT (Gemini + RAG Quy chế 3344/QĐ-DCT)**.
+
+Xây dựng theo kiến trúc **Spring Web MVC (Model – View – Controller)** kết hợp phân tầng **Service – Repository** (Constructor Injection chuẩn Spring Boot), cơ sở dữ liệu MySQL chuẩn hóa **3NF**.
+
+---
+
+## 1. Công nghệ sử dụng
+
+| Thành phần | Công nghệ / Phiên bản |
+| :--- | :--- |
+| **Ngôn ngữ & Runtime** | Java 17 (LTS) |
+| **Framework chính** | Spring Boot 3.5.14 (Spring Web MVC, Spring Data JPA, Validation) |
+| **ORM & Database** | Hibernate 6, MySQL 8.0 / 9.7 (`university_sis` — chuẩn hóa 3NF) |
+| **Giao diện (View)** | Thymeleaf, Thymeleaf Layout Dialect, Lucide Icons, Chart.js, Dark/Light Mode |
+| **AI Chatbot & RAG** | Google Gemini API + Apache PDFBox 3.0.3 (trích xuất & tìm kiếm văn bản quy chế PDF) |
+| **Xử lý Excel** | Apache POI 5.2.5 (`poi-ooxml`) — đồng bộ TKB nhiều học kỳ, xuất/nhập bảng điểm |
+| **Tiện ích & Vận hành** | Lombok (`@RequiredArgsConstructor`), Cloudflare Tunnel tích hợp, tự giải phóng port `8081` |
+
+---
+
+## 2. Tính năng nổi bật
+
+### 2.1. Xác thực & Phân quyền đa vai trò (RBAC)
+- Giao diện đăng nhập hiện đại với **slideshow 6 ảnh khuôn viên HUIT**, chế độ Sáng/Tối và hỗ trợ đăng nhập bằng `MSSV / MSGV / Email`.
+- Phân luồng 5 nhóm vai trò rõ ràng:
+  - **Sinh viên (`SINH_VIEN`)**: Dashboard tổng quan, ĐKHP thông minh, TKB, bảng điểm, mô phỏng GPA, công nợ học phí, dịch vụ một cửa, E-Learning, Trợ lý AI Gấu HUIT.
+  - **Giảng viên & Cố vấn học tập (`GIANG_VIEN`, `CO_VAN_HOC_TAP`)**: Lịch giảng dạy, điểm danh hàng loạt, nhập điểm, quản lý lớp danh nghĩa, đề xuất đổi lịch.
+  - **Phòng Đào tạo / Kế toán / Quản trị (`DAO_TAO`, `KE_TOAN`, `ADMIN`)**: Quản trị người dùng, học kỳ, lớp học phần, lịch học, import TKB Excel, thu học phí/phiếu thu, xét tốt nghiệp, nhật ký hệ thống.
+
+### 2.2. Đăng ký học phần thông minh & Kiểm soát xung đột theo từng tuần
+- Khóa bi quan **`LockModeType.PESSIMISTIC_WRITE`** trên `LopHocPhan` chống tranh chấp sĩ số (race condition) khi đăng ký đồng thời.
+- Kiểm tra tự động 5 ràng buộc: trạng thái học kỳ (`DANG_MO`), sĩ số tối đa, môn tiên quyết, giới hạn tín chỉ (25 TC bình thường / 18 TC khi cảnh báo học vụ), và **giao thoa lịch học chính xác theo tập tuần thực tế `T1–T30`** (bảng chuẩn hóa `lich_hoc_tuan`).
+- Hỗ trợ **Sandbox Planner**, **xếp lịch tự động (Auto-Schedule)**, chia sẻ lịch và phân tích thời khóa biểu.
+- Phân loại rõ học phần Lý thuyết / Thực hành, đăng ký Học mới (`HOC_MOI`), Học lại (`HOC_LAI`), Cải thiện (`CAI_THIEN`).
+
+### 2.3. Trợ lý AI Sinh viên — Gấu HUIT (Gemini + RAG)
+- Widget nổi tích hợp sẵn trên giao diện sinh viên (`ChatbotController`, `StudentChatbotService`, `RegulationKnowledgeService`).
+- Kết hợp ngữ cảnh cá nhân hóa theo tài khoản đang đăng nhập (lịch học kỳ hiện tại, điểm số, CPA, tín chỉ tích lũy, công nợ học phí) với kho tri thức RAG trích xuất từ **Quy chế đào tạo đại học theo hệ thống tín chỉ (QĐ 3344/QĐ-DCT)** và tài liệu học tập PDF.
+- Có chế độ fallback thông minh tra cứu trực tiếp CSDL & quy chế khi chưa cấu hình API key.
+
+### 2.4. Cổng HUIT E-Learning
+- Đăng nhập liền mạch (SSO) dành cho sinh viên tại `/ELearning`.
+- Danh mục học phần chuyên ngành Khoa học Dữ liệu đầy đủ đề cương chi tiết, chuẩn đầu ra CLO/PLO, cấu trúc chương mục, giáo trình và **tích hợp trực tiếp tài liệu bài giảng/slide** theo từng môn học (`learn.html`).
+
+### 2.5. Học vụ, Điểm danh, Học phí & Tốt nghiệp
+- **Điểm danh & Tự động cấm thi**: vắng vượt ngưỡng $> 20\%$ tự động gắn cờ `camThi = true` và khóa điểm cuối kỳ `0.0`.
+- **Tính điểm & Mô phỏng GPA**: tự động quy đổi thang 10 → điểm chữ → thang 4, giữ điểm cao nhất khi học lại/cải thiện, mô phỏng GPA mục tiêu.
+- **Cảnh báo học vụ & Xét tốt nghiệp (Degree Audit)**: tự động kiểm tra đủ tín chỉ, CPA $\ge 2.00$, không nợ môn bắt buộc, chứng chỉ chuẩn đầu ra và hoàn thành học phí.
+- **Tài chính học phí**: tính học phí động theo tín chỉ lý thuyết/thực hành, sinh phiếu thu (`PhieuThuHocPhi`) và cập nhật công nợ (`CongNoHocKy`).
+
+---
+
+## 3. Công thức nghiệp vụ cốt lõi
+
+1. **Tỷ lệ vắng mặt** (cấm thi khi $r_{\text{vắng}} > 20\%$):
+   $$r_{\text{vắng}} = \frac{\text{Số buổi / tiết vắng}}{\text{Tổng số buổi / tiết học phần}} \times 100\%$$
+
+2. **Điểm tổng kết hệ 10** (với $w_{cc} + w_{qt} + w_{th} + w_{ck} = 1$):
+   $$D_{10} = w_{cc}\cdot d_{cc} + w_{qt}\cdot d_{qt} + w_{th}\cdot d_{th} + w_{ck}\cdot d_{ck}$$
+
+3. **Bảng quy đổi điểm chữ & thang 4**:
+
+   | Thang 10 ($D_{10}$) | Điểm chữ | Thang 4 ($D_4$) | Xếp loại |
+   | :--- | :---: | :---: | :--- |
+   | 8.5 – 10.0 | A | 4.0 | Giỏi / Xuất sắc |
+   | 8.0 – 8.4 | B+ | 3.5 | Khá giỏi |
+   | 7.0 – 7.9 | B | 3.0 | Khá |
+   | 6.5 – 6.9 | C+ | 2.5 | Trung bình khá |
+   | 5.5 – 6.4 | C | 2.0 | Trung bình |
+   | 5.0 – 5.4 | D+ | 1.5 | Trung bình yếu |
+   | 4.0 – 4.9 | D | 1.0 | Yếu (Đạt) |
+   | < 4.0 | F | 0.0 | Kém (Không đạt) |
+
+4. **GPA / CPA tích lũy** (môn học lại/cải thiện chỉ giữ $D_4$ cao nhất):
+   $$\text{GPA} = \frac{\sum_{i=1}^{M} c_i \cdot D_{4,i}}{\sum_{i=1}^{M} c_i}$$
+
+5. **Học phí học phần tín chỉ**:
+   $$\text{HP} = (c_{lt} \cdot P) + (c_{th} \cdot P \cdot k_{th})$$
+   Trong đó $c_{lt}, c_{th}$ là số tín chỉ lý thuyết & thực hành, $P$ là đơn giá tín chỉ, $k_{th}$ là hệ số thực hành.
+
+---
+
+## 4. Kiến trúc & Cấu trúc mã nguồn
+
+Dự án gồm **83 lớp Java** tổ chức gọn gàng theo chuẩn Spring Boot MVC + Service–Repository:
+
+```text
+src/main/java/com/example/sis/
+├── SisApplication.java            # Entry point, tự động giải phóng port 8081 khi khởi động
+├── config/                        # 2 lớp cấu hình (ThymeleafConfig, LecturerDataSyncRunner)
+├── controller/                    # 9 Controller MVC & REST API
+│   ├── AccountController.java     # Đăng nhập, đăng xuất, đổi mật khẩu
+│   ├── HomeController.java        # Điều hướng theo vai trò
+│   ├── StudentController.java     # Phân hệ Sinh viên (Dashboard, ĐKHP, TKB, Điểm, Học phí...)
+│   ├── FacultyController.java     # Phân hệ Giảng viên & CVHT
+│   ├── AdminController.java       # Phân hệ Quản trị, Đào tạo, Kế toán
+│   ├── ELearningController.java   # Cổng HUIT E-Learning & xem tài liệu môn học
+│   ├── ChatbotController.java     # API Trợ lý AI Gấu HUIT
+│   ├── ApiController.java         # REST API biểu đồ, lịch học, mô phỏng GPA
+│   └── GlobalControllerAdvice.java
+├── service/                       # 16 Service nghiệp vụ (@RequiredArgsConstructor, @Transactional)
+│   ├── CourseRegistrationService.java
+│   ├── ScheduleConflictService.java
+│   ├── StudentChatbotService.java
+│   ├── RegulationKnowledgeService.java
+│   ├── ClassDatabaseImportService.java
+│   ├── ELearningService.java
+│   ├── AttendanceService.java
+│   ├── GradingService.java
+│   ├── GpaSimulatorService.java
+│   ├── AcademicStandingService.java
+│   ├── TuitionService.java
+│   ├── ExcelService.java
+│   ├── FileStorageService.java
+│   ├── NotificationService.java
+│   ├── AuditLogService.java
+│   └── CloudflareTunnelService.java
+├── entity/                        # 28 Entity JPA chuẩn hóa 3NF (bao gồm CoSo, PhongHoc, LichHocTuan)
+└── repository/                    # 27 Spring Data JPA Repository
+
+src/main/resources/
+├── application.properties         # Cấu hình MySQL, port 8081, Gemini AI, Cloudflare Tunnel
+├── static/                        # CSS themes, JS, logo & ảnh khuôn viên HUIT
+└── templates/                     # Giao diện Thymeleaf (account, student, faculty, admin, elearning, fragments)
+
+database/
+├── init_schema_and_data.sql       # Khởi tạo schema & dữ liệu nền
+├── seed_huit_khdl_and_receipts.sql# Dữ liệu mẫu ngành KHDL & phiếu thu
+├── upgrade_v2_workflows.sql       # Nâng cấp nghiệp vụ v2
+└── huit_normalized_schema.sql     # Lược đồ chuẩn hóa 3NF (co_so, phong_hoc, lich_hoc_tuan)
+```
+
+---
+
+## 5. Hướng dẫn cài đặt & chạy dự án
+
+### Bước 1: Yêu cầu môi trường
+- **JDK 17+**
+- **MySQL 8.0+** (mặc định cấu hình kết nối `localhost:3306/university_sis`, user `root`)
+
+### Bước 2: Khởi tạo CSDL MySQL
 ```bash
 mysql -u root -p < database/init_schema_and_data.sql
 mysql -u root -p university_sis < database/seed_huit_khdl_and_receipts.sql
+mysql -u root -p university_sis < database/huit_normalized_schema.sql
 ```
+*(Tùy chọn)* Nếu bạn có dữ liệu TKB Excel thực tế và tài liệu PDF/E-Learning nội bộ, đặt vào thư mục `class_database/` ở gốc dự án (thư mục này đã được đưa vào `.gitignore` để không đẩy dữ liệu nội bộ lên Git).
 
-### 6.2. Khởi chạy ứng dụng
-
-- Cách 1 (IDE): mở `SisApplication.java` và bấm Run (tự động giải phóng port `8081` nếu bị chiếm).
-- Cách 2 (Terminal Windows):
+### Bước 3: Cấu hình Gemini API Key (tùy chọn cho Chatbot AI)
+**Không dán trực tiếp API key vào `application.properties` khi commit Git.** Hãy khai báo qua biến môi trường trên máy:
 
 ```powershell
-.\mvnw.cmd spring-boot:run
+# Windows PowerShell
+$env:GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 ```
 
-Truy cập trình duyệt tại `http://localhost:8081` (hoặc link HTTPS công khai do Cloudflare Tunnel in ra ở console).
+Nếu không cấu hình key, Gấu HUIT vẫn hoạt động bình thường ở chế độ tra cứu trực tiếp CSDL & quy chế nội bộ.
 
-### 6.3. Tài khoản thử nghiệm (mật khẩu chung: `123456`)
+### Bước 4: Khởi chạy ứng dụng
+```powershell
+# Chạy ứng dụng (cổng mặc định: 8081)
+.\mvnw.cmd spring-boot:run
+```
+Hoặc chạy trực tiếp `SisApplication.java` trong IDE (VS Code / IntelliJ IDEA).
 
-| Vai trò | Mã đăng nhập | Email | Ghi chú kiểm thử |
-| :--- | :--- | :--- | :--- |
-| Sinh viên (Khá/Giỏi) | `2180601234` | `2180601234@sinhvien.sis.edu.vn` | ĐKHP, TKB, học phí, mô phỏng GPA, E-Learning |
-| Sinh viên (Cảnh báo) | `2180609999` | `2180609999@sinhvien.sis.edu.vn` | Kiểm tra giới hạn tối đa 18 TC |
-| Giảng viên | `GV001` | `gv.an@sis.edu.vn` | Lịch dạy, điểm danh, nhập điểm |
-| Cố vấn học tập | `GV002` | `gv.binh@sis.edu.vn` | Theo dõi lớp danh nghĩa |
-| Phòng Đào tạo | `DAOTAO01` | `daotao@sis.edu.vn` | Mở/đóng ĐKHP, xét tốt nghiệp |
-| Quản trị viên | `ADMIN01` | `admin@sis.edu.vn` | Quản lý người dùng, lịch học, hệ thống |
-| Phòng Kế toán | `KETOAN01` | `ketoan@sis.edu.vn` | Thu học phí, gạch nợ, in phiếu thu |
+Truy cập ứng dụng tại: **http://localhost:8081** (hoặc URL HTTPS công khai do `CloudflareTunnelService` in ra ở console nếu `app.cloudflare.tunnel.enabled=true`).
 
-## 7. Gợi ý mở rộng
-
-1. Tích hợp cổng thanh toán thực tế (VNPay / MoMo QR) thay cho bước xác nhận chuyển khoản mô phỏng.
-2. Nâng cấp bảo mật mật khẩu bằng Spring Security + BCrypt và xác thực 2 lớp (2FA).
-3. Bổ sung tính năng làm bài kiểm tra trực tuyến và nộp bài tập ngay trên cổng HUIT E-Learning.
-4. Thêm báo cáo thống kê tỷ lệ qua môn / cảnh báo học vụ theo từng khoa và khóa học.
-
-## 8. Công thức tóm tắt nhanh theo từng giai đoạn
-
-1. Tỷ lệ vắng mặt (cấm thi khi $> 20\%$):
-
-$$
-r_{\text{vắng}} = \frac{\text{Số tiết vắng}}{\text{Tổng số tiết học phần}} \times 100\%
-$$
-
-2. Điểm tổng kết hệ 10:
-
-$$
-D_{10} = w_{cc}\cdot d_{cc} + w_{qt}\cdot d_{qt} + w_{th}\cdot d_{th} + w_{ck}\cdot d_{ck}
-$$
-
-3. Điểm trung bình tích lũy GPA (chỉ lấy điểm cao nhất của mỗi học phần):
-
-$$
-\text{GPA} = \frac{\sum_{i=1}^{M} c_i \cdot D_{4,i}}{\sum_{i=1}^{M} c_i}
-$$
-
-4. Học phí học phần tín chỉ:
-
-$$
-\text{HP} = (c_{lt} \cdot P) + (c_{th} \cdot P \cdot k_{th})
-$$
-
-5. Số dư công nợ còn lại sau thanh toán:
-
-$$
-\text{Còn nợ} = \text{Tổng học phí kỳ} - \sum \text{Phiếu thu đã nộp}
-$$
+### Bước 5: Chạy kiểm thử tự động
+```powershell
+.\mvnw.cmd clean test
+```
 
 ---
 
-Nếu cần, có thể tách tài liệu này thành 2 file riêng:
+## 6. Tài khoản mẫu mặc định (khi nạp dữ liệu seed)
 
-1. `README.md` ngắn gọn cho hướng dẫn cài đặt và chạy nhanh.
-2. `REPORT.md` chi tiết cho phần kiến trúc, công thức nghiệp vụ và ví dụ thế số.
+Mật khẩu mặc định: `123456`
+
+| Vai trò | Mã đăng nhập | Chức năng chính |
+| :--- | :--- | :--- |
+| Sinh viên | `2180601234` | Dashboard, ĐKHP, TKB, Bảng điểm, Mô phỏng GPA, Học phí, E-Learning, AI Chatbot |
+| Sinh viên (Cảnh báo) | `2180609999` | Kiểm thử giới hạn đăng ký tối đa 18 TC/kỳ |
+| Giảng viên / CVHT | `GV001`, `GV002` | Lịch dạy, điểm danh tự động cấm thi, nhập điểm, quản lý lớp danh nghĩa |
+| Phòng Đào tạo | `DAOTAO01` | Quản lý học kỳ, mở/khóa ĐKHP, xét tốt nghiệp |
+| Phòng Kế toán | `KETOAN01` | Quản lý công nợ, thu học phí, xuất phiếu thu |
+| Quản trị viên | `ADMIN01` | Toàn quyền quản trị hệ thống, người dùng, lịch học, nhật ký |
 
 ---
 
-**Disclaimer:** Đây là dự án đồ án môn học phục vụ mục đích học tập và nghiên cứu, được xây dựng hoàn toàn độc lập lấy cảm hứng từ quy trình đào tạo tín chỉ đại học (HUIT). Hệ thống và dữ liệu mẫu trong dự án không phải là cổng thông tin chính thức của nhà trường.
-
+**Disclaimer:** Đây là dự án đồ án môn học phục vụ mục đích học tập và nghiên cứu, xây dựng độc lập lấy cảm hứng từ quy trình đào tạo tín chỉ đại học. Hệ thống không phải là cổng thông tin chính thức của nhà trường.
