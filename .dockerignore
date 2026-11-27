@@ -1,0 +1,8 @@
+target/
+.git/
+.vscode/
+.idea/
+class_database/
+uploads/
+*.log
+*.exe
