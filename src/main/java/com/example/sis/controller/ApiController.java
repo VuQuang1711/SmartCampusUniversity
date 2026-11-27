@@ -1,5 +1,6 @@
 package com.example.sis.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import com.example.sis.service.CourseRegistrationService;
@@ -7,7 +8,6 @@ import com.example.sis.service.ExcelService;
 import com.example.sis.service.FileStorageService;
 import com.example.sis.service.ScheduleConflictService;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -19,16 +19,17 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class ApiController {
 
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private HocPhanRepository hocPhanRepository;
-    @Autowired private ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
-    @Autowired private ExcelService excelService;
-    @Autowired private FileStorageService fileStorageService;
-    @Autowired private ScheduleConflictService scheduleConflictService;
-    @Autowired private CourseRegistrationService courseRegistrationService;
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final HocPhanRepository hocPhanRepository;
+    private final ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
+    private final ExcelService excelService;
+    private final FileStorageService fileStorageService;
+    private final ScheduleConflictService scheduleConflictService;
+    private final CourseRegistrationService courseRegistrationService;
+    private final LopHocPhanRepository lopHocPhanRepository;
 
     public static class CommandItem {
         public String title;

@@ -1,18 +1,19 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class GradingService {
 
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private SinhVienRepository sinhVienRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final SinhVienRepository sinhVienRepository;
 
     public static class GradeScaleResult {
         public final double he4;

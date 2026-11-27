@@ -752,18 +752,25 @@
                     </thead>
                     <tbody>
                     <tr th:each="lhp : ${openClasses}">
-                        <td><span class="mono" style="font-weight: 700;" th:text="${lhp.maLHP}">INT1405_01</span></td>
                         <td>
-                            <div style="font-weight: 600;" th:text="${lhp.hocPhan.tenHP}">OOP</div>
-                            <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${'HP: ' + lhp.hocPhan.maHP + ' • ' + lhp.hocPhan.soTCLyThuyet + ' LT + ' + lhp.hocPhan.soTCThucHanh + ' TH'}">INT1405</div>
+                            <div class="mono" style="font-weight: 700;" th:text="${lhp.maLHP}">010110108601</div>
+                            <div th:if="${lhp.lopDuKien != null and !lhp.lopDuKien.isEmpty()}" class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${lhp.lopDuKien}">15DHKHDL01</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;" th:text="${lhp.hocPhan.tenHP}">Dữ liệu lớn</div>
+                            <div class="mono" style="font-size: 11.5px; color: var(--text-muted);" th:text="${'HP: ' + lhp.hocPhan.maHP + ' • ' + lhp.hocPhan.soTCLyThuyet + ' LT + ' + lhp.hocPhan.soTCThucHanh + ' TH'}">0101101086</div>
                         </td>
                         <td class="mono" style="text-align: center; font-weight: 700;" th:text="${lhp.hocPhan.tongTinChi}">3</td>
-                        <td style="font-weight: 500;" th:text="${lhp.giangVien != null ? lhp.giangVien.tenDayDu : 'Chưa phân công'}">GV</td>
                         <td>
-                            <div th:each="lh : ${lhp.danhSachLichHoc}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                                <span class="lux-badge" style="font-size: 11px;">Thứ <span th:text="${lh.thu}">2</span></span>
+                            <div style="font-weight: 600;" th:text="${lhp.giangVien != null ? lhp.giangVien.tenDayDu : 'Chưa phân công'}">GV</div>
+                            <div th:if="${lhp.giangVien != null and lhp.giangVien.maGV != null}" class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${'Mã GV: ' + lhp.giangVien.maGV}">01001006</div>
+                        </td>
+                        <td>
+                            <div th:each="lh : ${lhp.danhSachLichHoc}" style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap;">
+                                <span class="lux-badge" style="font-size: 11px;" th:text="${lh.thu == 8 ? 'CN' : ('Thứ ' + lh.thu)}">Thứ 2</span>
                                 <span class="mono" style="font-size: 12px;">Tiết <span th:text="${lh.tietBatDau + '-' + lh.tietKetThuc}">1-3</span></span>
-                                <span class="mono" style="font-size: 12px; color: var(--text-muted);">(P.<span th:text="${lh.phongHoc}">A301</span>)</span>
+                                <span class="mono" style="font-size: 11.5px; color: var(--text-muted);">(P.<span th:text="${lh.phongHoc}">A301</span>)</span>
+                                <span class="mono" style="font-size: 11px; color: var(--text-muted);" th:text="${'Tuần: ' + (lh.tuanHoc != null and !lh.tuanHoc.isEmpty() ? lh.tuanHoc : (lh.tuTuan + '-' + lh.denTuan))}">Tuần: 1-15</span>
                             </div>
                         </td>
                         <td>
@@ -1053,9 +1060,59 @@
             const calcLhpTuition = lhp => (Number(lhp.soTCLyThuyet || 0) * BASE_PRICE_PER_CREDIT) + (Number(lhp.soTCThucHanh || 0) * BASE_PRICE_PER_CREDIT * Number(lhp.heSoHocPhi || 1.0));
             const colorForCourse = hpId => ACCENT_PALETTE[Math.abs(Number(hpId || 0)) % ACCENT_PALETTE.length];
 
+            function parseWeekSet(lh) {
+                const set = new Set();
+                const raw = (lh && lh.tuanHoc) ? String(lh.tuanHoc).trim() : '';
+                if (raw) {
+                    raw.split(/[,;\s]+/).forEach(part => {
+                        const p = part.trim();
+                        if (!p) return;
+                        if (p.includes('-')) {
+                            const [a, b] = p.split('-').map(x => parseInt(x.trim(), 10));
+                            if (!isNaN(a) && !isNaN(b)) {
+                                for (let w = Math.min(a, b); w <= Math.max(a, b); w++) set.add(w);
+                            }
+                        } else {
+                            const w = parseInt(p, 10);
+                            if (!isNaN(w)) set.add(w);
+                        }
+                    });
+                }
+                if (set.size === 0) {
+                    const s = Number(lh?.tuTuan || 1), e = Number(lh?.denTuan || 15);
+                    for (let w = Math.min(s, e); w <= Math.max(s, e); w++) set.add(w);
+                }
+                return set;
+            }
+
+            function formatWeeksCompactJs(weeksArr) {
+                if (!weeksArr || weeksArr.length === 0) return '';
+                const sorted = Array.from(new Set(weeksArr)).sort((a, b) => a - b);
+                const ranges = [];
+                let start = sorted[0], prev = sorted[0];
+                for (let i = 1; i < sorted.length; i++) {
+                    if (sorted[i] === prev + 1) {
+                        prev = sorted[i];
+                    } else {
+                        ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+                        start = prev = sorted[i];
+                    }
+                }
+                ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+                return ranges.join(', ');
+            }
+
+            function getOverlapWeeks(a, b) {
+                if (a.thu !== b.thu) return [];
+                if (a.tietKetThuc < b.tietBatDau || a.tietBatDau > b.tietKetThuc) return [];
+                const wA = parseWeekSet(a), wB = parseWeekSet(b);
+                const overlap = [];
+                wA.forEach(w => { if (wB.has(w)) overlap.push(w); });
+                return overlap;
+            }
+
             function sessionsOverlap(a, b) {
-                if (a.thu !== b.thu) return false;
-                return !(a.denTuan < b.tuTuan || a.tuTuan > b.denTuan) && !(a.tietKetThuc < b.tietBatDau || a.tietBatDau > b.tietKetThuc);
+                return getOverlapWeeks(a, b).length > 0;
             }
 
             function lhpListConflicts(list) {
@@ -1065,9 +1122,12 @@
                         const A = list[i], B = list[j];
                         for (const sA of (A.lichHoc || [])) {
                             for (const sB of (B.lichHoc || [])) {
-                                if (sessionsOverlap(sA, sB)) {
+                                const ovWeeks = getOverlapWeeks(sA, sB);
+                                if (ovWeeks.length > 0) {
                                     conflictedLhpIds.add(A.id); conflictedLhpIds.add(B.id);
-                                    conflicts.push({ text: `<strong>${A.maLHP}</strong> (${A.tenHP}) trùng <strong>${B.maLHP}</strong> (${B.tenHP}) — ${DAY_LABELS[sA.thu]}, T${Math.max(sA.tietBatDau, sB.tietBatDau)}-${Math.min(sA.tietKetThuc, sB.tietKetThuc)}` });
+                                    conflicts.push({
+                                        text: `<strong>${A.maLHP}</strong> (${A.tenHP}) trùng <strong>${B.maLHP}</strong> (${B.tenHP}) — ${DAY_LABELS[sA.thu]}, T${Math.max(sA.tietBatDau, sB.tietBatDau)}-${Math.min(sA.tietKetThuc, sB.tietKetThuc)} · <strong>Trùng tuần: ${formatWeeksCompactJs(ovWeeks)}</strong>`
+                                    });
                                 }
                             }
                         }
@@ -1193,7 +1253,7 @@
                             </div>
                         </div>
                         <div class="ev-meta">
-                            <div class="ev-row">${ICO_USER}<span>${lhp.giangVienTen}</span></div>
+                            <div class="ev-row">${ICO_USER}<span>${lhp.giangVienDisplay || lhp.giangVienTen}</span></div>
                             <div class="ev-row">${ICO_PIN}<span>${lh.phongHoc} · T${lh.tietBatDau}-${lh.tietKetThuc}</span></div>
                         </div>
                     `;
@@ -1209,7 +1269,12 @@
                 const filtered = COURSES_LIST.filter(c => {
                     if (!q) return true;
                     if (c.tenHP.toLowerCase().includes(q) || c.maHP.toLowerCase().includes(q)) return true;
-                    return c.sections.some(s => (s.maLHP || '').toLowerCase().includes(q) || (s.giangVienTen || '').toLowerCase().includes(q));
+                    return c.sections.some(s =>
+                        (s.maLHP || '').toLowerCase().includes(q)
+                        || (s.lopDuKien || '').toLowerCase().includes(q)
+                        || (s.giangVienMa || '').toLowerCase().includes(q)
+                        || (s.giangVienTen || '').toLowerCase().includes(q)
+                    );
                 });
 
                 if (filtered.length === 0) {
@@ -1232,8 +1297,9 @@
                         const isPicked = selectedLhpId === sec.id;
                         const hasTH = (sec.lichHoc || []).some(lh => lh.loaiLich === 'THUC_HANH');
                         const schedLines = (sec.lichHoc && sec.lichHoc.length > 0)
-                            ? sec.lichHoc.map(lh => `<strong>${DAY_SHORT[lh.thu]} · T${lh.tietBatDau}-${lh.tietKetThuc}</strong> · P.${lh.phongHoc} · W${lh.tuTuan}-${lh.denTuan}`).join('<br>')
+                            ? sec.lichHoc.map(lh => `<strong>${DAY_SHORT[lh.thu]} · T${lh.tietBatDau}-${lh.tietKetThuc}</strong> · ${lh.phongHoc} · Tuần ${lh.tuanHoc || (lh.tuTuan + '-' + lh.denTuan)}`).join('<br>')
                             : 'Chưa xếp lịch';
+                        const gvLabel = sec.giangVienDisplay || sec.giangVienTen;
                         return `
                             <div class="lhp-opt ${isPicked ? 'picked' : ''}"
                                  onclick="toggleSandboxLhp(${course.hocPhanId}, ${sec.id})"
@@ -1242,6 +1308,7 @@
                                 <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:5px;">
                                     <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
                                         <span class="mono" style="font-weight:800; font-size:12px;">${sec.maLHP}</span>
+                                        ${sec.lopDuKien ? `<span class="mono" style="font-size:10px; padding:1px 6px; border-radius:999px; background:#EFF6FF; color:#1D4ED8; font-weight:700;">${sec.lopDuKien}</span>` : ''}
                                         <span class="lux-badge" style="font-size:10px; padding:1px 6px;">${hasTH ? 'TH' : 'LT'}</span>
                                         <span class="mono" style="font-size:10.5px; color:var(--text-muted);">${sec.siSoHienTai}/${sec.siSoToiDa}</span>
                                         ${sec.registered ? '<span style="font-size:10px; font-weight:700; padding:1px 6px; border-radius:999px; background:#DCFCE7; color:#15803D;">Đã ĐK</span>' : ''}
@@ -1250,7 +1317,7 @@
                                 </div>
                                 <div style="font-size:11.5px; color:var(--text-secondary); line-height:1.45;">
                                     <div>${schedLines}</div>
-                                    <div style="color:var(--text-muted); margin-top:1px;">GV: ${sec.giangVienTen}</div>
+                                    <div style="color:var(--text-muted); margin-top:2px;">GV: <strong>${gvLabel}</strong></div>
                                 </div>
                             </div>
                         `;
@@ -1350,9 +1417,10 @@
                         ev.style.gridColumn = lh.thu;
                         ev.style.gridRow = `${startRow} / ${endRow}`;
                         ev.style.setProperty('--c-accent', isConflict ? '#DC2626' : col);
-                        ev.title = `${lhp.tenHP} (${lhp.maLHP}) • GV: ${lhp.giangVienTen} • P.${lh.phongHoc} • Tuần ${lh.tuTuan}-${lh.denTuan}`;
+                        ev.title = `${lhp.tenHP} (${lhp.maLHP}${lhp.lopDuKien ? ' - ' + lhp.lopDuKien : ''}) • GV: ${lhp.giangVienDisplay || lhp.giangVienTen} • ${lh.phongHoc} • Tuần ${lh.tuanHoc || (lh.tuTuan + '-' + lh.denTuan)}`;
 
                         const timeRange = `${PERIOD_START[lh.tietBatDau] || ('T'+lh.tietBatDau)}–${PERIOD_END[lh.tietKetThuc] || ('T'+lh.tietKetThuc)}`;
+                        const weekText = lh.tuanHoc || `${lh.tuTuan}-${lh.denTuan}`;
                         ev.innerHTML = `
                             <div>
                                 <div class="ev-hd">
@@ -1361,13 +1429,13 @@
                                 </div>
                                 <div class="ev-badges">
                                     <span class="ev-type-pill">${isConflict ? 'TRÙNG' : (isTH ? 'TH' : 'LT')}</span>
-                                    <span class="ev-code">${lhp.maLHP}${lhp.registered ? ' · ĐK' : ''}</span>
+                                    <span class="ev-code">${lhp.maLHP}${lhp.lopDuKien ? ' · ' + lhp.lopDuKien : ''}${lhp.registered ? ' · ĐK' : ''}</span>
                                 </div>
                             </div>
                             <div class="ev-meta">
-                                <div class="ev-row">${ICO_USER}<span>${lhp.giangVienTen}</span></div>
-                                <div class="ev-row">${ICO_CLOCK}<span>${timeRange} · W${lh.tuTuan}-${lh.denTuan}</span></div>
-                                <div class="ev-row">${ICO_PIN}<span>Phòng ${lh.phongHoc}</span></div>
+                                <div class="ev-row">${ICO_USER}<span>${lhp.giangVienDisplay || lhp.giangVienTen}</span></div>
+                                <div class="ev-row">${ICO_CLOCK}<span>${timeRange} · Tuần ${weekText}</span></div>
+                                <div class="ev-row">${ICO_PIN}<span>${lh.phongHoc}</span></div>
                             </div>
                         `;
                         grid.appendChild(ev);

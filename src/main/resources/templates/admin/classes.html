@@ -18,6 +18,52 @@
         </div>
     </div>
 
+    <div th:if="${successMsg}" style="margin-bottom:16px;padding:12px 16px;border-radius:10px;background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46;font-size:13.5px;font-weight:500;" th:text="${successMsg}"></div>
+    <div th:if="${errorMsg}" style="margin-bottom:16px;padding:12px 16px;border-radius:10px;background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;font-size:13.5px;font-weight:500;" th:text="${errorMsg}"></div>
+
+    <!-- Import TKB HUIT từ thư mục class_database -->
+    <div class="lux-card" style="padding: 20px 22px; margin-bottom: 20px; border-left: 4px solid var(--uit-blue-primary);">
+        <div class="card-heading" style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div class="card-heading-title">
+                <i data-lucide="file-spreadsheet" style="width:18px;height:18px;color:var(--uit-blue-primary);"></i>
+                <span>Import Thời Khóa Biểu HUIT (class_database) cho Đăng Ký Học Phần</span>
+            </div>
+            <form th:action="@{/Admin/Classes/SyncAllRealHuit}" method="post" style="display:inline-flex; gap:8px; align-items:center;">
+                <input type="hidden" name="filterPrefix" value="15DHKHDL">
+                <button type="submit" class="btn-lux" style="padding:6px 12px; font-size:12px; background:#EFF6FF; color:#1D4ED8; border:1px solid #BFDBFE;">
+                    <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Đồng bộ toàn bộ 4 kỳ KHDL (dữ liệu thật)
+                </button>
+            </form>
+        </div>
+        <form th:action="@{/Admin/Classes/ImportClassDatabase}" method="post" enctype="multipart/form-data"
+              style="display: grid; grid-template-columns: 2fr 1.2fr 1fr 1fr auto; gap: 12px; align-items: end;">
+            <div>
+                <label class="form-label">Chọn file có sẵn trong <code>class_database/</code></label>
+                <select name="fileName" class="lux-select">
+                    <option value="">-- Chọn file TKB HUIT --</option>
+                    <option th:each="f : ${classDbFiles}" th:value="${f.name}" th:text="${f.name + ' (' + f.sizeKb + ' KB)'}"></option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Hoặc Upload file .xls/.xlsx</label>
+                <input type="file" name="excelFile" accept=".xls,.xlsx" class="lux-input" style="padding: 7px 10px;">
+            </div>
+            <div>
+                <label class="form-label">Lọc theo Lớp / Môn (để trống = tất cả)</label>
+                <input type="text" name="filterPrefix" value="15DHKHDL" placeholder="VD: 15DHKHDL, 15DHTH..." class="lux-input mono">
+            </div>
+            <div>
+                <label class="form-label">Giới hạn số LHP</label>
+                <input type="number" name="maxClasses" value="150" min="10" max="5000" class="lux-input mono">
+            </div>
+            <div>
+                <button type="submit" class="btn-lux btn-lux-primary" style="white-space: nowrap;">
+                    <i data-lucide="download" style="width:15px;height:15px;"></i> Nạp vào ĐKHP
+                </button>
+            </div>
+        </form>
+    </div>
+
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 22px;">
         <!-- Tạo mới lớp học phần -->
         <div class="lux-card" style="padding: 22px; margin-bottom: 0;">

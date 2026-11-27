@@ -3,10 +3,8 @@ package com.example.sis.repository;
 import com.example.sis.entity.LichHoc;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 
-@Repository
 public interface LichHocRepository extends JpaRepository<LichHoc, Long> {
     List<LichHoc> findByLopHocPhanId(Long lopHocPhanId);
     List<LichHoc> findByLopHocPhanHocKyId(Long hocKyId);

@@ -2,7 +2,6 @@ package com.example.sis.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
 
 @Entity
 @Table(name = "khoa")

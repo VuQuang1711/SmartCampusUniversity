@@ -3,11 +3,9 @@ package com.example.sis.repository;
 import com.example.sis.entity.SinhVien;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface SinhVienRepository extends JpaRepository<SinhVien, Long> {
     Optional<SinhVien> findByMssv(String mssv);
     Optional<SinhVien> findByNguoiDungId(Long nguoiDungId);

@@ -3,11 +3,9 @@ package com.example.sis.repository;
 import com.example.sis.entity.DiemDanh;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 
-@Repository
 public interface DiemDanhRepository extends JpaRepository<DiemDanh, Long> {
     List<DiemDanh> findByLichHocId(Long lichHocId);
     List<DiemDanh> findByLichHocIdAndNgayHoc(Long lichHocId, LocalDate ngayHoc);

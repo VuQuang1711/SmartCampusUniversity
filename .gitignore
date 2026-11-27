@@ -38,8 +38,14 @@ replay_pid*
 
 # Runtime uploads & local binaries (too large for Git)
 uploads/
+class_database/
 *.exe
 cloudflared*
+
+# Local secrets & env files (never commit)
+.env
+.env.*
+src/main/resources/application-local.properties
 
 # Tool-generated folders
 .github/modernize/

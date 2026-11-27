@@ -1,17 +1,18 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class GpaSimulatorService {
 
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
 
     public static class SimulationResult {
         public double currentCpa;

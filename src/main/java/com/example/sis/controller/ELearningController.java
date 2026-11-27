@@ -1,25 +1,34 @@
 package com.example.sis.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import com.example.sis.service.ELearningService;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
 @Controller
 @RequestMapping({"/ELearning", "/elearning"})
+@RequiredArgsConstructor
 public class ELearningController {
 
-    @Autowired private ELearningService eLearningService;
-    @Autowired private NguoiDungRepository nguoiDungRepository;
-    @Autowired private SinhVienRepository sinhVienRepository;
+    private final ELearningService eLearningService;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final SinhVienRepository sinhVienRepository;
 
     /**
      * Cổng chính E-Learning (có màn hình chờ nền trắng + logo HUIT trước khi vào giao diện)
@@ -151,6 +160,7 @@ public class ELearningController {
         if (course == null) return "redirect:/ELearning?splash=false";
 
         model.addAttribute("course", course);
+        model.addAttribute("courseDocuments", eLearningService.getDocumentsForCourse(slug));
         model.addAttribute("relatedCourses", eLearningService.getAllCourses().stream()
                 .filter(c -> !c.slug.equals(slug) && c.category.equals(course.category))
                 .limit(3).toList());
@@ -159,7 +169,7 @@ public class ELearningController {
     }
 
     /**
-     * Khi bấm "Bắt đầu học" -> Màn hình nền trắng "Chức năng đang phát triển" + nút Quay lại
+     * Phòng học trực tuyến E-Learning: đọc trực tiếp PDF slide & tải tài liệu thật từ class_database/elearningdocument/
      */
     @GetMapping("/Course/{slug}/Learn")
     public String startLearning(@PathVariable String slug, HttpSession session, Model model) {
@@ -169,8 +179,53 @@ public class ELearningController {
         }
 
         ELearningService.ELearningCourse course = eLearningService.findBySlug(slug).orElse(null);
+        if (course == null) return "redirect:/ELearning?splash=false";
+
+        List<ELearningService.DocumentItem> docs = eLearningService.getDocumentsForCourse(slug);
         model.addAttribute("course", course);
-        model.addAttribute("backUrl", course != null ? "/ELearning/Course/" + course.slug : "/ELearning?splash=false");
-        return "elearning/developing";
+        model.addAttribute("documents", docs);
+        model.addAttribute("backUrl", "/ELearning/Course/" + course.slug);
+        return "elearning/learn";
+    }
+
+    @GetMapping("/Document/View")
+    public ResponseEntity<Resource> viewDocument(@RequestParam("path") String relativePath, HttpSession session) {
+        NguoiDung currentUser = (NguoiDung) session.getAttribute("currentUser");
+        if (currentUser == null) return ResponseEntity.status(401).build();
+
+        Optional<Path> fileOpt = eLearningService.resolveDocumentFile(relativePath);
+        if (fileOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        Path file = fileOpt.get();
+        String fileName = file.getFileName().toString();
+        MediaType mediaType = fileName.toLowerCase().endsWith(".pdf")
+                ? MediaType.APPLICATION_PDF
+                : MediaType.APPLICATION_OCTET_STREAM;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.inline().filename(fileName, StandardCharsets.UTF_8).build());
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(mediaType)
+                .body(new FileSystemResource(file));
+    }
+
+    @GetMapping("/Document/Download")
+    public ResponseEntity<Resource> downloadDocument(@RequestParam("path") String relativePath, HttpSession session) {
+        NguoiDung currentUser = (NguoiDung) session.getAttribute("currentUser");
+        if (currentUser == null) return ResponseEntity.status(401).build();
+
+        Optional<Path> fileOpt = eLearningService.resolveDocumentFile(relativePath);
+        if (fileOpt.isEmpty()) return ResponseEntity.notFound().build();
+
+        Path file = fileOpt.get();
+        String fileName = file.getFileName().toString();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDisposition(ContentDisposition.attachment().filename(fileName, StandardCharsets.UTF_8).build());
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new FileSystemResource(file));
     }
 }

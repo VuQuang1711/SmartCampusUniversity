@@ -1,11 +1,11 @@
 package com.example.sis.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import com.example.sis.service.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,33 +20,34 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/Student")
+@RequiredArgsConstructor
 public class StudentController {
 
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private NguoiDungRepository nguoiDungRepository;
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private LichHocRepository lichHocRepository;
-    @Autowired private HocKyRepository hocKyRepository;
-    @Autowired private CongNoHocKyRepository congNoHocKyRepository;
-    @Autowired private PhieuThuHocPhiRepository phieuThuHocPhiRepository;
-    @Autowired private KhungChuongTrinhRepository khungChuongTrinhRepository;
-    @Autowired private DieuKienHocPhanRepository dieuKienHocPhanRepository;
-    @Autowired private YeuCauDichVuMotCuaRepository yeuCauDichVuMotCuaRepository;
-    @Autowired private ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
-    @Autowired private DiemRenLuyenRepository diemRenLuyenRepository;
-    @Autowired private ThongBaoRepository thongBaoRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final LopHocPhanRepository lopHocPhanRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final LichHocRepository lichHocRepository;
+    private final HocKyRepository hocKyRepository;
+    private final CongNoHocKyRepository congNoHocKyRepository;
+    private final PhieuThuHocPhiRepository phieuThuHocPhiRepository;
+    private final KhungChuongTrinhRepository khungChuongTrinhRepository;
+    private final DieuKienHocPhanRepository dieuKienHocPhanRepository;
+    private final YeuCauDichVuMotCuaRepository yeuCauDichVuMotCuaRepository;
+    private final ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
+    private final DiemRenLuyenRepository diemRenLuyenRepository;
+    private final ThongBaoRepository thongBaoRepository;
 
-    @Autowired private CourseRegistrationService courseRegistrationService;
-    @Autowired private GradingService gradingService;
-    @Autowired private TuitionService tuitionService;
-    @Autowired private AcademicStandingService academicStandingService;
-    @Autowired private GpaSimulatorService gpaSimulatorService;
-    @Autowired private FileStorageService fileStorageService;
-    @Autowired private NotificationService notificationService;
-    @Autowired private AuditLogService auditLogService;
-    @Autowired private ObjectMapper objectMapper;
+    private final CourseRegistrationService courseRegistrationService;
+    private final GradingService gradingService;
+    private final TuitionService tuitionService;
+    private final AcademicStandingService academicStandingService;
+    private final GpaSimulatorService gpaSimulatorService;
+    private final FileStorageService fileStorageService;
+    private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
+    private final ObjectMapper objectMapper;
 
     private SinhVien getStudent(HttpSession session) {
         NguoiDung u = (NguoiDung) session.getAttribute("currentUser");
@@ -123,7 +124,7 @@ public class StudentController {
         List<Map<String, Object>> failedSubjects = new ArrayList<>();
         List<Map<String, Object>> remainingSubjects = new ArrayList<>();
 
-        int passedCredits = 0, takingCredits = 0, failedCredits = 0, remainingCredits = 0;
+        int passedCredits = 0, takingCredits = 0, failedCredits = 0;
 
         for (KhungChuongTrinh kct : kctList) {
             HocPhan hp = kct.getHocPhan();
@@ -147,7 +148,6 @@ public class StudentController {
                 takingCredits += hp.getTongTinChi();
             } else {
                 remainingSubjects.add(row);
-                remainingCredits += hp.getTongTinChi();
             }
         }
 
@@ -360,6 +360,11 @@ public class StudentController {
         dto.put("id", lhp.getId());
         dto.put("maLHP", lhp.getMaLHP());
         dto.put("tenLHP", lhp.getTenLHP());
+        dto.put("lopDuKien", lhp.getLopDuKien() != null ? lhp.getLopDuKien() : "");
+        dto.put("tinhChatHp", lhp.getTinhChatHp() != null ? lhp.getTinhChatHp() : "TRUC_TIEP");
+        dto.put("tongSoTiet", lhp.getTongSoTiet() != null ? lhp.getTongSoTiet() : (hp.getTongSoTiet() != null ? hp.getTongSoTiet() : 0));
+        dto.put("ngayBatDau", lhp.getNgayBatDau() != null ? lhp.getNgayBatDau().toString() : "");
+        dto.put("ngayKetThuc", lhp.getNgayKetThuc() != null ? lhp.getNgayKetThuc().toString() : "");
         dto.put("hocPhanId", hp.getId());
         dto.put("maHP", hp.getMaHP());
         dto.put("tenHP", hp.getTenHP());
@@ -367,8 +372,13 @@ public class StudentController {
         dto.put("soTCThucHanh", hp.getSoTCThucHanh() != null ? hp.getSoTCThucHanh() : 0);
         dto.put("tongTinChi", hp.getTongTinChi() != null ? hp.getTongTinChi() : 0);
         dto.put("heSoHocPhi", hp.getHeSoHocPhi() != null ? hp.getHeSoHocPhi() : 1.0);
-        dto.put("giangVienId", lhp.getGiangVien() != null ? lhp.getGiangVien().getId() : null);
-        dto.put("giangVienTen", lhp.getGiangVien() != null ? lhp.getGiangVien().getTenDayDu() : "Chưa phân công");
+        GiangVien gv = lhp.getGiangVien();
+        String gvMa = (gv != null && gv.getMaGV() != null) ? gv.getMaGV() : "";
+        String gvTen = (gv != null) ? gv.getTenDayDu() : "Chưa phân công";
+        dto.put("giangVienId", gv != null ? gv.getId() : null);
+        dto.put("giangVienMa", gvMa);
+        dto.put("giangVienTen", gvTen);
+        dto.put("giangVienDisplay", !gvMa.isEmpty() ? (gvMa + " - " + gvTen) : gvTen);
         dto.put("siSoHienTai", lhp.getSiSoHienTai() != null ? lhp.getSiSoHienTai() : 0);
         dto.put("siSoToiDa", lhp.getSiSoToiDa() != null ? lhp.getSiSoToiDa() : 50);
         dto.put("registered", isRegistered);
@@ -387,8 +397,11 @@ public class StudentController {
             sm.put("tietKetThuc", lh.getTietKetThuc());
             sm.put("soTiet", lh.getSoTiet());
             sm.put("phongHoc", lh.getPhongHoc() != null ? lh.getPhongHoc() : "Chưa xếp");
-            sm.put("tuTuan", lh.getTuTuan() != null ? lh.getTuTuan() : 1);
-            sm.put("denTuan", lh.getDenTuan() != null ? lh.getDenTuan() : 15);
+            int tuTuan = lh.getTuTuan() != null ? lh.getTuTuan() : 1;
+            int denTuan = lh.getDenTuan() != null ? lh.getDenTuan() : 15;
+            sm.put("tuTuan", tuTuan);
+            sm.put("denTuan", denTuan);
+            sm.put("tuanHoc", (lh.getTuanHoc() != null && !lh.getTuanHoc().isBlank()) ? lh.getTuanHoc() : (tuTuan + "-" + denTuan));
             sm.put("loaiLich", lh.getLoaiLich() != null ? lh.getLoaiLich().name() : "LY_THUYET");
             schedList.add(sm);
         }
@@ -472,11 +485,15 @@ public class StudentController {
         SinhVien sv = getStudent(session);
         if (sv == null) return "redirect:/Account/Login";
 
-        CourseRegistrationService.RegistrationResult result = courseRegistrationService.registerCourse(sv.getId(), lopHocPhanId);
-        if (result.isSuccess()) {
-            ra.addFlashAttribute("success", result.getMessage() + " • Hệ thống đã tự động cập nhật Công nợ học phí!");
-        } else {
-            ra.addFlashAttribute("error", result.getMessage());
+        try {
+            CourseRegistrationService.RegistrationResult result = courseRegistrationService.registerCourse(sv.getId(), lopHocPhanId);
+            if (result.isSuccess()) {
+                ra.addFlashAttribute("success", result.getMessage() + " • Hệ thống đã tự động cập nhật Công nợ học phí!");
+            } else {
+                ra.addFlashAttribute("error", result.getMessage());
+            }
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Không thể đăng ký học phần: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
         }
         return "redirect:/Student/Registration";
     }

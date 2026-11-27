@@ -1,10 +1,10 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,17 +18,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ExcelService {
 
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private NguoiDungRepository nguoiDungRepository;
-    @Autowired private LopDanhNghiaRepository lopDanhNghiaRepository;
-    @Autowired private NganhHocRepository nganhHocRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
-    @Autowired private CongNoHocKyRepository congNoHocKyRepository;
-    @Autowired private GradingService gradingService;
+    private final SinhVienRepository sinhVienRepository;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final LopDanhNghiaRepository lopDanhNghiaRepository;
+    private final NganhHocRepository nganhHocRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final LopHocPhanRepository lopHocPhanRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final CongNoHocKyRepository congNoHocKyRepository;
+    private final GradingService gradingService;
 
     /**
      * IMPORT TÂN SINH VIÊN TỪ EXCEL VÀ TỰ ĐỘNG PHÂN BỔ VÀO LỚP DANH NGHĨA

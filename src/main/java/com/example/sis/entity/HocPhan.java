@@ -33,6 +33,13 @@ public class HocPhan {
     @Column(name = "tong_tin_chi", nullable = false)
     private Integer tongTinChi;
 
+    @Column(name = "tong_so_tiet")
+    private Integer tongSoTiet; // VD: 30, 45, 60 (từ cột "Tổng số tiết" trong TKB HUIT)
+
+    @Column(name = "tinh_chat_hp", length = 50)
+    @Builder.Default
+    private String tinhChatHp = "TRUC_TIEP"; // TRUC_TIEP, E_learning(HUITx)
+
     @Column(name = "he_so_hoc_phi")
     @Builder.Default
     private Double heSoHocPhi = 1.0; // Hệ số nhân học phí (ví dụ môn chuyên ngành lab hệ số 1.2)

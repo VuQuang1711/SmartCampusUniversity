@@ -1,20 +1,21 @@
 package com.example.sis.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice
+@RequiredArgsConstructor
 public class GlobalControllerAdvice {
 
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private ThongBaoRepository thongBaoRepository;
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
-    @Autowired private YeuCauDoiLichRepository yeuCauDoiLichRepository;
-    @Autowired private ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final ThongBaoRepository thongBaoRepository;
+    private final LopHocPhanRepository lopHocPhanRepository;
+    private final YeuCauDoiLichRepository yeuCauDoiLichRepository;
+    private final ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
 
     @ModelAttribute("currentUser")
     public NguoiDung getCurrentUser(HttpSession session) {

@@ -1,8 +1,8 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,11 +10,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class NotificationService {
 
-    @Autowired private ThongBaoRepository thongBaoRepository;
-    @Autowired private NguoiDungRepository nguoiDungRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final ThongBaoRepository thongBaoRepository;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
 
     public ThongBao sendToUser(NguoiDung sender, NguoiDung recipient, String title, String content,
                                ThongBao.LoaiThongBao type, String link) {

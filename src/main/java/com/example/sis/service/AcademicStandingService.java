@@ -1,8 +1,8 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,13 +10,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AcademicStandingService {
 
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private KhungChuongTrinhRepository khungChuongTrinhRepository;
-    @Autowired private ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
-    @Autowired private CongNoHocKyRepository congNoHocKyRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final KhungChuongTrinhRepository khungChuongTrinhRepository;
+    private final ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
+    private final CongNoHocKyRepository congNoHocKyRepository;
 
     public static class GraduationAuditResult {
         public boolean eligible;

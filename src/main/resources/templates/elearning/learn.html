@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${course.title + ' - Phòng học E-Learning HUIT'}">Phòng học E-Learning HUIT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Be Vietnam Pro', -apple-system, sans-serif;
+            background: #F8FAFC;
+            color: #0F172A;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .lms-topbar {
+            height: 58px;
+            background: #FFFFFF;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        .lms-top-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            border-radius: 9px;
+            border: 1px solid #CBD5E1;
+            background: #F8FAFC;
+            color: #334155;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .btn-back:hover { background: #E2E8F0; color: #0F172A; }
+        .course-meta { min-width: 0; }
+        .course-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0F172A;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .course-sub { font-size: 11.5px; color: #64748B; }
+        .lms-top-right { display: flex; align-items: center; gap: 10px; }
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 9px;
+            border: none;
+            background: #005BAB;
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-action:hover { background: #004687; }
+        .btn-outline {
+            background: #FFFFFF;
+            color: #005BAB;
+            border: 1px solid #BFDBFE;
+        }
+        .btn-outline:hover { background: #EFF6FF; }
+
+        .lms-body {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+        }
+        .doc-sidebar {
+            width: 340px;
+            flex: 0 0 340px;
+            background: #FFFFFF;
+            border-right: 1px solid #E2E8F0;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .sidebar-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid #E2E8F0;
+        }
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .count-pill {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #EFF6FF;
+            color: #1D4ED8;
+            font-weight: 700;
+        }
+        .search-box {
+            width: 100%;
+            padding: 8px 11px;
+            border-radius: 9px;
+            border: 1px solid #CBD5E1;
+            font-family: inherit;
+            font-size: 12.5px;
+            outline: none;
+        }
+        .search-box:focus { border-color: #005BAB; }
+        .doc-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .doc-item {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #E2E8F0;
+            background: #FFFFFF;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .doc-item:hover { border-color: #93C5FD; background: #F8FAFC; }
+        .doc-item.active { border-color: #005BAB; background: #EFF6FF; }
+        .ext-badge {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 6px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .ext-pdf { background: #FEE2E2; color: #B91C1C; }
+        .ext-doc { background: #DBEAFE; color: #1D4ED8; }
+        .doc-name {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #0F172A;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+        .doc-sub { font-size: 11px; color: #64748B; margin-top: 3px; }
+
+        .viewer-pane {
+            flex: 1;
+            background: #1E293B;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+        }
+        .pdf-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #1E293B;
+        }
+        .non-pdf-card {
+            margin: auto;
+            background: #FFFFFF;
+            padding: 36px 40px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 440px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        }
+        @media (max-width: 900px) {
+            body { height: auto; overflow: auto; }
+            .lms-body { flex-direction: column; }
+            .doc-sidebar { width: 100%; flex: none; max-height: 320px; border-right: none; border-bottom: 1px solid #E2E8F0; }
+            .viewer-pane { height: 70vh; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="lms-topbar">
+    <div class="lms-top-left">
+        <a th:href="${backUrl}" class="btn-back">
+            <i data-lucide="arrow-left" style="width: 15px; height: 15px;"></i> Quay lại
+        </a>
+        <div class="course-meta">
+            <div class="course-title" th:text="${course.title}">Tên môn học</div>
+            <div class="course-sub" th:text="${'Mã HP: ' + course.code + ' • ' + course.credits + ' TC • GV: ' + course.lecturer}">Thông tin</div>
+        </div>
+    </div>
+    <div class="lms-top-right">
+        <a id="btnOpenNewTab" href="#" target="_blank" class="btn-action btn-outline" style="display:none;">
+            <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Mở tab mới
+        </a>
+        <a id="btnDownloadCurrent" href="#" class="btn-action" style="display:none;">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i> Tải tài liệu
+        </a>
+    </div>
+</header>
+
+<div class="lms-body">
+    <aside class="doc-sidebar">
+        <div class="sidebar-head">
+            <div class="sidebar-title">
+                <span>📚 Tài liệu &amp; Slide bài giảng</span>
+                <span class="count-pill" th:text="${documents.size() + ' tệp'}">0 tệp</span>
+            </div>
+            <input id="docSearch" type="text" class="search-box" placeholder="Tìm slide, chương, bài tập..." oninput="filterDocs()">
+        </div>
+        <div id="docList" class="doc-list">
+            <div th:if="${documents.isEmpty()}" style="text-align:center; padding:30px 12px; color:#64748B; font-size:13px;">
+                Chưa có tài liệu nào trong thư mục cho môn học này.
+            </div>
+            <div th:each="doc, stat : ${documents}"
+                 class="doc-item"
+                 th:classappend="${stat.index == 0 ? ' active' : ''}"
+                 th:attr="data-path=${doc.relativePath}, data-name=${doc.name}, data-pdf=${doc.pdf}, data-ext=${doc.extension}, data-size=${doc.sizeText}, data-group=${doc.groupLabel}"
+                 onclick="selectDoc(this)">
+                <span class="ext-badge" th:classappend="${doc.pdf ? ' ext-pdf' : ' ext-doc'}" th:text="${doc.extension}">PDF</span>
+                <div style="min-width:0; flex:1;">
+                    <div class="doc-name" th:text="${doc.name}">Slide.pdf</div>
+                    <div class="doc-sub" th:text="${doc.groupLabel + ' • ' + doc.sizeText}">Slide • 1.2 MB</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="viewer-pane" id="viewerPane">
+        <iframe id="pdfFrame" class="pdf-frame" style="display:none;"></iframe>
+        <div id="nonPdfCard" class="non-pdf-card" style="display:none;">
+            <div style="font-size:40px; margin-bottom:10px;">📄</div>
+            <h3 id="nonPdfTitle" style="font-size:16px; font-weight:700; margin-bottom:6px; word-break:break-word;">Tài liệu Word</h3>
+            <p id="nonPdfMeta" style="font-size:13px; color:#64748B; margin-bottom:18px;">Tệp định dạng DOCX — Bấm nút bên dưới để tải về máy và mở bằng Word.</p>
+            <a id="nonPdfDownload" href="#" class="btn-action" style="justify-content:center;">
+                <i data-lucide="download" style="width: 15px; height: 15px;"></i> Tải tài liệu về máy
+            </a>
+        </div>
+    </main>
+</div>
+
+<script>
+    function selectDoc(el) {
+        if (!el) return;
+        document.querySelectorAll('.doc-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+
+        const path = el.getAttribute('data-path');
+        const name = el.getAttribute('data-name');
+        const isPdf = el.getAttribute('data-pdf') === 'true';
+        const ext = el.getAttribute('data-ext');
+        const size = el.getAttribute('data-size');
+        const encoded = encodeURIComponent(path);
+
+        const viewUrl = '/ELearning/Document/View?path=' + encoded;
+        const downloadUrl = '/ELearning/Document/Download?path=' + encoded;
+
+        const btnDl = document.getElementById('btnDownloadCurrent');
+        const btnNew = document.getElementById('btnOpenNewTab');
+        btnDl.href = downloadUrl;
+        btnDl.style.display = 'inline-flex';
+
+        const frame = document.getElementById('pdfFrame');
+        const card = document.getElementById('nonPdfCard');
+
+        if (isPdf) {
+            btnNew.href = viewUrl;
+            btnNew.style.display = 'inline-flex';
+            card.style.display = 'none';
+            frame.style.display = 'block';
+            frame.src = viewUrl;
+        } else {
+            btnNew.style.display = 'none';
+            frame.style.display = 'none';
+            frame.src = 'about:blank';
+            document.getElementById('nonPdfTitle').textContent = name;
+            document.getElementById('nonPdfMeta').textContent = `Định dạng ${ext} • ${size} — Tải về để xem trên máy tính.`;
+            document.getElementById('nonPdfDownload').href = downloadUrl;
+            card.style.display = 'block';
+        }
+    }
+
+    function filterDocs() {
+        const q = (document.getElementById('docSearch').value || '').trim().toLowerCase();
+        document.querySelectorAll('.doc-item').forEach(el => {
+            const name = (el.getAttribute('data-name') || '').toLowerCase();
+            const grp = (el.getAttribute('data-group') || '').toLowerCase();
+            el.style.display = (!q || name.includes(q) || grp.includes(q)) ? 'flex' : 'none';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
+        const first = document.querySelector('.doc-item');
+        if (first) selectDoc(first);
+    });
+</script>
+</body>
+</html>

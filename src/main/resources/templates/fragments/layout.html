@@ -430,5 +430,308 @@
         }
     });
 </script>
+
+<!-- ==================== GẤU HUIT AI CHATBOT WIDGET ==================== -->
+<style>
+    .huit-chat-fab {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        padding: 3px;
+        background: linear-gradient(135deg, #2563EB, #0EA5E9);
+        border: 2px solid #FFFFFF;
+        box-shadow: 0 10px 28px rgba(37, 99, 235, 0.35);
+        cursor: pointer;
+        z-index: 950;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .huit-chat-fab:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 14px 34px rgba(37, 99, 235, 0.48);
+    }
+    .huit-chat-fab img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        background: #fff;
+    }
+    .huit-chat-badge-dot {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #22C55E;
+        border: 2px solid #FFFFFF;
+    }
+    .huit-chat-panel {
+        position: fixed;
+        right: 22px;
+        bottom: 96px;
+        width: 380px;
+        max-width: calc(100vw - 32px);
+        height: 540px;
+        max-height: calc(100vh - 130px);
+        background: var(--bg-card, #FFFFFF);
+        border: 1px solid var(--border-color, #E2E8F0);
+        border-radius: 20px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+        z-index: 955;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        animation: huitChatPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .huit-chat-panel.open { display: flex; }
+    @keyframes huitChatPop {
+        from { opacity: 0; transform: translateY(14px) scale(0.96); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .huit-chat-header {
+        background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 60%, #0284C7 100%);
+        color: #FFFFFF;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+    }
+    .huit-chat-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255,255,255,0.85);
+        background: #fff;
+        flex-shrink: 0;
+    }
+    .huit-chat-title { font-size: 14.5px; font-weight: 700; line-height: 1.2; }
+    .huit-chat-sub { font-size: 11.5px; opacity: 0.9; display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+    .huit-chat-close {
+        margin-left: auto;
+        background: rgba(255,255,255,0.16);
+        border: none;
+        color: #fff;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .huit-chat-close:hover { background: rgba(255,255,255,0.28); }
+    .huit-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--bg-body, #F8FAFC);
+    }
+    .huit-msg-row { display: flex; gap: 8px; align-items: flex-end; }
+    .huit-msg-row.user { justify-content: flex-end; }
+    .huit-msg-bubble {
+        max-width: 82%;
+        padding: 10px 13px;
+        border-radius: 15px;
+        font-size: 13px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .huit-msg-row.bot .huit-msg-bubble {
+        background: var(--bg-card, #FFFFFF);
+        color: var(--text-primary, #0F172A);
+        border: 1px solid var(--border-color, #E2E8F0);
+        border-bottom-left-radius: 4px;
+    }
+    .huit-msg-row.user .huit-msg-bubble {
+        background: #2563EB;
+        color: #FFFFFF;
+        border-bottom-right-radius: 4px;
+    }
+    .huit-chat-chips {
+        padding: 8px 12px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        background: var(--bg-card, #FFFFFF);
+        border-top: 1px solid var(--border-color, #E2E8F0);
+    }
+    .huit-chip-btn {
+        font-size: 11.5px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        border: 1px solid #BFDBFE;
+        background: #EFF6FF;
+        color: #1D4ED8;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.15s ease;
+    }
+    .huit-chip-btn:hover { background: #DBEAFE; }
+    .huit-chat-input-bar {
+        padding: 10px 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: var(--bg-card, #FFFFFF);
+        border-top: 1px solid var(--border-color, #E2E8F0);
+    }
+    .huit-chat-input {
+        flex: 1;
+        border: 1px solid var(--border-color, #CBD5E1);
+        border-radius: 12px;
+        padding: 9px 12px;
+        font-size: 13px;
+        background: var(--bg-body, #F8FAFC);
+        color: var(--text-primary, #0F172A);
+        outline: none;
+    }
+    .huit-chat-input:focus { border-color: #2563EB; }
+    .huit-chat-send {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        border: none;
+        background: #2563EB;
+        color: #FFFFFF;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .huit-chat-send:hover { background: #1D4ED8; }
+    .huit-chat-send:disabled { opacity: 0.55; cursor: not-allowed; }
+</style>
+
+<button id="huitChatFab" class="huit-chat-fab" type="button" title="Hỏi Gấu HUIT - Trợ lý sinh viên">
+    <img th:src="@{/images/huit-bot-mascot.jpg}" alt="Gấu HUIT">
+    <span class="huit-chat-badge-dot"></span>
+</button>
+
+<div id="huitChatPanel" class="huit-chat-panel" aria-hidden="true">
+    <div class="huit-chat-header">
+        <img th:src="@{/images/huit-bot-mascot.jpg}" alt="Gấu HUIT" class="huit-chat-avatar">
+        <div>
+            <div class="huit-chat-title">Gấu HUIT Assistant</div>
+            <div class="huit-chat-sub"><span style="width:7px;height:7px;border-radius:50%;background:#4ADE80;display:inline-block;"></span> Trợ lý cá nhân sinh viên</div>
+        </div>
+        <button id="huitChatClose" class="huit-chat-close" type="button" title="Đóng">✕</button>
+    </div>
+
+    <div id="huitChatMessages" class="huit-chat-messages">
+        <div class="huit-msg-row bot">
+            <div class="huit-msg-bubble">Chào bạn! 🐻 Mình là <b>Gấu HUIT</b>. Mình có thể tra cứu trực tiếp <b>lịch học</b>, <b>điểm số/CPA</b> và <b>học phí</b> của bạn. Bạn cần hỏi gì nào?</div>
+        </div>
+    </div>
+
+    <div class="huit-chat-chips">
+        <button type="button" class="huit-chip-btn" data-q="Lịch học kỳ này của tôi thế nào?">📅 Lịch học kỳ này</button>
+        <button type="button" class="huit-chip-btn" data-q="Học phí và công nợ hiện tại của tôi là bao nhiêu?">💰 Học phí & Công nợ</button>
+        <button type="button" class="huit-chip-btn" data-q="Điểm số và CPA hiện tại của tôi ra sao?">🎓 Điểm & CPA</button>
+        <button type="button" class="huit-chip-btn" data-q="Quy định đăng ký khối lượng học tập và cảnh báo học vụ theo quy chế 3344?">📘 Quy chế 3344</button>
+    </div>
+
+    <form id="huitChatForm" class="huit-chat-input-bar">
+        <input id="huitChatInput" class="huit-chat-input" type="text" placeholder="Hỏi lịch học, điểm, học phí..." autocomplete="off">
+        <button id="huitChatSend" class="huit-chat-send" type="submit" title="Gửi">➤</button>
+    </form>
+</div>
+
+<script>
+    (function () {
+        const fab = document.getElementById('huitChatFab');
+        const panel = document.getElementById('huitChatPanel');
+        const closeBtn = document.getElementById('huitChatClose');
+        const form = document.getElementById('huitChatForm');
+        const input = document.getElementById('huitChatInput');
+        const sendBtn = document.getElementById('huitChatSend');
+        const messagesEl = document.getElementById('huitChatMessages');
+        if (!fab || !panel) return;
+
+        const chatHistory = [];
+
+        function formatMarkdownLite(text) {
+            return String(text || '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+                .replace(/`([^`]+)`/g, '<code style="background:rgba(37,99,235,0.1);padding:1px 5px;border-radius:4px;font-size:12px;">$1</code>')
+                .replace(/_(.+?)_/g, '<i>$1</i>');
+        }
+
+        function appendMsg(role, text) {
+            const row = document.createElement('div');
+            row.className = 'huit-msg-row ' + (role === 'user' ? 'user' : 'bot');
+            const bubble = document.createElement('div');
+            bubble.className = 'huit-msg-bubble';
+            bubble.innerHTML = role === 'user'
+                ? String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                : formatMarkdownLite(text);
+            row.appendChild(bubble);
+            messagesEl.appendChild(row);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+            return bubble;
+        }
+
+        async function sendMessage(text) {
+            const q = (text || '').trim();
+            if (!q) return;
+            appendMsg('user', q);
+            input.value = '';
+            sendBtn.disabled = true;
+
+            const typingBubble = appendMsg('bot', 'Gấu HUIT đang tra cứu dữ liệu...');
+            try {
+                const res = await fetch('/api/chatbot/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: q, history: chatHistory })
+                });
+                const data = await res.json();
+                const reply = data.reply || 'Xin lỗi, mình chưa nhận được phản hồi.';
+                typingBubble.innerHTML = formatMarkdownLite(reply);
+                chatHistory.push({ role: 'user', text: q });
+                chatHistory.push({ role: 'assistant', text: reply });
+            } catch (err) {
+                typingBubble.innerHTML = 'Không thể kết nối tới trợ lý lúc này. Bạn thử lại sau nhé!';
+            } finally {
+                sendBtn.disabled = false;
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+                input.focus();
+            }
+        }
+
+        fab.addEventListener('click', function () {
+            const isOpen = panel.classList.toggle('open');
+            panel.setAttribute('aria-hidden', String(!isOpen));
+            if (isOpen) setTimeout(() => input.focus(), 100);
+        });
+
+        closeBtn.addEventListener('click', function () {
+            panel.classList.remove('open');
+            panel.setAttribute('aria-hidden', 'true');
+        });
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            sendMessage(input.value);
+        });
+
+        document.querySelectorAll('.huit-chip-btn').forEach(btn => {
+            btn.addEventListener('click', () => sendMessage(btn.getAttribute('data-q')));
+        });
+    })();
+</script>
 </body>
 </html>

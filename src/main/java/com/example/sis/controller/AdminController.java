@@ -1,10 +1,10 @@
 package com.example.sis.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import com.example.sis.service.*;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,37 +18,39 @@ import java.util.*;
 
 @Controller
 @RequestMapping("/Admin")
+@RequiredArgsConstructor
 public class AdminController {
 
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
-    @Autowired private HocPhanRepository hocPhanRepository;
-    @Autowired private GiangVienRepository giangVienRepository;
-    @Autowired private HocKyRepository hocKyRepository;
-    @Autowired private KhoaRepository khoaRepository;
-    @Autowired private NganhHocRepository nganhHocRepository;
-    @Autowired private KhungChuongTrinhRepository khungChuongTrinhRepository;
-    @Autowired private DieuKienHocPhanRepository dieuKienHocPhanRepository;
-    @Autowired private LichHocRepository lichHocRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private DiemRenLuyenRepository diemRenLuyenRepository;
-    @Autowired private CongNoHocKyRepository congNoHocKyRepository;
-    @Autowired private PhieuThuHocPhiRepository phieuThuHocPhiRepository;
-    @Autowired private ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
-    @Autowired private YeuCauDoiLichRepository yeuCauDoiLichRepository;
-    @Autowired private YeuCauDichVuMotCuaRepository yeuCauDichVuMotCuaRepository;
-    @Autowired private NguoiDungRepository nguoiDungRepository;
-    @Autowired private LopDanhNghiaRepository lopDanhNghiaRepository;
-    @Autowired private ThongBaoRepository thongBaoRepository;
-    @Autowired private NhatKyHeThongRepository nhatKyHeThongRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final LopHocPhanRepository lopHocPhanRepository;
+    private final HocPhanRepository hocPhanRepository;
+    private final GiangVienRepository giangVienRepository;
+    private final HocKyRepository hocKyRepository;
+    private final KhoaRepository khoaRepository;
+    private final NganhHocRepository nganhHocRepository;
+    private final KhungChuongTrinhRepository khungChuongTrinhRepository;
+    private final DieuKienHocPhanRepository dieuKienHocPhanRepository;
+    private final LichHocRepository lichHocRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final DiemRenLuyenRepository diemRenLuyenRepository;
+    private final CongNoHocKyRepository congNoHocKyRepository;
+    private final PhieuThuHocPhiRepository phieuThuHocPhiRepository;
+    private final ChungChiChuanDauRaRepository chungChiChuanDauRaRepository;
+    private final YeuCauDoiLichRepository yeuCauDoiLichRepository;
+    private final YeuCauDichVuMotCuaRepository yeuCauDichVuMotCuaRepository;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final LopDanhNghiaRepository lopDanhNghiaRepository;
+    private final ThongBaoRepository thongBaoRepository;
+    private final NhatKyHeThongRepository nhatKyHeThongRepository;
 
-    @Autowired private ExcelService excelService;
-    @Autowired private AcademicStandingService academicStandingService;
-    @Autowired private TuitionService tuitionService;
-    @Autowired private GradingService gradingService;
-    @Autowired private ScheduleConflictService scheduleConflictService;
-    @Autowired private NotificationService notificationService;
-    @Autowired private AuditLogService auditLogService;
+    private final ExcelService excelService;
+    private final ClassDatabaseImportService classDatabaseImportService;
+    private final AcademicStandingService academicStandingService;
+    private final TuitionService tuitionService;
+    private final GradingService gradingService;
+    private final ScheduleConflictService scheduleConflictService;
+    private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     private NguoiDung getAdmin(HttpSession session) {
         NguoiDung u = (NguoiDung) session.getAttribute("currentUser");
@@ -465,7 +467,55 @@ public class AdminController {
         model.addAttribute("semesters", hocKyRepository.findAll());
         model.addAttribute("faculties", giangVienRepository.findAll());
         model.addAttribute("schedules", lichHocRepository.findAll());
+        model.addAttribute("classDbFiles", classDatabaseImportService.listLocalExcelFiles());
         return "admin/classes";
+    }
+
+    @PostMapping("/Classes/ImportClassDatabase")
+    public String importClassDatabase(@RequestParam(required = false) String fileName,
+                                      @RequestParam(required = false) MultipartFile excelFile,
+                                      @RequestParam(required = false, defaultValue = "15DHKHDL") String filterPrefix,
+                                      @RequestParam(required = false, defaultValue = "150") Integer maxClasses,
+                                      HttpSession session,
+                                      RedirectAttributes redirectAttributes) {
+        if (getAdmin(session) == null) return "redirect:/Account/Login";
+        try {
+            Map<String, Object> res;
+            if (excelFile != null && !excelFile.isEmpty()) {
+                res = classDatabaseImportService.importFromMultipart(excelFile, filterPrefix, maxClasses);
+            } else if (fileName != null && !fileName.isBlank()) {
+                res = classDatabaseImportService.importFromLocalFile(fileName, filterPrefix, maxClasses);
+            } else {
+                redirectAttributes.addFlashAttribute("errorMsg", "Vui lòng chọn 1 file từ thư mục class_database hoặc upload file Excel TKB.");
+                return "redirect:/Admin/Classes";
+            }
+            redirectAttributes.addFlashAttribute("successMsg",
+                    "Import TKB thành công vào " + res.get("hocKy")
+                            + ": +" + res.get("createdHocPhan") + " Học phần, +"
+                            + res.get("createdLopHp") + " Lớp HP, +"
+                            + res.get("createdLichHoc") + " Lịch học, +"
+                            + res.get("createdGiangVien") + " Giảng viên.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi import TKB: " + e.getMessage());
+        }
+        return "redirect:/Admin/Classes";
+    }
+
+    @PostMapping("/Classes/SyncAllRealHuit")
+    public String syncAllRealHuit(@RequestParam(required = false, defaultValue = "15DHKHDL") String filterPrefix,
+                                  HttpSession session,
+                                  RedirectAttributes redirectAttributes) {
+        if (getAdmin(session) == null) return "redirect:/Account/Login";
+        try {
+            Map<String, Object> res = classDatabaseImportService.syncAllRealHuitData(filterPrefix);
+            redirectAttributes.addFlashAttribute("successMsg",
+                    "Đã đồng bộ " + res.get("filesProcessed") + " file TKB HUIT (mở ĐKHP: " + res.get("activeSemester") + ") — "
+                            + "+" + res.get("createdHocPhan") + " Học phần, +" + res.get("createdLopHp")
+                            + " Lớp HP, +" + res.get("createdLichHoc") + " Lịch học, +" + res.get("createdGiangVien") + " Giảng viên thật.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Lỗi đồng bộ TKB HUIT: " + e.getMessage());
+        }
+        return "redirect:/Admin/Classes";
     }
 
     @PostMapping("/Classes/Create")

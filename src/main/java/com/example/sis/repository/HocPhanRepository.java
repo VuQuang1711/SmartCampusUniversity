@@ -3,11 +3,9 @@ package com.example.sis.repository;
 import com.example.sis.entity.HocPhan;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
 public interface HocPhanRepository extends JpaRepository<HocPhan, Long> {
     Optional<HocPhan> findByMaHP(String maHP);
     List<HocPhan> findByKhoaId(Long khoaId);

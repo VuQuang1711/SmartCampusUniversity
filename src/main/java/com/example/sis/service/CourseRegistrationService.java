@@ -1,25 +1,27 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.TreeSet;
 
 @Service
+@RequiredArgsConstructor
 public class CourseRegistrationService {
 
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
-    @Autowired private DieuKienHocPhanRepository dieuKienHocPhanRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private LichHocRepository lichHocRepository;
-    @Autowired private TuitionService tuitionService;
+    private final LopHocPhanRepository lopHocPhanRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final DieuKienHocPhanRepository dieuKienHocPhanRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final LichHocRepository lichHocRepository;
+    private final TuitionService tuitionService;
 
     public static class RegistrationResult {
         private final boolean success;
@@ -65,8 +67,10 @@ public class CourseRegistrationService {
         }
 
         // 2. Kiểm tra sĩ số lớp (chống vượt sĩ số)
-        if (lhp.getSiSoHienTai() >= lhp.getSiSoToiDa()) {
-            return new RegistrationResult(false, "Lớp học phần " + lhp.getMaLHP() + " đã hết chỗ (Sĩ số: " + lhp.getSiSoHienTai() + "/" + lhp.getSiSoToiDa() + ")!");
+        int curSiSo = lhp.getSiSoHienTai() != null ? lhp.getSiSoHienTai() : 0;
+        int maxSiSo = lhp.getSiSoToiDa() != null ? lhp.getSiSoToiDa() : 60;
+        if (curSiSo >= maxSiSo) {
+            return new RegistrationResult(false, "Lớp học phần " + lhp.getMaLHP() + " đã hết chỗ (Sĩ số: " + curSiSo + "/" + maxSiSo + ")!");
         }
 
         // 3. Kiểm tra môn tiên quyết
@@ -118,29 +122,41 @@ public class CourseRegistrationService {
             }
 
             for (LichHoc newLh : newClassSchedules) {
+                if (newLh.getLoaiLich() == LichHoc.LoaiLich.LICH_THI || newLh.getThu() == null) continue;
                 for (LichHoc exLh : existingSchedules) {
+                    if (exLh.getLoaiLich() == LichHoc.LoaiLich.LICH_THI || exLh.getThu() == null) continue;
                     if (newLh.getThu().equals(exLh.getThu())) {
-                        // Kiểm tra giao thoa tuần
-                        boolean weekOverlap = !(newLh.getDenTuan() < exLh.getTuTuan() || newLh.getTuTuan() > exLh.getDenTuan());
                         // Kiểm tra giao thoa tiết
                         boolean periodOverlap = !(newLh.getTietKetThuc() < exLh.getTietBatDau() || newLh.getTietBatDau() > exLh.getTietKetThuc());
-
-                        if (weekOverlap && periodOverlap) {
-                            return new RegistrationResult(false, "Trùng thời khóa biểu! Lớp " + lhp.getMaLHP() + " trùng lịch (Thứ " + newLh.getThu() + ", tiết " + newLh.getTietBatDau() + "-" + newLh.getTietKetThuc() + ") với lớp đã đăng ký [" + existingDk.getLopHocPhan().getMaLHP() + "]!");
+                        if (!periodOverlap) continue;
+                        // Kiểm tra giao thoa TỪNG TUẦN THỰC TẾ (tuanHoc: VD "1-2, 7-13, 15")
+                        TreeSet<Integer> overlapWeeks = newLh.getOverlapWeeks(exLh);
+                        if (!overlapWeeks.isEmpty()) {
+                            String dayLabel = newLh.getThu() == 8 ? "Chủ nhật" : ("Thứ " + newLh.getThu());
+                            return new RegistrationResult(false, "Trùng thời khóa biểu! Lớp " + lhp.getMaLHP()
+                                    + " trùng lịch (" + dayLabel + ", tiết " + newLh.getTietBatDau() + "-" + newLh.getTietKetThuc()
+                                    + ", trùng tuần: " + LichHoc.formatWeekSet(overlapWeeks)
+                                    + ") với lớp đã đăng ký [" + existingDk.getLopHocPhan().getMaLHP() + "]!");
                         }
                     }
                 }
             }
         }
 
-        // Xác định loại đăng ký: HOC_MOI, HOC_LAI, CAI_THIEN
+        // Xác định loại đăng ký: HOC_MOI, HOC_LAI, CAI_THIEN (bỏ qua các lớp đã hủy hoặc chưa có điểm chữ để tránh NPE)
         DangKyHocPhan.LoaiDangKy loaiDangKy = DangKyHocPhan.LoaiDangKy.HOC_MOI;
         for (DiemHocPhan d : allPastGrades) {
+            if (d.getDangKyHocPhan() == null
+                    || d.getDangKyHocPhan().getTrangThai() != DangKyHocPhan.TrangThaiDangKy.THANH_CONG) {
+                continue;
+            }
             if (d.getDangKyHocPhan().getLopHocPhan().getHocPhan().getId().equals(hocPhan.getId())) {
                 String letter = d.getDiemChu();
-                if ("F".equalsIgnoreCase(letter)) {
+                if (letter == null || letter.isBlank()) continue;
+                String normLetter = letter.trim().toUpperCase();
+                if ("F".equals(normLetter)) {
                     loaiDangKy = DangKyHocPhan.LoaiDangKy.HOC_LAI;
-                } else if (List.of("D", "D+", "C").contains(letter)) {
+                } else if ("D".equals(normLetter) || "D+".equals(normLetter) || "C".equals(normLetter)) {
                     loaiDangKy = DangKyHocPhan.LoaiDangKy.CAI_THIEN;
                 }
             }
@@ -163,10 +179,10 @@ public class CourseRegistrationService {
                     .ngayDangKy(LocalDateTime.now())
                     .build();
         }
-        dangKyHocPhanRepository.save(dk);
+        dk = dangKyHocPhanRepository.save(dk);
 
         // Tăng sĩ số hiện tại
-        lhp.setSiSoHienTai(lhp.getSiSoHienTai() + 1);
+        lhp.setSiSoHienTai(curSiSo + 1);
         lopHocPhanRepository.save(lhp);
 
         // Khởi tạo bản ghi điểm học phần

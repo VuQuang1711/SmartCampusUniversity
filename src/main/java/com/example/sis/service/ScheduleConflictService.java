@@ -1,8 +1,8 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,14 +10,15 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class ScheduleConflictService {
 
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
-    @Autowired private LichHocRepository lichHocRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
-    @Autowired private YeuCauDoiLichRepository yeuCauDoiLichRepository;
-    @Autowired private NotificationService notificationService;
-    @Autowired private AuditLogService auditLogService;
+    private final LopHocPhanRepository lopHocPhanRepository;
+    private final LichHocRepository lichHocRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final YeuCauDoiLichRepository yeuCauDoiLichRepository;
+    private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     public static class ConflictReport {
         public boolean canSubmit;
@@ -29,12 +30,14 @@ public class ScheduleConflictService {
         public String summary;
     }
 
-    private boolean overlaps(int thu1, int tuTuan1, int denTuan1, int tietBd1, int tietKt1,
-                             int thu2, int tuTuan2, int denTuan2, int tietBd2, int tietKt2) {
-        if (thu1 != thu2) return false;
-        boolean weekOverlap = !(denTuan1 < tuTuan2 || tuTuan1 > denTuan2);
-        boolean periodOverlap = !(tietKt1 < tietBd2 || tietBd1 > tietKt2);
-        return weekOverlap && periodOverlap;
+    private boolean overlapsWithExisting(int thuMoi, int tuTuanMoi, int denTuanMoi, int tietBdMoi, int tietKtMoi, LichHoc existing) {
+        if (existing.getThu() == null || thuMoi != existing.getThu()) return false;
+        boolean periodOverlap = !(tietKtMoi < existing.getTietBatDau() || tietBdMoi > existing.getTietKetThuc());
+        if (!periodOverlap) return false;
+        for (int w : existing.getWeekSet()) {
+            if (w >= tuTuanMoi && w <= denTuanMoi) return true;
+        }
+        return false;
     }
 
     /**
@@ -68,9 +71,7 @@ public class ScheduleConflictService {
             for (LichHoc existing : svSchedules) {
                 if (ignoreLichHocId != null && existing.getId().equals(ignoreLichHocId)) continue;
                 if (existing.getLopHocPhan().getId().equals(lopHocPhanId) && ignoreLichHocId != null) continue;
-                if (overlaps(thuMoi, tuTuanMoi, denTuanMoi, tietBatDauMoi, tietKetThucMoi,
-                        existing.getThu(), existing.getTuTuan(), existing.getDenTuan(),
-                        existing.getTietBatDau(), existing.getTietKetThuc())) {
+                if (overlapsWithExisting(thuMoi, tuTuanMoi, denTuanMoi, tietBatDauMoi, tietKetThucMoi, existing)) {
                     conflictedStudentIds.add(sv.getId());
                     report.studentConflicts.add(String.format(
                             "SV %s (%s) bị trùng với lớp %s (%s) - Thứ %d, Tiết %d-%d, Phòng %s",
@@ -95,9 +96,7 @@ public class ScheduleConflictService {
 
             if (!targetRoom.isEmpty() && existing.getPhongHoc() != null
                     && existing.getPhongHoc().trim().equalsIgnoreCase(targetRoom)) {
-                if (overlaps(thuMoi, tuTuanMoi, denTuanMoi, tietBatDauMoi, tietKetThucMoi,
-                        existing.getThu(), existing.getTuTuan(), existing.getDenTuan(),
-                        existing.getTietBatDau(), existing.getTietKetThuc())) {
+                if (overlapsWithExisting(thuMoi, tuTuanMoi, denTuanMoi, tietBatDauMoi, tietKetThucMoi, existing)) {
                     report.roomConflicts.add(String.format(
                             "Phòng %s đã có lớp %s (%s) sử dụng vào Thứ %d, Tiết %d-%d (Tuần %d-%d)",
                             targetRoom, existing.getLopHocPhan().getMaLHP(),
@@ -113,9 +112,7 @@ public class ScheduleConflictService {
             List<LichHoc> gvSchedules = lichHocRepository.findLichHocByGiangVienAndHocKy(lhp.getGiangVien().getId(), hocKyId);
             for (LichHoc existing : gvSchedules) {
                 if (ignoreLichHocId != null && existing.getId().equals(ignoreLichHocId)) continue;
-                if (overlaps(thuMoi, tuTuanMoi, denTuanMoi, tietBatDauMoi, tietKetThucMoi,
-                        existing.getThu(), existing.getTuTuan(), existing.getDenTuan(),
-                        existing.getTietBatDau(), existing.getTietKetThuc())) {
+                if (overlapsWithExisting(thuMoi, tuTuanMoi, denTuanMoi, tietBatDauMoi, tietKetThucMoi, existing)) {
                     report.lecturerConflicts.add(String.format(
                             "Giảng viên bị trùng lịch dạy lớp %s (%s) vào Thứ %d, Tiết %d-%d",
                             existing.getLopHocPhan().getMaLHP(),

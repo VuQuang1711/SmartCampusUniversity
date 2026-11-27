@@ -1,8 +1,8 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,14 +12,15 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AttendanceService {
 
-    @Autowired private DiemDanhRepository diemDanhRepository;
-    @Autowired private LichHocRepository lichHocRepository;
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private GradingService gradingService;
+    private final DiemDanhRepository diemDanhRepository;
+    private final LichHocRepository lichHocRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final GradingService gradingService;
 
     /**
      * ĐIỂM DANH HÀNG LOẠT CHO CẢ LỚP (BULK ATTENDANCE) VÀ TỰ ĐỘNG CẢNH BÁO CẤM THI NẾU VẮNG > 20%
@@ -69,7 +70,6 @@ public class AttendanceService {
     @Transactional
     public boolean checkAndFlagCamThi(Long sinhVienId, Long lopHocPhanId) {
         long absentSessions = diemDanhRepository.countVangBySinhVienAndLopHocPhan(sinhVienId, lopHocPhanId);
-        long totalRecordedSessions = diemDanhRepository.countTongBuoiBySinhVienAndLopHocPhan(sinhVienId, lopHocPhanId);
 
         // Chuẩn học kỳ đại học: 15 tuần học
         long totalEstimatedSessions = 15;

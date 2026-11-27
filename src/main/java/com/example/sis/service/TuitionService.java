@@ -1,8 +1,8 @@
 package com.example.sis.service;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,13 +12,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class TuitionService {
 
-    @Autowired private CongNoHocKyRepository congNoHocKyRepository;
-    @Autowired private PhieuThuHocPhiRepository phieuThuHocPhiRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
-    @Autowired private HocKyRepository hocKyRepository;
-    @Autowired private SinhVienRepository sinhVienRepository;
+    private final CongNoHocKyRepository congNoHocKyRepository;
+    private final PhieuThuHocPhiRepository phieuThuHocPhiRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final HocKyRepository hocKyRepository;
+    private final SinhVienRepository sinhVienRepository;
 
     /**
      * TỰ ĐỘNG KẾT CHUYỂN DỮ LIỆU TỪ ĐĂNG KÝ HỌC PHẦN SANG CÔNG NỢ HỌC KỲ

@@ -1,10 +1,10 @@
 package com.example.sis.controller;
 
+import lombok.RequiredArgsConstructor;
 import com.example.sis.entity.*;
 import com.example.sis.repository.*;
 import com.example.sis.service.*;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -15,33 +15,33 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/Faculty")
+@RequiredArgsConstructor
 public class FacultyController {
 
-    @Autowired private GiangVienRepository giangVienRepository;
-    @Autowired private LopHocPhanRepository lopHocPhanRepository;
-    @Autowired private HocPhanRepository hocPhanRepository;
-    @Autowired private HocKyRepository hocKyRepository;
-    @Autowired private KhungChuongTrinhRepository khungChuongTrinhRepository;
-    @Autowired private LichHocRepository lichHocRepository;
-    @Autowired private DangKyHocPhanRepository dangKyHocPhanRepository;
-    @Autowired private DiemHocPhanRepository diemHocPhanRepository;
-    @Autowired private DiemDanhRepository diemDanhRepository;
-    @Autowired private DiemRenLuyenRepository diemRenLuyenRepository;
-    @Autowired private LopDanhNghiaRepository lopDanhNghiaRepository;
-    @Autowired private SinhVienRepository sinhVienRepository;
-    @Autowired private YeuCauDoiLichRepository yeuCauDoiLichRepository;
-    @Autowired private ThongBaoRepository thongBaoRepository;
+    private final GiangVienRepository giangVienRepository;
+    private final LopHocPhanRepository lopHocPhanRepository;
+    private final HocPhanRepository hocPhanRepository;
+    private final HocKyRepository hocKyRepository;
+    private final KhungChuongTrinhRepository khungChuongTrinhRepository;
+    private final LichHocRepository lichHocRepository;
+    private final DangKyHocPhanRepository dangKyHocPhanRepository;
+    private final DiemHocPhanRepository diemHocPhanRepository;
+    private final DiemDanhRepository diemDanhRepository;
+    private final DiemRenLuyenRepository diemRenLuyenRepository;
+    private final LopDanhNghiaRepository lopDanhNghiaRepository;
+    private final SinhVienRepository sinhVienRepository;
+    private final YeuCauDoiLichRepository yeuCauDoiLichRepository;
+    private final ThongBaoRepository thongBaoRepository;
 
-    @Autowired private AttendanceService attendanceService;
-    @Autowired private GradingService gradingService;
-    @Autowired private ScheduleConflictService scheduleConflictService;
-    @Autowired private NotificationService notificationService;
-    @Autowired private ExcelService excelService;
-    @Autowired private AuditLogService auditLogService;
+    private final AttendanceService attendanceService;
+    private final GradingService gradingService;
+    private final ScheduleConflictService scheduleConflictService;
+    private final NotificationService notificationService;
+    private final ExcelService excelService;
+    private final AuditLogService auditLogService;
 
     private GiangVien getFaculty(HttpSession session) {
         NguoiDung u = (NguoiDung) session.getAttribute("currentUser");

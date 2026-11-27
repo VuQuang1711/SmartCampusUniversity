@@ -22,7 +22,8 @@ public class SisApplication {
                 if (arg != null && arg.startsWith("--server.port=")) {
                     try {
                         return Integer.parseInt(arg.substring("--server.port=".length()).trim());
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
             }
         }
@@ -30,7 +31,8 @@ public class SisApplication {
     }
 
     /**
-     * Tự động phát hiện và tắt tiến trình đang chiếm giữ port trên Windows/Linux/Mac
+     * Tự động phát hiện và tắt tiến trình đang chiếm giữ port trên
+     * Windows/Linux/Mac
      */
     private static void freePortIfOccupied(int port) {
         try {
@@ -39,26 +41,30 @@ public class SisApplication {
 
             if (os.contains("win")) {
                 // Lệnh tìm PID đang lắng nghe trên cổng: netstat -ano | findstr :PORT
-                ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c", "netstat -ano | findstr LISTENING | findstr :" + port);
+                ProcessBuilder pb = new ProcessBuilder("cmd.exe", "/c",
+                        "netstat -ano | findstr LISTENING | findstr :" + port);
                 Process process = pb.start();
 
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         line = line.trim();
-                        if (line.isEmpty()) continue;
+                        if (line.isEmpty())
+                            continue;
                         String[] parts = line.split("\\s+");
                         if (parts.length > 0) {
                             String pidStr = parts[parts.length - 1];
                             try {
                                 long pid = Long.parseLong(pidStr);
                                 if (pid > 0 && pid != currentPid) {
-                                    System.out.println(">>> [SisApplication] Port " + port + " occupied by PID " + pid + ". Terminating stale process...");
+                                    System.out.println(">>> [SisApplication] Port " + port + " occupied by PID " + pid
+                                            + ". Terminating stale process...");
                                     new ProcessBuilder("taskkill", "/F", "/PID", String.valueOf(pid)).start().waitFor();
                                     Thread.sleep(600);
                                     System.out.println(">>> [SisApplication] Port " + port + " freed successfully.");
                                 }
-                            } catch (NumberFormatException ignored) {}
+                            } catch (NumberFormatException ignored) {
+                            }
                         }
                     }
                 }

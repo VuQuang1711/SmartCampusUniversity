@@ -2,6 +2,7 @@ package com.example.sis.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,25 @@ public class LopHocPhan {
 
     @Column(name = "ten_lhp", nullable = false, length = 150)
     private String tenLHP;
+
+    @Column(name = "lop_du_kien", length = 60)
+    private String lopDuKien; // Ví dụ: 15DHKHDL01, 15DHKHDL03
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lop_danh_nghia_id")
+    private LopDanhNghia lopDanhNghia; // FK chuẩn hóa từ cột "Lớp học" trong Excel HUIT
+
+    @Column(name = "tinh_chat_hp", length = 50)
+    private String tinhChatHp; // VD: E_learning(HUITx) hoặc TRUC_TIEP
+
+    @Column(name = "tong_so_tiet")
+    private Integer tongSoTiet; // Tổng số tiết thực dạy (cột "Tổng số tiết")
+
+    @Column(name = "ngay_bat_dau")
+    private LocalDate ngayBatDau; // Ngày bắt đầu đợt học (cột "Bắt đầu")
+
+    @Column(name = "ngay_ket_thuc")
+    private LocalDate ngayKetThuc; // Ngày kết thúc đợt học (cột "Kết thúc")
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hoc_phan_id", nullable = false)
